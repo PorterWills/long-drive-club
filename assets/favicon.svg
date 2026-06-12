@@ -1,0 +1,8 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" fill="#0E2A1C"/>
+  <circle cx="50" cy="44" r="22" fill="none" stroke="#EDE9DF" stroke-width="2.5"/>
+  <text x="50" y="50" font-family="Archivo, Arial, sans-serif" font-weight="800" font-size="15" fill="#EDE9DF" text-anchor="middle">LDC</text>
+  <rect x="20" y="78" width="60" height="4" fill="#0E2A1C" stroke="#EDE9DF" stroke-width="0.5"/>
+  <rect x="62" y="78" width="8.4" height="4" fill="#EDE9DF"/>
+  <rect x="70.4" y="78" width="3" height="4" fill="#C1121F"/>
+</svg>
