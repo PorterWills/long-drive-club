@@ -111,16 +111,25 @@
       return o;
     }
 
-    fetch("car-makes-models.json")
+    fetch("car-makes-models.json?v=3")
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        Object.keys(data).forEach(function (make) {
-          makeSel.appendChild(option(make));
-        });
+        var makes = data.makes || data; // tolerate old flat shape
+        var popular = data.popular || [];
+
+        function group(label, names) {
+          var g = document.createElement("optgroup");
+          g.label = label;
+          names.forEach(function (m) { g.appendChild(option(m)); });
+          return g;
+        }
+        if (popular.length) makeSel.appendChild(group("Popular makes", popular));
+        makeSel.appendChild(group("All makes", Object.keys(makes)));
+
         makeSel.addEventListener("change", function () {
           modelSel.innerHTML = "";
           modelSel.appendChild(option("", "Model"));
-          var models = data[makeSel.value] || [];
+          var models = makes[makeSel.value] || [];
           if (models.length) {
             models.forEach(function (m) { modelSel.appendChild(option(m)); });
             modelSel.disabled = false;
