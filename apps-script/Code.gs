@@ -28,7 +28,7 @@ var UNSUBSCRIBE_URL = 'mailto:hello@longdriveclub.com?subject=Unsubscribe';
 // The first ten are filled by the form; the last three are filled by the
 // owner / the approval flow.
 var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'party', 'days', 'consent',
-               'status', 'password', 'approved_at'];
+               'status', 'password', 'approved_at', 'paid_at', 'declined_at'];
 
 function doPost(e) {
   try {
@@ -174,8 +174,11 @@ function onApprovalEdit(e) {
 
   if (value === 'approved') {
     handleApproved(sheet, row, headers);
+  } else if (value === 'paid') {
+    handlePaid(sheet, row, headers);
+  } else if (value === 'declined') {
+    handleDeclined(sheet, row, headers);
   }
-  // 'paid' and 'declined' will be wired here next.
 }
 
 function handleApproved(sheet, row, headers) {
@@ -197,6 +200,32 @@ function handleApproved(sheet, row, headers) {
   sendViaResend({ to: email, subject: "You're in", html: html });
 
   approvedCell.setValue(new Date());
+}
+
+function handlePaid(sheet, row, headers) {
+  var cell = sheet.getRange(row, headers['paid_at']);
+  if (cell.getValue()) return; // already sent
+
+  var email = String(sheet.getRange(row, headers['email']).getValue()).trim();
+  if (!email) return;
+
+  var html = renderEmail('email_place_confirmed', { unsubscribe_url: UNSUBSCRIBE_URL });
+  sendViaResend({ to: email, subject: "That's you confirmed", html: html });
+
+  cell.setValue(new Date());
+}
+
+function handleDeclined(sheet, row, headers) {
+  var cell = sheet.getRange(row, headers['declined_at']);
+  if (cell.getValue()) return; // already sent
+
+  var email = String(sheet.getRange(row, headers['email']).getValue()).trim();
+  if (!email) return;
+
+  var html = renderEmail('email_declined', { unsubscribe_url: UNSUBSCRIBE_URL });
+  sendViaResend({ to: email, subject: 'Not this time', html: html });
+
+  cell.setValue(new Date());
 }
 
 // A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
