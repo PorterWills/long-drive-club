@@ -228,8 +228,52 @@
       });
   })();
 
+  /* ---- "Where you're based": progressive region / overseas picker --------
+     UK applicants pick a region; "Outside the UK" reveals a country select
+     and an optional city. No postal address is ever collected. */
+  (function () {
+    var base = document.getElementById("f-base");
+    var overseas = document.getElementById("base-overseas");
+    var country = document.getElementById("f-country");
+    var city = document.getElementById("f-city");
+    if (!base || !overseas || !country) return;
+    var COUNTRIES = [
+      "Ireland", "France", "Germany", "Switzerland", "Monaco", "Italy", "Spain", "Portugal",
+      "Netherlands", "Belgium", "Luxembourg", "Austria", "Denmark", "Sweden", "Norway", "Finland",
+      "Iceland", "Poland", "Czech Republic", "Slovakia", "Hungary", "Greece", "Cyprus", "Malta",
+      "Croatia", "Slovenia", "Romania", "Bulgaria", "Estonia", "Latvia", "Lithuania",
+      "United States", "Canada", "Mexico", "Brazil", "Argentina", "Chile",
+      "United Arab Emirates", "Qatar", "Saudi Arabia", "Bahrain", "Kuwait", "Oman", "Israel", "Turkey",
+      "South Africa", "Kenya", "Nigeria", "Egypt", "Morocco",
+      "Australia", "New Zealand", "Singapore", "Hong Kong", "Japan", "South Korea", "China",
+      "India", "Thailand", "Malaysia", "Indonesia", "Philippines", "Vietnam",
+      "Other"
+    ];
+    COUNTRIES.forEach(function (c) {
+      var o = document.createElement("option");
+      o.textContent = c;
+      country.appendChild(o);
+    });
+    base.addEventListener("change", function () {
+      var isOverseas = base.value === "Outside the UK";
+      overseas.hidden = !isOverseas;
+      if (!isOverseas) { country.value = ""; if (city) city.value = ""; }
+    });
+  })();
+
+  // Resolve the base/city the form should record from the three controls.
+  function resolveBase(form) {
+    var sel = form.elements.base ? form.elements.base.value : "";
+    if (sel === "Outside the UK") {
+      var c = form.elements.country ? form.elements.country.value : "";
+      return { base: c || "Outside the UK", city: (form.elements.city ? form.elements.city.value : "").trim() };
+    }
+    return { base: sel, city: "" };
+  }
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
+    var loc = resolveBase(form);
     var f = {
       name: form.elements.name.value,
       email: form.elements.email.value,
@@ -238,6 +282,8 @@
       make: form.elements.make.value,
       model: form.elements.model.value,
       handicap: formatHandicap(parseFloat(form.elements.handicap_value.value)),
+      base: loc.base,
+      baseCity: loc.city,
       play: form.elements.play.value,
       party: form.elements.party.value,
       days: Array.prototype.slice.call(form.querySelectorAll('input[name="days"]:checked')).map(function (c) { return c.value; }),
@@ -298,6 +344,8 @@
         make: f.make || null,
         model: f.model || null,
         handicap: f.handicap || null,
+        base: f.base || null,
+        base_city: f.baseCity || null,
         play: f.play || null,
         party: f.party || null,
         days: f.days,
@@ -322,6 +370,7 @@
         "What they do": f.work.trim() || "—",
         "What they drive": f.car.trim() || "—",
         "Handicap": f.handicap || "—",
+        "Where they're based": (f.baseCity ? f.base + " — " + f.baseCity : f.base) || "—",
         "How often they play": f.play || "—",
         "Coming alone or with someone": f.party || "—",
         "Days that interest them": days || "—",

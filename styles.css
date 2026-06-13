@@ -846,3 +846,8 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .hcp-slider:focus { outline: none; }
 .hcp-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 4px var(--focus-ring); }
 .hcp-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 4px var(--focus-ring); }
+
+/* ---- "Where you're based": overseas country/city reveal ---- */
+.base-overseas { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 22px; }
+.base-overseas .select-wrap { display: block; }
+@media (max-width: 560px) { .base-overseas { grid-template-columns: 1fr; row-gap: 22px; } }

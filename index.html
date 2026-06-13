@@ -81,7 +81,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -292,9 +292,44 @@
             </span>
           </div>
 
+          <div class="field ldc-rise" data-delay="150">
+            <label class="field-label" for="f-base">
+              <span class="ldc-numeral field-num" aria-hidden="true">09</span>
+              <span class="field-name">Where you're based</span>
+            </label>
+            <span class="select-wrap">
+              <select id="f-base" name="base">
+                <option value="">Region</option>
+                <optgroup label="United Kingdom">
+                  <option>London</option>
+                  <option>South East</option>
+                  <option>South West</option>
+                  <option>East of England</option>
+                  <option>East Midlands</option>
+                  <option>West Midlands</option>
+                  <option>Yorkshire &amp; the Humber</option>
+                  <option>North West</option>
+                  <option>North East</option>
+                  <option>Scotland</option>
+                  <option>Wales</option>
+                  <option>Northern Ireland</option>
+                </optgroup>
+                <option value="Outside the UK">Outside the UK</option>
+              </select>
+            </span>
+            <div class="base-overseas" id="base-overseas" hidden>
+              <span class="select-wrap">
+                <select id="f-country" name="country" aria-label="Country">
+                  <option value="">Country</option>
+                </select>
+              </span>
+              <input id="f-city" name="city" type="text" aria-label="City (optional)" placeholder="City (optional)">
+            </div>
+          </div>
+
           <fieldset class="field day-group ldc-rise" data-delay="160" style="border:none;padding:0;margin:0">
             <legend class="field-label" style="padding:0">
-              <span class="ldc-numeral field-num" aria-hidden="true">09</span>
+              <span class="ldc-numeral field-num" aria-hidden="true">10</span>
               <span class="field-name">Which days interest you</span>
             </legend>
             <div class="options">
@@ -550,6 +585,6 @@
   </div>
 </div>
 
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>
