@@ -81,7 +81,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -248,9 +248,22 @@
             <span class="ldc-voice hint">The one you'd bring.</span>
           </div>
 
+          <div class="field ldc-rise" data-delay="110">
+            <div class="field-label hcp-head">
+              <span class="hcp-name">
+                <span class="ldc-numeral field-num" aria-hidden="true">06</span>
+                <span class="field-name">Handicap</span>
+              </span>
+              <output class="hcp-readout ldc-numeral" id="hcp-readout" for="f-handicap">18</output>
+            </div>
+            <input type="range" class="hcp-slider" id="f-handicap" name="handicap_value"
+                   min="0" max="37" step="1" value="19" aria-label="Handicap" aria-valuetext="18">
+            <div class="hcp-scale" aria-hidden="true"><span>&lt;0</span><span>18</span><span>36</span></div>
+          </div>
+
           <div class="field ldc-rise" data-delay="120">
             <label class="field-label" for="f-play">
-              <span class="ldc-numeral field-num" aria-hidden="true">06</span>
+              <span class="ldc-numeral field-num" aria-hidden="true">07</span>
               <span class="field-name">How often you play</span>
             </label>
             <span class="select-wrap">
@@ -266,7 +279,7 @@
 
           <div class="field ldc-rise" data-delay="140">
             <label class="field-label" for="f-party">
-              <span class="ldc-numeral field-num" aria-hidden="true">07</span>
+              <span class="ldc-numeral field-num" aria-hidden="true">08</span>
               <span class="field-name">Coming alone, or bringing someone</span>
             </label>
             <span class="select-wrap">
@@ -282,7 +295,7 @@
 
           <fieldset class="field day-group ldc-rise" data-delay="160" style="border:none;padding:0;margin:0">
             <legend class="field-label" style="padding:0">
-              <span class="ldc-numeral field-num" aria-hidden="true">08</span>
+              <span class="ldc-numeral field-num" aria-hidden="true">09</span>
               <span class="field-name">Which days interest you</span>
             </legend>
             <div class="options">
@@ -538,6 +551,6 @@
   </div>
 </div>
 
-<script src="app.js?v=7"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>
