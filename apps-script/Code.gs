@@ -109,9 +109,23 @@ function headerMap(sheet) {
 
 /* ---- Approval flow ----------------------------------------------------- */
 
-// Installable "On edit" trigger (set up via the clock icon, NOT named onEdit
-// — a simple trigger can't call Resend). Fires whenever the sheet is edited;
-// we only act when the edited cell is the status column.
+// Run this ONCE by hand (select installApprovalTrigger ▸ Run) to wire the
+// on-edit trigger. This project is standalone (not bound to the sheet), so
+// the Triggers UI doesn't offer "From spreadsheet" — we create it in code
+// instead. Safe to re-run: it clears old copies first.
+function installApprovalTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'onApprovalEdit') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('onApprovalEdit')
+    .forSpreadsheet(SpreadsheetApp.openById(props_('SHEET_ID')))
+    .onEdit()
+    .create();
+}
+
+// Installable "On edit" trigger (created by installApprovalTrigger, NOT named
+// onEdit — a simple trigger can't call Resend). Fires whenever the sheet is
+// edited; we only act when the edited cell is the status column.
 function onApprovalEdit(e) {
   var range = e.range;
   var sheet = range.getSheet();
