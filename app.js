@@ -9,8 +9,11 @@
      application to a Google Sheet and sends the confirmation email. Apps
      Script web apps don't return CORS headers, so submissions are posted
      with mode: "no-cors" and a plain-text body (see saveApplication).
-     GATE_HASH: SHA-256 of the password sent to chosen applicants. To change
-     the password run:  echo -n "newpassword" | shasum -a 256              */
+     GATE_HASH: SHA-256 of a developer/master password that always unlocks
+     the gate, for testing. Real applicant passwords are unique per person
+     and checked against the Google Sheet via the Apps Script (see the gate
+     section below). To change the master password run:
+       echo -n "newpassword" | shasum -a 256                               */
   var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec";
   var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
@@ -366,16 +369,52 @@
     });
   }
 
+  // Ask the Apps Script whether a password matches an approved applicant.
+  // Apps Script can't answer a normal fetch (no CORS headers), so we use
+  // JSONP: load the request as a <script> whose response calls our callback
+  // with { ok: true|false }. Resolves false on any error or timeout.
+  function checkPasswordRemote(guess) {
+    return new Promise(function (resolve) {
+      var cb = "ldcGate" + Date.now() + Math.floor(Math.random() * 1000);
+      var script = document.createElement("script");
+      var timer = setTimeout(function () { cleanup(); resolve(false); }, 8000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (err) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (data) { cleanup(); resolve(!!(data && data.ok)); };
+      script.onerror = function () { cleanup(); resolve(false); };
+      script.src = APPS_SCRIPT_URL + "?password=" + encodeURIComponent(guess) + "&callback=" + cb;
+      document.head.appendChild(script);
+    });
+  }
+
+  var unlockBtn = lock.querySelector('button[type="submit"]');
+  var unlockLabel = unlockBtn ? unlockBtn.querySelector(".label") : null;
+
   lock.addEventListener("submit", function (e) {
     e.preventDefault();
-    var guess = pwInput.value.trim().toLowerCase();
-    sha256Hex(guess).then(function (hex) {
-      if (hex === GATE_HASH) {
-        lock.hidden = true;
-        open.hidden = false;
-      } else {
-        pwError.classList.add("show");
-      }
+    var guess = pwInput.value.trim();
+    if (!guess) { pwError.classList.add("show"); return; }
+
+    pwError.classList.remove("show");
+    var originalLabel = unlockLabel ? unlockLabel.textContent : "";
+    if (unlockBtn) unlockBtn.disabled = true;
+    if (unlockLabel) unlockLabel.textContent = "Checking…";
+
+    function done(ok) {
+      if (unlockBtn) unlockBtn.disabled = false;
+      if (unlockLabel) unlockLabel.textContent = originalLabel;
+      if (ok) { lock.hidden = true; open.hidden = false; }
+      else { pwError.classList.add("show"); }
+    }
+
+    // The developer/master password (GATE_HASH) unlocks instantly, offline.
+    // Anything else is checked against approved applicants in the sheet.
+    sha256Hex(guess.toLowerCase()).then(function (hex) {
+      if (hex === GATE_HASH) { done(true); return; }
+      checkPasswordRemote(guess).then(done);
     });
   });
 
