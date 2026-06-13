@@ -44,8 +44,7 @@
     var stage = document.getElementById("hero-photo");
     if (!stage) return;
     var IMAGES = [
-      "assets/hero-01.jpg", "assets/hero-02.jpg", "assets/hero-03.jpg", "assets/hero-04.jpg", "assets/hero-05.jpg",
-      "assets/hero-06.jpg", "assets/hero-07.jpg", "assets/hero-08.jpg", "assets/hero-09.jpg", "assets/hero-10.jpg"
+      "assets/hero-01.jpg", "assets/hero-04.jpg", "assets/hero-06.jpg", "assets/hero-07.jpg", "assets/hero-10.jpg"
     ];
     var POS = "50% 68%";          // shared focal point; tune per-image if needed
     var HOLD = 6000, FADE = 1200; // ms
