@@ -787,3 +787,9 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
   text-decoration: none;
 }
 .legal .back:hover { color: var(--ldc-tarmac); }
+
+/* ---- Car make/model picker (field 05) ---- */
+.car-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 4px; }
+.car-picker .select-wrap { display: block; }
+.field select:disabled { opacity: 0.45; cursor: default; }
+@media (max-width: 560px) { .car-picker { grid-template-columns: 1fr; row-gap: 22px; } }

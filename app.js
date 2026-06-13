@@ -95,6 +95,54 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   }
 
+  /* ---- Car make/model picker (field 05) --------------------------------
+     Two linked selects. Make populates from the local car-makes-models.json
+     (read once, no live API at runtime); choosing a make fills and enables
+     the model select. */
+  (function () {
+    var makeSel = document.getElementById("f-make");
+    var modelSel = document.getElementById("f-model");
+    if (!makeSel || !modelSel) return;
+
+    function option(value, label) {
+      var o = document.createElement("option");
+      o.value = value;
+      o.textContent = label === undefined ? value : label;
+      return o;
+    }
+
+    fetch("car-makes-models.json")
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        Object.keys(data).forEach(function (make) {
+          makeSel.appendChild(option(make));
+        });
+        makeSel.addEventListener("change", function () {
+          modelSel.innerHTML = "";
+          modelSel.appendChild(option("", "Model"));
+          var models = data[makeSel.value] || [];
+          if (models.length) {
+            models.forEach(function (m) { modelSel.appendChild(option(m)); });
+            modelSel.disabled = false;
+          } else {
+            modelSel.disabled = true;
+          }
+        });
+      })
+      .catch(function () {
+        // If the list can't load, fall back to a typed make so the field
+        // still works rather than leaving a dead dropdown.
+        makeSel.innerHTML = "";
+        var input = document.createElement("input");
+        input.type = "text";
+        input.id = "f-make";
+        input.name = "make";
+        input.placeholder = "Make and model";
+        makeSel.replaceWith(input);
+        modelSel.closest(".select-wrap").style.display = "none";
+      });
+  })();
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var f = {
@@ -102,12 +150,14 @@
       email: form.elements.email.value,
       phone: form.elements.phone.value,
       work: form.elements.work.value,
-      car: form.elements.car.value,
+      make: form.elements.make.value,
+      model: form.elements.model.value,
       play: form.elements.play.value,
       party: form.elements.party.value,
       days: Array.prototype.slice.call(form.querySelectorAll('input[name="days"]:checked')).map(function (c) { return c.value; }),
       consent: form.elements.consent.checked
     };
+    f.car = [f.make, f.model].filter(Boolean).join(" ");
 
     var ok = true;
     if (!f.name.trim()) { setFieldError("name", "We'll need a name for the sheet."); ok = false; } else setFieldError("name");
@@ -159,6 +209,8 @@
         phone: f.phone.trim(),
         work: f.work.trim() || null,
         car: f.car.trim() || null,
+        make: f.make || null,
+        model: f.model || null,
         play: f.play || null,
         party: f.party || null,
         days: f.days,
