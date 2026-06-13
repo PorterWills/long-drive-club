@@ -235,9 +235,50 @@
     pwError.classList.remove("show");
   });
 
-  document.getElementById("reserve-btn").addEventListener("click", function () {
-    document.getElementById("reserve-row").hidden = true;
-    document.getElementById("held-row").hidden = false;
-  });
+  /* ---- Reserve flow: agree to T&Cs before the payment step -------------- */
+  var modal = document.getElementById("terms-modal");
+  var reserveBtn = document.getElementById("reserve-btn");
+  var agreeCheck = document.getElementById("terms-agree-check");
+  var continueBtn = document.getElementById("terms-continue");
+  var lastFocus = null;
+
+  function openModal() {
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    document.body.style.overflow = "hidden";
+    agreeCheck.checked = false;
+    continueBtn.disabled = true;
+    var body = document.getElementById("terms-modal-body");
+    if (body) body.scrollTop = 0;
+    // focus the dialog so Escape works and screen readers land inside it
+    modal.querySelector(".modal-panel").focus();
+  }
+  function closeModal() {
+    modal.hidden = true;
+    document.body.style.overflow = "";
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  if (reserveBtn && modal) {
+    reserveBtn.addEventListener("click", openModal);
+
+    agreeCheck.addEventListener("change", function () {
+      continueBtn.disabled = !agreeCheck.checked;
+    });
+
+    continueBtn.addEventListener("click", function () {
+      if (!agreeCheck.checked) return;
+      closeModal();
+      document.getElementById("reserve-row").hidden = true;
+      document.getElementById("held-row").hidden = false;
+    });
+
+    modal.querySelectorAll("[data-close]").forEach(function (el) {
+      el.addEventListener("click", closeModal);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+  }
 
 })();

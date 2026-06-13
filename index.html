@@ -81,7 +81,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -158,7 +158,7 @@
             <span class="badge">Invitation only</span>
             <span class="badge badge--open">A handful of places</span>
           </div>
-          <p class="ldc-voice">Twenty cars on the lawn. Bacon rolls at half six. We tee off once the dew's gone.</p>
+          <p class="ldc-voice">Twenty cars on the lawn. Breakfast at half six. We tee off once the dew's gone.</p>
           <p class="ldc-body quiet-note">Who's behind it stays behind it, for now. You'll meet us on the day.</p>
         </div>
         <div class="ldc-rise" data-delay="120">
@@ -169,7 +169,7 @@
             <div><div class="stat"><span class="ldc-numeral value" data-count="01">01</span><span class="ldc-eyebrow">Drive, to start</span></div></div>
             <div><div class="stat"><span class="ldc-numeral value" data-count="20">20</span><span class="ldc-eyebrow">Cars, no more</span></div></div>
             <div><div class="stat"><span class="ldc-numeral value" data-count="18">18</span><span class="ldc-eyebrow">Holes</span></div></div>
-            <div><div class="stat"><span class="ldc-numeral value value--accent" data-count="06:30">06:30</span><span class="ldc-eyebrow">Bacon rolls</span></div></div>
+            <div><div class="stat"><span class="ldc-numeral value value--accent" data-count="06:30">06:30</span><span class="ldc-eyebrow">Breakfast</span></div></div>
           </div>
         </div>
       </div>
@@ -386,6 +386,10 @@
         <span class="wordmark" style="font-size:20px">Long Drive Club</span>
         <p class="ldc-voice foot-line">The road is the clubhouse.</p>
       </div>
+      <nav class="foot-legal" aria-label="Legal">
+        <a href="privacy.html">Privacy policy</a>
+        <a href="terms.html">Terms &amp; conditions</a>
+      </nav>
     </div>
     <div class="col foot-meta">
       <span>LONG DRIVE CLUB · EST. 2026</span>
@@ -396,6 +400,133 @@
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
 </div>
 
-<script src="app.js?v=2"></script>
+<!-- Terms & Conditions — shown at the payment step, must be agreed before reserving -->
+<div class="modal" id="terms-modal" hidden role="dialog" aria-modal="true" aria-labelledby="terms-modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" tabindex="-1">
+    <div class="modal-head">
+      <div>
+        <p class="ldc-eyebrow" style="margin:0">Before you reserve</p>
+        <h2 class="ldc-display" id="terms-modal-title">Terms &amp; conditions of entry</h2>
+      </div>
+      <button type="button" class="modal-x" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="terms-modal-body" tabindex="0">
+      <p>These terms govern your application for, and attendance at, a Long Drive Club event. Please read them before you pay. By paying for a place, you accept these terms.</p>
+
+      <h3>1. Who we are</h3>
+      <p>Long Drive Club Ltd ("LDC", "we", "us", "our") is a company registered in England and Wales under company number <span class="fill">[COMPANY NUMBER]</span>, with its registered office at <span class="fill">[REGISTERED ADDRESS]</span>. You can contact us at <span class="fill">[CONTACT EMAIL]</span>.</p>
+
+      <h3>2. What a Long Drive Club event is</h3>
+      <p>An LDC event is a social day that combines a drive on public roads to a golf course with a round of golf and hospitality. It is not a race, a rally against the clock, a competition of speed or any form of motor sport. There is no timing, no result by speed and nothing to be won by driving quickly. The drive is a social journey on open public roads, and you take part in ordinary traffic, subject to the law of the road in the same way as on any other day.</p>
+
+      <h3>3. Applying for a place</h3>
+      <p>Attendance is by application and invitation. When you apply, you give us the information described in our Privacy Policy. We curate each event, and we decide who is offered a place. We are not obliged to offer you a place, and we do not have to give a reason for not doing so. Our selection is made on the fit of the field as a whole, never on any characteristic protected by the Equality Act 2010.</p>
+      <p>If you are offered a place, we will send you a means to pay. Your place is confirmed only when we have received payment in full.</p>
+
+      <h3>4. The ticket price, and what it includes</h3>
+      <p>The price of a place is stated at the point we offer it to you. Unless we say otherwise, it includes:</p>
+      <ul>
+        <li>the organised drive</li>
+        <li>breakfast</li>
+        <li>the green fee for the round</li>
+        <li>range balls</li>
+        <li>lunch</li>
+        <li>one entry to the Longest Drive competition</li>
+        <li>the event decal</li>
+        <li>event photography</li>
+      </ul>
+      <p>It does not include fuel, your travel to the meeting point, on the day detailing, extra Longest Drive entries, merchandise, accommodation, or anything else not listed above. We will tell you the price of any optional extra before you buy it.</p>
+
+      <h3>5. Your place is personal to you</h3>
+      <p>A place is offered to you as the person we have curated into the field. You may not sell it, transfer it or pass it to anyone else without our written agreement. If you want to bring a passenger, you tell us at application, and the passenger pays the same price as a driver.</p>
+
+      <h3>6. Paying, and your right to change your mind</h3>
+      <p>Payment is taken in advance, through our payment processor.</p>
+      <p>Because an LDC event is a leisure event provided on a specific date, the law that gives consumers a 14 day cooling off period for most online purchases does not apply to it. Your right to a refund is therefore as set out in clause 7, and not otherwise.</p>
+
+      <h3>7. If you cancel, and if we cancel</h3>
+      <p><strong>If you cancel.</strong> Tell us in writing as soon as you can. Because we commit to the venue, the field and our suppliers in advance, the following applies to the price you have paid:</p>
+      <ul>
+        <li>more than 30 days before the event: full refund, less a £<span class="fill">[XX]</span> administration fee</li>
+        <li>15 to 30 days before the event: 50% refund</li>
+        <li>14 days or fewer before the event: no refund</li>
+      </ul>
+      <p>You may instead, with our agreement, transfer your place to another person we approve, in which case no refund arises and the new attendee takes it on these terms.</p>
+      <p><strong>If we cancel or postpone.</strong> If we cancel the event entirely and do not offer an alternative date, we will refund what you have paid in full. If we postpone it to another date, your place carries over to that date; if the new date does not suit you, you may instead have a full refund. In either case, our liability to you for the cancellation or postponement is limited to the refund, and we are not responsible for other costs you may have incurred, such as travel or accommodation. We recommend you arrange your own insurance for those.</p>
+
+      <h3>8. Weather</h3>
+      <p>The drive and the golf both depend on the weather, and we will not run either in conditions we judge unsafe. If the weather forces a change:</p>
+      <ul>
+        <li>where we can, we will run the day in an adjusted form, which may mean a changed or shortened route, or golf replaced by an alternative such as indoor simulators and a long lunch. A day that goes ahead in an adjusted form is not a cancelled day, and no refund arises.</li>
+        <li>where the weather forces us to call the day off entirely, clause 7 applies as if we had cancelled.</li>
+      </ul>
+      <p>The decision on whether conditions are safe is ours, and we make it in the interest of everyone attending.</p>
+
+      <h3>9. Driving on the day: your responsibilities</h3>
+      <p>The drive takes place on public roads, and on the day you drive your own car, under your own control, on your own responsibility. You agree that:</p>
+      <ul>
+        <li>you hold a valid licence to drive the car, and the car is taxed, insured for the journey and holds a valid MOT</li>
+        <li>you are fit to drive, and free of any drink, drug or medical condition that would impair you</li>
+        <li>you will obey the law of the road at all times, including speed limits, and follow the route and the safety briefing we give you</li>
+        <li>you remain responsible for your own driving and your own decisions throughout, and the presence of a route, a briefing or other attendees does not transfer that responsibility to us</li>
+      </ul>
+      <p>The drive is not stewarded as a closed road event, because it is not one. You are in normal traffic and the rules of the road apply to you as they always do.</p>
+
+      <h3>10. Conduct, and our right to remove you</h3>
+      <p>LDC depends on the quality of the field and on our standing with the clubs and suppliers we work with. We may refuse entry to, or remove from an event, anyone who:</p>
+      <ul>
+        <li>drives dangerously, competitively or in breach of the law of the road</li>
+        <li>is, in our reasonable judgement, unfit to drive</li>
+        <li>behaves abusively or unacceptably towards other attendees, our staff, the club or the public</li>
+        <li>breaches the rules of the golf club or any venue we attend</li>
+      </ul>
+      <p>If we remove you for any of these reasons, no refund is due. This is a serious step and we will take it only where the conduct warrants it.</p>
+
+      <h3>11. At the golf club</h3>
+      <p>While at the golf club you are its guest and subject to its rules, its dress code and its safety requirements, and you agree to follow them. The club, not LDC, controls the course and its premises. Where the club imposes a charge or a penalty because of something you do, such as missing a tee time or damaging its property, that is your responsibility.</p>
+
+      <h3>12. Photography and film</h3>
+      <p>We photograph and film our events, and the resulting images are central to how we promote LDC. By attending, you accept that you, your car and its registration plate may appear in photographs and video that we use to promote LDC and its events, including on our website and social media. If you do not want a close, identifiable image of you used in that way, tell us on the day or afterwards in writing, and we will not use it and will remove it from material within our control. How we handle the personal data in images is set out in our Privacy Policy.</p>
+
+      <h3>13. Our responsibility to you</h3>
+      <p>We will run each event with reasonable care and skill.</p>
+      <p>Nothing in these terms limits or excludes our liability for death or personal injury caused by our negligence, for fraud, or for anything else that the law does not allow us to limit or exclude.</p>
+      <p>Subject to that, we are not responsible for:</p>
+      <ul>
+        <li>loss or damage to your car, its contents or your belongings, however caused, except where caused by our negligence</li>
+        <li>the acts or omissions of the golf club, a supplier or another attendee</li>
+        <li>loss that was not reasonably foreseeable, or that did not arise from our breach</li>
+      </ul>
+      <p>and our total liability to you arising from an event is limited to the price you paid for your place.</p>
+      <p>You are responsible for any loss or damage you cause to us, to the club or to a third party, and you indemnify us against any claim brought against us because of your driving, your conduct or your breach of these terms.</p>
+
+      <h3>14. Events outside our control</h3>
+      <p>We are not liable for failing to run an event, or for running it in an altered form, where the cause is outside our reasonable control. This includes severe weather, the closure or withdrawal of a venue, restrictions imposed by an authority, and any other event we could not reasonably have avoided. Where this happens, clauses 7 and 8 govern what you are owed.</p>
+
+      <h3>15. If there is a dispute</h3>
+      <p>If something goes wrong, tell us, and we will try in good faith to resolve it with you directly. If we cannot resolve it between us, we will consider mediation before either of us starts court proceedings.</p>
+
+      <h3>16. Governing law</h3>
+      <p>These terms are governed by the law of England and Wales, and the courts of England and Wales have jurisdiction over any dispute arising from them. If you live in Scotland or Northern Ireland, you may instead bring proceedings in your own jurisdiction, and the law of that jurisdiction will not deprive you of the protection its consumer law gives you.</p>
+
+      <h3>17. General</h3>
+      <p>If any part of these terms is found to be unenforceable, the rest continue to apply. Our not enforcing a term on one occasion does not prevent us enforcing it later. These terms, with the Privacy Policy and anything we tell you at the point of booking, are the whole of the agreement between us.</p>
+    </div>
+    <div class="modal-foot">
+      <label class="check">
+        <input type="checkbox" id="terms-agree-check">
+        <span class="box" aria-hidden="true"></span>
+        <span>I have read and agree to the Terms &amp; Conditions and the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn--md btn--ghost" data-close><span class="label">Cancel</span></button>
+        <button type="button" class="btn btn--md btn--accent" id="terms-continue" disabled><span class="tick" aria-hidden="true"></span><span class="label">Agree &amp; continue</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js?v=3"></script>
 </body>
 </html>
