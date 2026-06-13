@@ -28,11 +28,13 @@ Propagation is usually minutes, occasionally up to a day.
 
 ## Where applications go
 
-The entry sheet inserts into the `ldc_applications` table in the
-Supabase project `yjusavyowoobgrnzhlfr` (eu-west-1). The key in
-`app.js` is the public anon key and the table is insert-only for the
-public (row-level security), so applications can only be read from the
-Supabase dashboard: **Table Editor → ldc_applications**.
+The entry sheet POSTs each application to a deployed Google Apps Script
+web app (the `APPS_SCRIPT_URL` near the top of `app.js`). The script
+saves the submission to a Google Sheet and sends the applicant a
+confirmation email. Because Apps Script web apps don't return CORS
+headers, the form posts with `mode: "no-cors"` and a plain-text body and
+treats a resolved request as success. To point the form at a different
+deployment, update `APPS_SCRIPT_URL`.
 
 ## Changing the gate password
 

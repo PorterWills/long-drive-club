@@ -5,16 +5,13 @@
   "use strict";
 
   /* ---- Configuration ---------------------------------------------------
-     SUPABASE_URL / SUPABASE_KEY: where applications are stored. The key is
-     the public anon key; the table only accepts inserts (row-level
-     security), so it is safe to ship in the page.
-     WEB3FORMS_KEY: emails a copy of each application. Send-only, tied to
-     the owner's inbox — safe to ship.
+     APPS_SCRIPT_URL: the deployed Google Apps Script web app. It saves each
+     application to a Google Sheet and sends the confirmation email. Apps
+     Script web apps don't return CORS headers, so submissions are posted
+     with mode: "no-cors" and a plain-text body (see saveApplication).
      GATE_HASH: SHA-256 of the password sent to chosen applicants. To change
      the password run:  echo -n "newpassword" | shasum -a 256              */
-  var SUPABASE_URL = "https://zroovwyumybnvclzmxxh.supabase.co";
-  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpyb292d3l1bXlibnZjbHpteHhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyOTc5NzgsImV4cCI6MjA5Njg3Mzk3OH0.WJFTddHRObBPIZN35mevZ1_47SgcXrUt8hRQBMTfQmU";
-  var WEB3FORMS_KEY = "bd3f7e6e-7a6a-4a3e-be39-b800b1c9784a";
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec";
   var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
   /* ---- Reveal on scroll: restrained rise, honours reduced motion ------- */
@@ -313,71 +310,33 @@
     });
   });
 
-  // Each application goes two places at once: the Supabase table (the
-  // record) and Web3Forms (an email copy to the owner). We treat the
-  // submission as successful if either lands, so a hiccup in one service
-  // never loses an application.
+  // Each application is posted to the Google Apps Script web app, which
+  // saves it to the Sheet and sends the confirmation email. Apps Script
+  // doesn't return CORS headers, so we post with mode: "no-cors" and a
+  // plain-text content type — anything else triggers a preflight Apps
+  // Script can't answer. The response is opaque, so a resolved fetch is
+  // treated as success.
   function saveApplication(f) {
-    var days = f.days.join(", ");
-    return Promise.allSettled([saveToDatabase(f), emailApplication(f, days)])
-      .then(function (results) {
-        var anyOk = results.some(function (r) { return r.status === "fulfilled"; });
-        if (!anyOk) throw new Error("both submission channels failed");
-      });
-  }
-
-  function saveToDatabase(f) {
-    return fetch(SUPABASE_URL + "/rest/v1/ldc_applications", {
+    return fetch(APPS_SCRIPT_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_KEY,
-        "Authorization": "Bearer " + SUPABASE_KEY,
-        "Prefer": "return=minimal"
-      },
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({
         name: f.name.trim(),
         email: f.email.trim(),
         phone: f.phone.trim(),
-        work: f.work.trim() || null,
-        car: f.car.trim() || null,
-        make: f.make || null,
-        model: f.model || null,
-        handicap: f.handicap || null,
-        base: f.base || null,
-        base_city: f.baseCity || null,
-        play: f.play || null,
-        party: f.party || null,
-        days: f.days,
+        work: f.work.trim(),
+        car: f.car.trim(),
+        make: f.make,
+        model: f.model,
+        handicap: f.handicap,
+        base: f.base,
+        baseCity: f.baseCity,
+        play: f.play,
+        party: f.party,
+        days: f.days.join(", "),
         consent: f.consent
       })
-    }).then(function (res) {
-      if (!res.ok) throw new Error("insert failed: " + res.status);
-    });
-  }
-
-  function emailApplication(f, days) {
-    return fetch("https://api.web3forms.com/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({
-        access_key: WEB3FORMS_KEY,
-        subject: "New application — " + (f.name.trim() || "Long Drive Club"),
-        from_name: "Long Drive Club",
-        Name: f.name.trim(),
-        Email: f.email.trim(),
-        Phone: f.phone.trim(),
-        "What they do": f.work.trim() || "—",
-        "What they drive": f.car.trim() || "—",
-        "Handicap": f.handicap || "—",
-        "Where they're based": (f.baseCity ? f.base + " — " + f.baseCity : f.base) || "—",
-        "How often they play": f.play || "—",
-        "Coming alone or with someone": f.party || "—",
-        "Days that interest them": days || "—",
-        "Keep details for future drives": f.consent ? "Yes" : "No"
-      })
-    }).then(function (res) {
-      if (!res.ok) throw new Error("email failed: " + res.status);
     });
   }
 
