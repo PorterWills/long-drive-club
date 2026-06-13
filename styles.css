@@ -365,6 +365,10 @@ section { scroll-margin-top: 80px; }
   width: calc(100% + 32px);
   height: 100%;
 }
+.hero-media .photo > img {
+  /* the artwork is portrait: bias the crop low so the course stays in frame */
+  object-position: 50% 85%;
+}
 .hero-media .redline-edge {
   position: absolute;
   left: 0;
