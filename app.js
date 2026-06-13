@@ -77,6 +77,29 @@
     statIo.observe(statGrid);
   }
 
+  /* ---- Handicap slider (field 06) --------------------------------------
+     Below 0 = "<0" (better than scratch); 0.0 to 36.0 in 0.1 steps.
+     Stored as a readable string: "<0", "0.0", "18.3", "36.0". */
+  function formatHandicap(v) {
+    return v < 0 ? "<0" : v.toFixed(1);
+  }
+  (function () {
+    var slider = document.getElementById("f-handicap");
+    var readout = document.getElementById("hcp-readout");
+    if (!slider || !readout) return;
+    var min = parseFloat(slider.min), max = parseFloat(slider.max);
+    function update() {
+      var v = parseFloat(slider.value);
+      var label = formatHandicap(v);
+      readout.textContent = label;
+      slider.setAttribute("aria-valuetext", label === "<0" ? "Better than scratch" : label);
+      var pct = (v - min) / (max - min) * 100;
+      slider.style.setProperty("--pct", pct + "%");
+    }
+    slider.addEventListener("input", update);
+    update();
+  })();
+
   /* ---- The entry sheet -------------------------------------------------- */
   var form = document.getElementById("entry-form");
   var formError = document.getElementById("form-error");
@@ -161,6 +184,7 @@
       work: form.elements.work.value,
       make: form.elements.make.value,
       model: form.elements.model.value,
+      handicap: formatHandicap(parseFloat(form.elements.handicap_value.value)),
       play: form.elements.play.value,
       party: form.elements.party.value,
       days: Array.prototype.slice.call(form.querySelectorAll('input[name="days"]:checked')).map(function (c) { return c.value; }),
@@ -220,6 +244,7 @@
         car: f.car.trim() || null,
         make: f.make || null,
         model: f.model || null,
+        handicap: f.handicap || null,
         play: f.play || null,
         party: f.party || null,
         days: f.days,
@@ -243,6 +268,7 @@
         Phone: f.phone.trim(),
         "What they do": f.work.trim() || "—",
         "What they drive": f.car.trim() || "—",
+        "Handicap": f.handicap || "—",
         "How often they play": f.play || "—",
         "Coming alone or with someone": f.party || "—",
         "Days that interest them": days || "—",

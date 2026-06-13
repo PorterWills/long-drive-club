@@ -793,3 +793,38 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .car-picker .select-wrap { display: block; }
 .field select:disabled { opacity: 0.45; cursor: default; }
 @media (max-width: 560px) { .car-picker { grid-template-columns: 1fr; row-gap: 22px; } }
+
+/* Manifesto italics: smaller on phones so the closing line doesn't orphan
+   its last word ("…This is the first."). */
+@media (max-width: 560px) {
+  .manifesto-lines p { font-size: 22px; text-wrap: pretty; }
+}
+
+/* ---- Handicap slider (field 06) ---- */
+.hcp-head { justify-content: space-between; align-items: baseline; }
+.hcp-name { display: flex; align-items: baseline; gap: 10px; }
+.hcp-readout { font-size: 22px; color: var(--ldc-tarmac); font-feature-settings: "tnum" 1; }
+.hcp-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 24px; margin: 16px 0 0; background: transparent; cursor: pointer;
+}
+.hcp-slider::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--ldc-redline) 0 var(--pct, 50%), var(--hairline-strong) var(--pct, 50%) 100%);
+}
+.hcp-slider::-moz-range-track { height: 4px; border-radius: 2px; background: var(--hairline-strong); }
+.hcp-slider::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--ldc-redline); }
+.hcp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 16px; height: 16px; margin-top: -6px;
+  background: var(--ldc-redline); border: 1px solid var(--ldc-redline-down); border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 2px var(--ldc-chalk);
+}
+.hcp-slider::-moz-range-thumb {
+  width: 16px; height: 16px;
+  background: var(--ldc-redline); border: 1px solid var(--ldc-redline-down); border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 2px var(--ldc-chalk);
+}
+.hcp-slider:focus { outline: none; }
+.hcp-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 4px var(--focus-ring); }
+.hcp-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 4px var(--focus-ring); }
