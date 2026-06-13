@@ -28,7 +28,8 @@ var UNSUBSCRIBE_URL = 'mailto:hello@longdriveclub.com?subject=Unsubscribe';
 // The first ten are filled by the form; the last three are filled by the
 // owner / the approval flow.
 var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'party', 'days', 'consent',
-               'status', 'password', 'approved_at', 'paid_at', 'declined_at'];
+               'status', 'password', 'approved_at', 'paid_at', 'declined_at',
+               'nudge1_at', 'nudge2_at', 'nudge3_at'];
 
 function doPost(e) {
   try {
@@ -235,6 +236,60 @@ function makePassword(car) {
   if (!brand) brand = 'DRIVER';
   var digits = String(Math.floor(1000 + Math.random() * 9000));
   return brand + digits;
+}
+
+/* ---- Nudges ------------------------------------------------------------ */
+
+// Run this ONCE by hand (select installNudgeTrigger ▸ Run) to wire the hourly
+// timer that sends the unpaid nudges. Safe to re-run: clears old copies first.
+function installNudgeTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'sendNudges') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('sendNudges').timeBased().everyHours(1).create();
+}
+
+// Runs hourly. For each approved-but-unpaid applicant, sends the nudge for the
+// tier their wait has reached (4h / 24h / 48h since approved_at). Stops once
+// the row is paid or declined. Each nudge sends once, and only the current
+// tier goes out per run, so nobody gets a burst.
+function sendNudges() {
+  var sheet = getSheet();
+  var headers = headerMap(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return;
+
+  var data = sheet.getRange(2, 1, last - 1, sheet.getLastColumn()).getValues();
+  var now = Date.now();
+
+  var STAMP = ['', 'nudge1_at', 'nudge2_at', 'nudge3_at'];
+  var TEMPLATE = ['', 'email_nudge_password_unused', 'email_nudge_password_unused', 'email_nudge_hold_expiry'];
+  var SUBJECT = ['', "Your place is still here", "Your place is still here", 'Nearly out of time'];
+
+  for (var i = 0; i < data.length; i++) {
+    var rowNum = i + 2;
+    var cell = function (name) { return data[i][headers[name] - 1]; };
+
+    var approvedAt = cell('approved_at');
+    if (!approvedAt) continue;         // never approved
+    if (cell('paid_at')) continue;     // paid -> stop nudging
+    if (cell('declined_at')) continue; // declined -> stop nudging
+
+    var email = String(cell('email')).trim();
+    if (!email) continue;
+
+    var hours = (now - new Date(approvedAt).getTime()) / 3600000;
+    var tier = 0;
+    if (hours >= 48) tier = 3;
+    else if (hours >= 24) tier = 2;
+    else if (hours >= 4) tier = 1;
+    if (tier === 0) continue;          // not due yet
+    if (cell(STAMP[tier])) continue;   // current tier already sent
+
+    var html = renderEmail(TEMPLATE[tier], { unsubscribe_url: UNSUBSCRIBE_URL });
+    sendViaResend({ to: email, subject: SUBJECT[tier], html: html });
+    sheet.getRange(rowNum, headers[STAMP[tier]]).setValue(new Date());
+  }
 }
 
 /* ---- Email ------------------------------------------------------------- */
