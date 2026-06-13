@@ -166,13 +166,13 @@ function handleApproved(sheet, row, headers) {
   approvedCell.setValue(new Date());
 }
 
-// A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE-4827.
-// Falls back to DRIVER-#### when no car was given.
+// A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
+// Falls back to DRIVER#### when no car was given.
 function makePassword(car) {
   var brand = String(car || '').trim().split(/\s+/)[0].toUpperCase().replace(/[^A-Z0-9]/g, '');
   if (!brand) brand = 'DRIVER';
   var digits = String(Math.floor(1000 + Math.random() * 9000));
-  return brand + '-' + digits;
+  return brand + digits;
 }
 
 /* ---- Email ------------------------------------------------------------- */
