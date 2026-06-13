@@ -43,9 +43,42 @@ function doPost(e) {
   }
 }
 
-// A plain GET is handy for confirming the deployment is live in a browser.
-function doGet() {
+// Handles two things:
+//  - ?password=XXX&callback=YYY  the site gate asking if a password is valid.
+//    Replies as JSONP (YYY({"ok":true})) so a static page can read it without
+//    CORS. ok:true when the password matches an approved applicant.
+//  - no params: a plain liveness check, handy in a browser.
+function doGet(e) {
+  var params = (e && e.parameter) || {};
+  if (params.password) {
+    var body = JSON.stringify({ ok: passwordValid(params.password) });
+    if (params.callback) {
+      return ContentService
+        .createTextOutput(params.callback + '(' + body + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
+  }
   return jsonOut({ ok: true, service: 'ldc-applications' });
+}
+
+// True when the guess matches a generated password in the sheet. A password
+// only exists once a row is approved, so a match means an approved applicant.
+// Case-insensitive, so "bmw6291" works as well as "BMW6291".
+function passwordValid(guess) {
+  var g = String(guess || '').trim().toUpperCase();
+  if (!g) return false;
+  var sheet = getSheet();
+  var col = headerMap(sheet)['password'];
+  if (!col) return false;
+  var last = sheet.getLastRow();
+  if (last < 2) return false;
+  var values = sheet.getRange(2, col, last - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    var stored = String(values[i][0]).trim().toUpperCase();
+    if (stored && stored === g) return true;
+  }
+  return false;
 }
 
 // Run this once by hand (select setupColumns ▸ Run) to add the status,
