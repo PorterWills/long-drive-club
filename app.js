@@ -11,7 +11,7 @@
      GATE_HASH: SHA-256 of the password sent to chosen applicants. To change
      the password run:  echo -n "newpassword" | shasum -a 256              */
   var SUPABASE_URL = "https://yjusavyowoobgrnzhlfr.supabase.co";
-  var SUPABASE_KEY = "sb_publishable_3NPcjaSZXHksVlG5dpot1A_wr3vBWYo";
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqdXNhdnlvd29vYmdybnpobGZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMDkxNTQsImV4cCI6MjA5Mjc4NTE1NH0.uen6zG6ZaFEjOIQWhQF4A6Kjz3AXAgFRqYwkE-qN_bA";
   var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
   /* ---- Reveal on scroll: restrained rise, honours reduced motion ------- */
@@ -31,6 +31,47 @@
       });
     }, { rootMargin: "0px 0px -40px 0px", threshold: 0.05 });
     rises.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---- First-drive stats: count up once they're in view ----------------- */
+  function animateCount(el) {
+    var target = el.getAttribute("data-count");
+    var total, fmt;
+    if (target.indexOf(":") >= 0) {
+      var parts = target.split(":");
+      total = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      fmt = function (v) {
+        var h = Math.floor(v / 60), m = v % 60;
+        return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+      };
+    } else {
+      total = parseInt(target, 10);
+      var width = target.length;
+      fmt = function (v) { return String(v).padStart(width, "0"); };
+    }
+    var duration = 1100;
+    var start = null;
+    function frame(ts) {
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / duration);
+      var eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = fmt(Math.round(total * eased));
+      if (t < 1) requestAnimationFrame(frame);
+      else el.textContent = target;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  var statGrid = document.querySelector(".stat-grid");
+  if (statGrid && !reduced && "IntersectionObserver" in window) {
+    var statIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        statIo.unobserve(entry.target);
+        entry.target.querySelectorAll("[data-count]").forEach(animateCount);
+      });
+    }, { threshold: 0.4 });
+    statIo.observe(statGrid);
   }
 
   /* ---- The entry sheet -------------------------------------------------- */

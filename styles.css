@@ -55,6 +55,17 @@
   --focus-ring:      var(--ldc-chalk);
 }
 
+/* Light panel inside a dark section (the gate's chalk card) — resets the
+   semantic tokens so text and rules read on chalk again. */
+.ldc-light {
+  --surface-recess:  var(--ldc-chalk-down);
+  --text-body:       var(--ldc-tarmac);
+  --text-dim:        var(--ldc-tarmac-dim);
+  --hairline:        var(--ldc-hairline-on-light);
+  --hairline-strong: var(--ldc-hairline-on-light-strong);
+  --focus-ring:      var(--ldc-green);
+}
+
 /* ---- Base ---- */
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -238,11 +249,11 @@ section { scroll-margin-top: 80px; }
 .btn--ghost:hover, .btn--ghost:active { background: var(--surface-recess); }
 
 /* Solid chalk CTA for dark grounds (the hero's primary action) and its
-   green twin for chalk grounds. In-system: chalk-down on press. */
-.btn--chalk { background: var(--ldc-chalk); color: var(--ldc-green); padding: 16px 32px; font-size: 15px; }
+   green twin for chalk grounds. Colour only — pair with a size class. */
+.btn--chalk { background: var(--ldc-chalk); color: var(--ldc-green); }
 .btn--chalk:hover  { background: #F4F1EA; }
 .btn--chalk:active { background: var(--ldc-chalk-down); }
-.btn--green { background: var(--ldc-green); color: var(--ldc-chalk); padding: 16px 32px; font-size: 15px; }
+.btn--green { background: var(--ldc-green); color: var(--ldc-chalk); }
 .btn--green:hover  { background: var(--ldc-green-up); }
 .btn--green:active { background: var(--ldc-tarmac); }
 
@@ -280,8 +291,36 @@ section { scroll-margin-top: 80px; }
   color: var(--ldc-chalk-dim);
   border-top: 1px solid var(--ldc-hairline-on-dark);
 }
-.site-footer .col {
-  padding-top: 40px;
+.foot-main {
+  padding-top: 56px;
+  padding-bottom: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+.foot-brand .wordmark { color: var(--ldc-chalk); }
+.foot-brand .foot-line {
+  margin: 12px 0 0;
+  font-size: 16px;
+  color: var(--ldc-chalk-dim);
+  max-width: 320px;
+}
+.foot-nav { display: flex; gap: 26px; flex-wrap: wrap; padding-top: 4px; }
+.foot-nav a {
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ldc-chalk-dim);
+  text-decoration: none;
+}
+.foot-nav a:hover { color: var(--ldc-chalk); }
+.foot-meta {
+  border-top: 1px solid var(--ldc-hairline-on-dark);
+  padding-top: 24px;
   padding-bottom: 40px;
   display: flex;
   justify-content: space-between;

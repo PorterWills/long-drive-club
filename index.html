@@ -34,7 +34,7 @@
         <a class="nav-link" href="#what">What this is</a>
         <a class="nav-link" href="#first">The drive</a>
         <a class="nav-link" href="#gate">Password</a>
-        <a class="btn btn--sm btn--secondary" href="#apply" style="color:var(--ldc-chalk)"><span class="label">Request a place</span></a>
+        <a class="btn btn--sm btn--chalk" href="#apply"><span class="tick" aria-hidden="true"></span><span class="label">Request a place</span></a>
       </nav>
     </div>
   </header>
@@ -102,10 +102,10 @@
             <img src="assets/lawn.webp" alt="The coast course at dusk, one car arriving" loading="lazy">
           </div>
           <div class="stat-grid">
-            <div><div class="stat"><span class="ldc-numeral value">01</span><span class="ldc-eyebrow">Drive, to start</span></div></div>
-            <div><div class="stat"><span class="ldc-numeral value">20</span><span class="ldc-eyebrow">Cars, no more</span></div></div>
-            <div><div class="stat"><span class="ldc-numeral value">18</span><span class="ldc-eyebrow">Holes</span></div></div>
-            <div><div class="stat"><span class="ldc-numeral value value--accent">06:30</span><span class="ldc-eyebrow">Bacon rolls</span></div></div>
+            <div><div class="stat"><span class="ldc-numeral value" data-count="01">01</span><span class="ldc-eyebrow">Drive, to start</span></div></div>
+            <div><div class="stat"><span class="ldc-numeral value" data-count="20">20</span><span class="ldc-eyebrow">Cars, no more</span></div></div>
+            <div><div class="stat"><span class="ldc-numeral value" data-count="18">18</span><span class="ldc-eyebrow">Holes</span></div></div>
+            <div><div class="stat"><span class="ldc-numeral value value--accent" data-count="06:30">06:30</span><span class="ldc-eyebrow">Bacon rolls</span></div></div>
           </div>
         </div>
       </div>
@@ -271,7 +271,7 @@
         <div class="ldc-rise" data-delay="120">
           <div class="stripe stripe--thin" aria-hidden="true"><span></span><span></span><span></span></div>
 
-          <form class="gate-panel" id="gate-lock">
+          <form class="gate-panel ldc-light" id="gate-lock">
             <p class="ldc-eyebrow" style="margin:0">Members &amp; invited</p>
             <h3 class="ldc-display">Enter your password</h3>
             <div class="field pw-field">
@@ -284,7 +284,7 @@
             </div>
           </form>
 
-          <div class="gate-panel unlocked" id="gate-open" hidden>
+          <div class="gate-panel unlocked ldc-light" id="gate-open" hidden>
             <div class="who">
               <div class="roundel roundel--on-light" style="width:56px;height:56px;font-size:18px">01</div>
               <div>
@@ -317,10 +317,22 @@
 <!-- Footer -->
 <div class="ldc-dark">
   <footer class="site-footer">
-    <div class="col">
+    <div class="col foot-main">
+      <div class="foot-brand">
+        <span class="wordmark" style="font-size:20px">Long Drive Club</span>
+        <p class="ldc-voice foot-line">The road is the clubhouse.</p>
+      </div>
+      <nav class="foot-nav" aria-label="Footer">
+        <a href="#what">What this is</a>
+        <a href="#first">The drive</a>
+        <a href="#apply">Request a place</a>
+        <a href="#gate">Password</a>
+      </nav>
+    </div>
+    <div class="col foot-meta">
       <span>LONG DRIVE CLUB · EST. 2026</span>
-      <span>BY APPLICATION · THE ROAD IS THE CLUBHOUSE</span>
-      <span>20</span>
+      <span>BY APPLICATION · FIRST DRIVE SEPTEMBER 2026</span>
+      <span>LONGDRIVECLUB.COM</span>
     </div>
   </footer>
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>

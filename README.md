@@ -1,50 +1,55 @@
-# longdriveclub.com — the front door
+# Long Drive Club — longdriveclub.com
 
-Production implementation of the "LDC — The long way round" design
-(Claude Design handoff, June 2026). Static site: no build step, no
-framework — `index.html` + `styles.css` + `app.js`.
+The application-gated front door for Long Drive Club. A static site:
+no build step, no framework — just `index.html`, `styles.css`, `app.js`,
+and the images in `assets/`.
 
-## Going live (one-time setup)
+## Going live (GitHub Pages)
 
-The site deploys to GitHub Pages via `.github/workflows/deploy-longdriveclub.yml`
-whenever `longdriveclub/**` changes on the default branch
-(`claude/porter-wills-os-wireframe`).
+This repo is the whole website; the files sit at the root on purpose.
 
-1. Merge this branch into the default branch.
-2. In the repo settings → **Pages** → set **Source** to **GitHub Actions**.
-3. Still in Pages settings, set **Custom domain** to `longdriveclub.com`
-   and tick **Enforce HTTPS** once the certificate is issued.
-4. At your domain registrar, point DNS at GitHub Pages:
-   - `A` records for the apex (`longdriveclub.com`) →
-     `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-   - `CNAME` record for `www` → `<github-username>.github.io`
+1. **Settings → Pages.**
+2. Under **Build and deployment → Source**, choose **Deploy from a branch**.
+3. Set **Branch** to `main` and the folder to **/ (root)**, then **Save**.
+4. Under **Custom domain**, enter `longdriveclub.com` and **Save**
+   (the `CNAME` file in this repo already sets this — it'll just confirm).
+5. Tick **Enforce HTTPS** once GitHub finishes issuing the certificate
+   (can take a few minutes to an hour).
 
-DNS can take up to a day to propagate; usually it's minutes.
+### DNS (at your domain registrar)
+
+Point the domain at GitHub Pages:
+
+- Four `A` records on the apex (`longdriveclub.com`):
+  `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+- One `CNAME` record for `www` → `porterwills.github.io`
+
+Propagation is usually minutes, occasionally up to a day.
 
 ## Where applications go
 
 The entry sheet inserts into the `ldc_applications` table in the
-Supabase project `yjusavyowoobgrnzhlfr` (eu-west-1). The key shipped in
-`app.js` is a publishable key and the table is insert-only for the
-public (RLS) — applications can only be read from the Supabase
-dashboard: Table Editor → `ldc_applications`.
+Supabase project `yjusavyowoobgrnzhlfr` (eu-west-1). The key in
+`app.js` is the public anon key and the table is insert-only for the
+public (row-level security), so applications can only be read from the
+Supabase dashboard: **Table Editor → ldc_applications**.
 
 ## Changing the gate password
 
 The current password is `longway` (carried over from the prototype —
 change it before you email anyone). The page stores only a SHA-256
-hash. To set a new one:
+hash, never the password itself. To set a new one, run:
 
 ```sh
 echo -n "yournewpassword" | shasum -a 256
 ```
 
-Put the resulting hex in `GATE_HASH` near the top of `app.js`.
-Note the gate is presentation, not security: it reveals booking details,
-it does not protect secrets.
+Put the resulting hex string into `GATE_HASH` near the top of `app.js`.
+Note: the gate reveals booking details; it is presentation, not real
+security, so don't put anything truly sensitive behind it.
 
 ## Imagery
 
-`assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first drive,
-landscape) came from the design handoff's image slots. Swap the files to
+`assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first
+drive, landscape) came from the original design. Swap the files to
 change the photography; keep the warm, low-saturation, golden-hour mood.
