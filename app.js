@@ -36,6 +36,60 @@
     rises.forEach(function (el) { io.observe(el); });
   }
 
+  /* ---- Hero carousel: cross-dissolve, ~6s hold, slow Ken Burns ----------
+     Ten images, ordered dawn -> dusk so each blend is between near tones.
+     First frame is in the HTML for instant paint; the rest load just after.
+     Honours reduced motion (single still frame, no cycling, no zoom). */
+  (function () {
+    var stage = document.getElementById("hero-photo");
+    if (!stage) return;
+    var IMAGES = [
+      "assets/hero-01.jpg", "assets/hero-02.jpg", "assets/hero-03.jpg", "assets/hero-04.jpg", "assets/hero-05.jpg",
+      "assets/hero-06.jpg", "assets/hero-07.jpg", "assets/hero-08.jpg", "assets/hero-09.jpg", "assets/hero-10.jpg"
+    ];
+    var POS = "50% 68%";          // shared focal point; tune per-image if needed
+    var HOLD = 6000, FADE = 1200; // ms
+
+    var first = stage.querySelector(".hero-slide");
+    if (!first) return;
+    first.style.objectPosition = POS;
+    first.addEventListener("error", function () { this.dataset.broken = "1"; this.style.opacity = "0"; });
+    var slides = [first];
+
+    // Build the remaining slides; defer their loading so the first paints fast.
+    for (var i = 1; i < IMAGES.length; i++) {
+      var img = document.createElement("img");
+      img.className = "hero-slide";
+      img.alt = "";
+      img.setAttribute("aria-hidden", "true");
+      img.style.objectPosition = POS;
+      img.dataset.src = IMAGES[i];
+      img.addEventListener("error", function () { this.dataset.broken = "1"; this.style.opacity = "0"; });
+      stage.appendChild(img);
+      slides.push(img);
+    }
+
+    function ensure(s) { if (s.dataset.src) { s.src = s.dataset.src; delete s.dataset.src; } }
+
+    if (reduced || slides.length < 2) return; // static first frame only
+
+    function hydrate() { for (var j = 1; j < slides.length; j++) ensure(slides[j]); }
+    if (document.readyState === "complete") setTimeout(hydrate, 300);
+    else window.addEventListener("load", function () { setTimeout(hydrate, 300); });
+
+    var idx = 0;
+    setInterval(function () {
+      var tries = 0, next = idx;
+      do { next = (next + 1) % slides.length; tries++; }
+      while (slides[next].dataset.broken && tries <= slides.length);
+      if (next === idx) return;
+      ensure(slides[next]);
+      slides[next].classList.add("is-active");
+      slides[idx].classList.remove("is-active");
+      idx = next;
+    }, HOLD + FADE);
+  })();
+
   /* ---- First-drive stats: count up once they're in view ----------------- */
   function animateCount(el) {
     var target = el.getAttribute("data-count");
