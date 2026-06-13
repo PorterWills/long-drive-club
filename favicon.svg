@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  
+  <defs><clipPath id="lr-clip"><circle cx="32" cy="32" r="30"></circle></clipPath></defs>
+  <circle cx="32" cy="32" r="31.5" fill="#EDE9DF"></circle>
+  <circle cx="32" cy="32" r="30" fill="#0E2A1C"></circle>
+  <g clip-path="url(#lr-clip)">
+    <rect x="0" y="35" width="64" height="9.5" fill="#EDE9DF"></rect>
+    <rect x="0" y="44.5" width="64" height="4" fill="#C1121F"></rect>
+  </g>
+</svg>
