@@ -851,3 +851,7 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .base-overseas { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 22px; }
 .base-overseas .select-wrap { display: block; }
 @media (max-width: 560px) { .base-overseas { grid-template-columns: 1fr; row-gap: 22px; } }
+
+/* Footer URL link */
+.foot-meta a { color: inherit; text-decoration: none; }
+.foot-meta a:hover { color: var(--ldc-chalk); text-decoration: underline; text-underline-offset: 3px; }
