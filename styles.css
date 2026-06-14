@@ -1350,3 +1350,14 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 @media (max-width: 720px) {
   .member-nav .badge { display: none; }
 }
+/* Keep the drive-day block countdown on one line on phones — shrink the
+   numerals and tighten the gaps so SEC doesn't orphan onto its own row. */
+@media (max-width: 560px) {
+  .cd--block { gap: 14px; flex-wrap: nowrap; }
+  .cd--block .cd-num { font-size: 32px; }
+  .cd--block .cd-label { font-size: 9px; letter-spacing: 0.2em; }
+}
+@media (max-width: 380px) {
+  .cd--block { gap: 10px; }
+  .cd--block .cd-num { font-size: 26px; }
+}
