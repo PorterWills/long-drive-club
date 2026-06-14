@@ -356,7 +356,6 @@
 
   /* ---- The gate ---------------------------------------------------------- */
   var lock = document.getElementById("gate-lock");
-  var open = document.getElementById("gate-open");
   var pwInput = document.getElementById("f-pw");
   var pwError = document.getElementById("pw-error");
 
@@ -404,10 +403,12 @@
     if (unlockLabel) unlockLabel.textContent = "Checking…";
 
     function done(ok) {
+      // On success the day lives on its own page ("You're in"); send them
+      // there. On failure, stay put and surface the error.
+      if (ok) { window.location.href = "welcome.html"; return; }
       if (unlockBtn) unlockBtn.disabled = false;
       if (unlockLabel) unlockLabel.textContent = originalLabel;
-      if (ok) { lock.hidden = true; open.hidden = false; }
-      else { pwError.classList.add("show"); }
+      pwError.classList.add("show");
     }
 
     // The developer/master password (GATE_HASH) unlocks instantly, offline.
@@ -421,51 +422,5 @@
   pwInput.addEventListener("input", function () {
     pwError.classList.remove("show");
   });
-
-  /* ---- Reserve flow: agree to T&Cs before the payment step -------------- */
-  var modal = document.getElementById("terms-modal");
-  var reserveBtn = document.getElementById("reserve-btn");
-  var agreeCheck = document.getElementById("terms-agree-check");
-  var continueBtn = document.getElementById("terms-continue");
-  var lastFocus = null;
-
-  function openModal() {
-    lastFocus = document.activeElement;
-    modal.hidden = false;
-    document.body.style.overflow = "hidden";
-    agreeCheck.checked = false;
-    continueBtn.disabled = true;
-    var body = document.getElementById("terms-modal-body");
-    if (body) body.scrollTop = 0;
-    // focus the dialog so Escape works and screen readers land inside it
-    modal.querySelector(".modal-panel").focus();
-  }
-  function closeModal() {
-    modal.hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-  }
-
-  if (reserveBtn && modal) {
-    reserveBtn.addEventListener("click", openModal);
-
-    agreeCheck.addEventListener("change", function () {
-      continueBtn.disabled = !agreeCheck.checked;
-    });
-
-    continueBtn.addEventListener("click", function () {
-      if (!agreeCheck.checked) return;
-      closeModal();
-      document.getElementById("reserve-row").hidden = true;
-      document.getElementById("held-row").hidden = false;
-    });
-
-    modal.querySelectorAll("[data-close]").forEach(function (el) {
-      el.addEventListener("click", closeModal);
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !modal.hidden) closeModal();
-    });
-  }
 
 })();

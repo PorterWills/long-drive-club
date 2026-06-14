@@ -855,3 +855,207 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 /* Footer URL link */
 .foot-meta a { color: inherit; text-decoration: none; }
 .foot-meta a:hover { color: var(--ldc-chalk); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============================================================
+   The "You're in" page (welcome.html) — the post-gate welcome.
+   Same tokens and devices as the front door; the reservation is
+   the only button on the page.
+   ============================================================ */
+
+/* 1. The reveal — confirm the gate opened. Warm, brief, small. */
+.welcome-reveal { background: var(--ldc-tarmac); }
+.welcome-reveal .col { padding-top: 72px; padding-bottom: 60px; }
+.reveal-stamp { display: flex; align-items: center; gap: 10px; margin: 0; }
+.reveal-stamp svg { flex-shrink: 0; }
+.reveal-line {
+  font-size: clamp(23px, 2.9vw, 31px);
+  line-height: 1.32;
+  color: var(--ldc-chalk);
+  margin: 20px 0 0;
+  max-width: 680px;
+}
+.reveal-note {
+  font-size: 14px;
+  color: var(--ldc-chalk-dim);
+  margin: 18px 0 0;
+  letter-spacing: 0.01em;
+}
+
+/* 2. The drive, as character — the headline of the whole page. */
+.welcome-drive { background: var(--ldc-green); }
+.welcome-drive .col { padding-top: 84px; padding-bottom: 92px; }
+.drive-headline {
+  font-size: clamp(50px, 8.4vw, 116px);
+  color: var(--ldc-chalk);
+  margin: 24px 0 0;
+  max-width: 12ch;
+  text-wrap: balance;
+}
+.drive-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.94fr);
+  gap: 60px;
+  align-items: start;
+  margin-top: 56px;
+}
+.drive-lead {
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.28;
+  color: var(--ldc-chalk);
+  margin: 0;
+  max-width: 460px;
+}
+.drive-paras { display: flex; flex-direction: column; gap: 20px; margin-top: 30px; max-width: 480px; }
+.drive-paras p { font-size: 16px; color: var(--ldc-chalk-dim); margin: 0; }
+.drive-lineup { width: 100%; height: 280px; }
+.drive-lineup img { width: 100%; height: 100%; object-fit: contain; }
+.drive-cap { font-size: 13px; color: var(--ldc-chalk-dim); margin: 12px 0 0; }
+
+/* 3. The map — the hero asset. */
+.welcome-map { background: var(--ldc-tarmac); }
+.welcome-map .col { padding-top: 88px; padding-bottom: 90px; }
+.map-frame {
+  margin-top: 30px;
+  border: 1px solid var(--ldc-hairline-on-dark-strong);
+  background: var(--ldc-green);
+}
+.map-stage { position: relative; }
+.map-stage img {
+  width: 100%;
+  height: clamp(360px, 50vw, 560px);
+  object-fit: cover;
+}
+.map-chip {
+  position: absolute;
+  left: 20px;
+  top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: rgba(27, 25, 22, 0.74);
+  padding: 8px 12px 7px;
+  border-radius: var(--radius-sm);
+}
+.map-chip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ldc-chalk);
+  border: 2px solid var(--ldc-tarmac);
+  flex-shrink: 0;
+}
+.map-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 48px;
+  align-items: end;
+  margin-top: 28px;
+}
+.map-cap { font-size: clamp(20px, 2.3vw, 26px); line-height: 1.38; color: var(--ldc-chalk); margin: 0; max-width: 560px; }
+.map-stat .value { font-size: 44px; }
+
+/* 4. The day's value — honours board, flush chalk cells on 2px seams. */
+.welcome-value { background: var(--ldc-chalk); color: var(--ldc-tarmac); }
+.welcome-value .col { padding-top: 84px; padding-bottom: 88px; }
+.value-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.74fr);
+  gap: 56px;
+  align-items: end;
+  margin-bottom: 40px;
+}
+.value-head h2 { font-size: clamp(32px, 4vw, 50px); margin: 22px 0 0; }
+.value-head .ldc-body { font-size: 16px; color: var(--ldc-tarmac-dim); margin: 0; max-width: 380px; }
+.value-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--ldc-tarmac);
+  border: 1px solid var(--ldc-tarmac);
+}
+.value-cell { background: var(--ldc-chalk); padding: 30px 30px 32px; }
+.value-cell--wide { grid-column: 1 / -1; }
+.value-hero { font-size: clamp(36px, 4.4vw, 54px); line-height: 1; color: var(--ldc-tarmac); }
+.value-cell--wide .value-hero { font-size: clamp(44px, 6vw, 76px); }
+.value-hero--accent { color: var(--ldc-redline); }
+.value-cell .ldc-eyebrow { margin: 16px 0 0; }
+.value-line { font-size: 15px; color: var(--ldc-tarmac-dim); margin: 10px 0 0; max-width: 360px; }
+.value-cell--wide .value-line { font-size: 16px; max-width: 620px; }
+
+/* 5. The room — the quiet emotional core, centred. */
+.welcome-room { background: var(--ldc-tarmac); }
+.welcome-room .col { padding-top: 104px; padding-bottom: 108px; }
+.room-inner { max-width: 720px; margin: 0 auto; text-align: center; }
+.room-lead { font-size: clamp(28px, 4vw, 46px); line-height: 1.26; color: var(--ldc-chalk); margin: 28px 0 0; }
+.room-sub { font-size: clamp(20px, 2.4vw, 27px); line-height: 1.4; color: var(--ldc-chalk-dim); margin: 26px 0 0; }
+.room-note { font-size: 16px; color: var(--ldc-chalk-dim); margin: 30px auto 0; max-width: 540px; }
+
+/* 6 + 7. The price, and the reservation. */
+.welcome-price { background: var(--ldc-green); }
+.welcome-price .col { padding-top: 88px; padding-bottom: 92px; }
+.price-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+}
+.price-number { font-size: clamp(64px, 8.5vw, 108px); line-height: 0.96; color: var(--ldc-chalk); margin: 24px 0 0; }
+.price-line { font-size: clamp(20px, 2.4vw, 27px); line-height: 1.38; color: var(--ldc-chalk-dim); margin: 26px 0 0; max-width: 420px; }
+.covers { margin-top: 18px; border-top: 1px solid var(--ldc-hairline-on-dark); }
+.cover-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--ldc-hairline-on-dark);
+}
+.cover-name { font-size: 19px; color: var(--ldc-chalk); }
+.cover-note { font-size: 14px; color: var(--ldc-chalk-dim); text-align: right; }
+
+.reserve-card { margin-top: 44px; background: var(--ldc-chalk); color: var(--ldc-tarmac); }
+.reserve-body {
+  padding: 34px 36px 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 40px;
+  align-items: center;
+}
+.reserve-body #held-copy { grid-column: 1 / -1; }
+.reserve-title { font-size: 26px; margin: 16px 0 0; }
+.reserve-sub { font-size: 15px; color: var(--ldc-tarmac-dim); margin: 10px 0 0; max-width: 440px; }
+.reserve-held { font-size: 18px; line-height: 1.4; color: var(--ldc-tarmac); margin: 10px 0 0; max-width: 460px; }
+.reserve-action { justify-self: end; }
+.reserve-foot {
+  border-top: 1px solid var(--ldc-hairline-on-light);
+  padding: 16px 36px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.reserve-foot-mark { width: 8px; height: 8px; background: var(--ldc-redline); flex-shrink: 0; }
+.reserve-foot .ldc-body { font-size: 14px; color: var(--ldc-tarmac-dim); }
+
+/* 8. The close. */
+.welcome-close { background: var(--ldc-tarmac); }
+.welcome-close .col { padding-top: 92px; padding-bottom: 96px; }
+.close-inner { max-width: 800px; margin: 0 auto; text-align: center; }
+.close-line { font-size: clamp(24px, 3.2vw, 38px); line-height: 1.32; color: var(--ldc-chalk); margin: 0; }
+
+.welcome-foot-meta { padding-top: 40px; padding-bottom: 40px; border-top: none; }
+
+/* Welcome page — responsive */
+@media (max-width: 920px) {
+  .drive-grid,
+  .value-head,
+  .price-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .drive-grid { margin-top: 44px; }
+  .map-foot { grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+}
+@media (max-width: 560px) {
+  .value-grid { grid-template-columns: 1fr; }
+  .value-cell { grid-column: 1 / -1; }
+  .reserve-body { grid-template-columns: 1fr; gap: 24px; }
+  .reserve-action { justify-self: start; }
+  .reserve-body, .reserve-foot { padding-left: 24px; padding-right: 24px; }
+}

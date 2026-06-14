@@ -4,6 +4,13 @@ The application-gated front door for Long Drive Club. A static site:
 no build step, no framework — just `index.html`, `styles.css`, `app.js`,
 and the images in `assets/`.
 
+Once an applicant enters a valid password at the gate (`#gate` on
+`index.html`), `app.js` sends them to `welcome.html` — the "You're in"
+page that lays out the drive, the map, the day, the price and the
+reservation. Its behaviour (reveal-on-scroll and the reserve / T&C step)
+lives in `welcome.js`; its styles are the `welcome.html` section of
+`styles.css`.
+
 ## Going live (GitHub Pages)
 
 This repo is the whole website; the files sit at the root on purpose.
@@ -55,3 +62,9 @@ security, so don't put anything truly sensitive behind it.
 `assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first
 drive, landscape) came from the original design. Swap the files to
 change the photography; keep the warm, low-saturation, golden-hour mood.
+
+The "You're in" page uses two illustrations drawn in the LDC livery:
+`assets/welcome-map.png` (the regional road map, the hero asset) and
+`assets/welcome-lineup.png` (the lineup in silhouette under the drive
+headline). Swap either for real photography or a commissioned
+illustration without touching markup — they sit in plain `<img>` slots.
