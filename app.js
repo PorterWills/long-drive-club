@@ -286,7 +286,7 @@
       baseCity: loc.city,
       play: form.elements.play.value,
       party: form.elements.party.value,
-      days: Array.prototype.slice.call(form.querySelectorAll('input[name="days"]:checked')).map(function (c) { return c.value; }),
+      days: form.elements.days.value,
       consent: form.elements.consent.checked
     };
     f.car = [f.make, f.model].filter(Boolean).join(" ");
@@ -337,7 +337,7 @@
         baseCity: f.baseCity,
         play: f.play,
         party: f.party,
-        days: f.days.join(", "),
+        days: f.days,
         consent: f.consent
       })
     });

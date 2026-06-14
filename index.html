@@ -332,12 +332,14 @@
               <span class="ldc-numeral field-num" aria-hidden="true">10</span>
               <span class="field-name">Which days interest you</span>
             </legend>
-            <div class="options">
-              <label class="check"><input type="checkbox" name="days" value="A drive and 18 holes"><span class="box" aria-hidden="true"></span><span>A drive and 18 holes</span></label>
-              <label class="check"><input type="checkbox" name="days" value="An overnight, two courses"><span class="box" aria-hidden="true"></span><span>An overnight, two courses</span></label>
-              <label class="check"><input type="checkbox" name="days" value="Something track adjacent"><span class="box" aria-hidden="true"></span><span>Something track adjacent</span></label>
-              <label class="check"><input type="checkbox" name="days" value="You tell me"><span class="box" aria-hidden="true"></span><span>You tell me</span></label>
-            </div>
+            <span class="select-wrap">
+              <select id="f-days" name="days" aria-label="Which days interest you">
+                <option value="">Which days interest you</option>
+                <option value="A drive and 18 holes">A drive and 18 holes</option>
+                <option value="An overnight, two courses">An overnight, two courses</option>
+                <option value="Something track adjacent">Something track adjacent</option>
+              </select>
+            </span>
           </fieldset>
 
           <div class="form-foot ldc-rise" data-delay="180">
@@ -435,6 +437,6 @@
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
 </div>
 
-<script src="app.js?v=17"></script>
+<script src="app.js?v=18"></script>
 </body>
 </html>
