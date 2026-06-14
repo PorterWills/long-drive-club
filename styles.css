@@ -920,7 +920,7 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .drive-paras p { font-size: 16px; color: var(--ldc-chalk-dim); margin: 0; }
 .drive-lineup { width: 100%; height: 280px; background: var(--ldc-tarmac); }
 .drive-lineup img { width: 100%; height: 100%; object-fit: cover; }
-.drive-cap { font-size: 13px; color: var(--ldc-chalk-dim); margin: 12px 0 0; text-wrap: balance; }
+.drive-cap { font-size: 13px; color: var(--ldc-chalk-dim); margin: 12px 0 0; }
 
 /* 3. The map — the hero asset. */
 .welcome-map { background: var(--ldc-tarmac); }
@@ -1065,6 +1065,9 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
   .price-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   .drive-grid { margin-top: 44px; }
   .map-foot { grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+  /* Keep the lineup caption on one line — scale it down with the viewport
+     rather than letting it wrap to two lines. Capped at the base 13px. */
+  .drive-cap { white-space: nowrap; font-size: clamp(8px, 2.5vw, 13px); }
 }
 @media (max-width: 560px) {
   .value-grid { grid-template-columns: 1fr; }
