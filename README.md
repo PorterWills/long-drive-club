@@ -63,8 +63,8 @@ security, so don't put anything truly sensitive behind it.
 drive, landscape) came from the original design. Swap the files to
 change the photography; keep the warm, low-saturation, golden-hour mood.
 
-The "You're in" page uses two illustrations drawn in the LDC livery:
-`assets/welcome-map.png` (the regional road map, the hero asset) and
-`assets/welcome-lineup.png` (the lineup in silhouette under the drive
-headline). Swap either for real photography or a commissioned
-illustration without touching markup — they sit in plain `<img>` slots.
+The "You're in" page uses two images: `assets/welcome-map.jpg` (the
+route, drawn in redline over a regional road map — the hero asset) and
+`assets/welcome-lineup.jpg` (the lineup on the grass beside the drive
+copy). Swap either by replacing the file (keep the name, or update the
+`<img src>` in `welcome.html`) — they sit in plain `<img>` slots.
