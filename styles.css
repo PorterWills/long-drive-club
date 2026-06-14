@@ -1281,6 +1281,8 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 }
 .score-cell--num { justify-content: flex-end; }
 .score-cell--last { border-right: none; }
+.score-empty { padding: 22px 18px; border-bottom: 1px solid var(--hairline); }
+.score-empty .ldc-body { color: var(--text-dim); }
 .score-n { font-size: 18px; color: var(--ldc-tarmac); }
 .score-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ldc-tarmac); }
 .score-car { font-family: var(--font-body); font-size: 14px; color: var(--text-dim); }

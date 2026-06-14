@@ -39,7 +39,7 @@
   // `PLACES_TAKEN` is how many of the roster are paid up; raise it as the
   // field fills.
   var TOTAL_PLACES = 20;
-  var PLACES_TAKEN = 14;
+  var PLACES_TAKEN = 0; // no one's paid yet — raise as the field fills
   var ROSTER = [
     { name: "Tom Fairclough", car: "Porsche 911 Carrera T" },
     { name: "Priya Anand", car: "BMW M2" },
@@ -152,6 +152,19 @@
     var rowsHost = document.getElementById("score-rows");
     if (!rowsHost) return;
     rowsHost.innerHTML = "";
+
+    // No places taken yet — show a quiet placeholder rather than a bare
+    // card, so it reads as a board waiting to fill, not a broken one.
+    if (taken === 0) {
+      var empty = document.createElement("div");
+      empty.className = "score-empty";
+      empty.innerHTML = '<span class="ldc-body"></span>';
+      empty.querySelector(".ldc-body").textContent =
+        "No cars on the board yet. The first names land here as places are taken.";
+      rowsHost.appendChild(empty);
+      return;
+    }
+
     ROSTER.slice(0, taken).forEach(function (entry, i) {
       var row = document.createElement("div");
       row.className = "score-row" + ((i % 2 === 1) ? " score-row--alt" : "");
