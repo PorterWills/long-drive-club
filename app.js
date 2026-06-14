@@ -201,6 +201,9 @@
 
     lane.addEventListener("pointerdown", function (e) {
       e.preventDefault();
+      // Pointer interaction focuses the lane via script; suppress the keyboard
+      // focus ring so a mouse click doesn't draw a box around the control.
+      lane.classList.add("hcp-no-ring");
       lane.focus();
       setFromX(e.clientX);
       function move(ev) { setFromX(ev.clientX); }
@@ -213,6 +216,8 @@
     });
 
     lane.addEventListener("keydown", function (e) {
+      // Genuine keyboard use: restore the focus ring.
+      lane.classList.remove("hcp-no-ring");
       var v = value;
       if (e.key === "ArrowRight" || e.key === "ArrowUp") v += e.shiftKey ? 1 : STEP;
       else if (e.key === "ArrowLeft" || e.key === "ArrowDown") v -= e.shiftKey ? 1 : STEP;
@@ -225,6 +230,9 @@
       value = snap(v);
       render();
     });
+
+    // Clear the modality flag on blur so a later Tab back shows the ring.
+    lane.addEventListener("blur", function () { lane.classList.remove("hcp-no-ring"); });
 
     render();
   })();

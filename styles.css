@@ -869,6 +869,7 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 }
 .hcp-scratch-zero { font-size: 19px; }
 .hcp-lane:focus-visible { outline: 2px solid var(--ldc-green); outline-offset: 4px; }
+.hcp-lane.hcp-no-ring:focus-visible { outline: none; }
 
 .hcp-ticks { position: relative; height: 30px; margin-top: 10px; }
 .hcp-tick-minor {
