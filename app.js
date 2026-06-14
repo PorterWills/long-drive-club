@@ -480,8 +480,15 @@
 
     function done(ok) {
       // On success the day lives on its own page ("You're in"); send them
-      // there. On failure, stay put and surface the error.
-      if (ok) { window.location.href = "welcome.html"; return; }
+      // there. We first drop a session marker so welcome.html knows the
+      // visitor came through the gate — a shared welcome URL carries no
+      // session storage, so it bounces straight back here. (Deterrent only,
+      // not real security; see README.) On failure, surface the error.
+      if (ok) {
+        try { sessionStorage.setItem("ldc-gate", "open"); } catch (e) {}
+        window.location.href = "welcome.html";
+        return;
+      }
       if (unlockBtn) unlockBtn.disabled = false;
       if (unlockLabel) unlockLabel.textContent = originalLabel;
       pwError.classList.add("show");
