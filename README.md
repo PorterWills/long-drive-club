@@ -72,6 +72,23 @@ e.g. putting the site behind Cloudflare Access / Zero Trust, a host with
 built-in password protection, or a serverless function that only returns
 the content after checking the password.
 
+### Stopping direct access to `members.html`
+
+`members.html` is the post-payment event page (the drive, the reveals,
+the garage, the day sheet). A member reaches it from the **View event
+details** button in the place-confirmed email, which links to
+`members.html#access`. A guard at the top of the page admits a visitor
+who carries that `#access` marker, already holds a member session
+(`sessionStorage` key `ldc-member`), or passed the password gate this
+session; everyone else is redirected to the gate. Once admitted, the
+marker is stripped from the URL and the session is remembered, so the
+member can move around the page and refresh without re-triggering it.
+
+Like the welcome guard, this is a deterrent, not real security: the file
+is public, so the `#access` marker is visible to anyone who reads the
+email or the source. Server-side gating (as above) is the only way to
+truly restrict it.
+
 ## Imagery
 
 `assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first

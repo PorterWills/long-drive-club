@@ -1100,3 +1100,251 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
   .reserve-action { justify-self: start; }
   .reserve-body, .reserve-foot { padding-left: 24px; padding-right: 24px; }
 }
+
+/* ============================================================
+   members.html — Drive 01, the members' event page.
+   Three content states: known now, counts down to a reveal,
+   grows over time (the garage). Built on the same tokens and
+   devices as the rest of the site.
+   ============================================================ */
+
+/* A status badge that reads "full" — redline twin of .badge--open. */
+.badge--sold { color: var(--ldc-redline); border-color: var(--ldc-redline); }
+
+/* The members chrome reuses the public header; this badge sits with the
+   nav links and drops out with them on narrow screens. */
+.member-nav { display: flex; align-items: center; gap: 26px; }
+.member-nav .badge { color: var(--ldc-chalk-dim); }
+
+/* ---- 1. Masthead ---- */
+.member-hero { background: var(--ldc-green); }
+.member-hero .col { padding-top: 72px; padding-bottom: 64px; }
+.member-hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.member-hero-mark {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+.member-hero-titles { flex: 1; min-width: 280px; }
+.member-hero-h1 { font-size: clamp(44px, 6.5vw, 78px); margin: 0; }
+.member-hero-voice {
+  font-size: 22px;
+  margin: 16px 0 0;
+  max-width: 560px;
+  color: var(--ldc-chalk-dim);
+}
+.member-rule { border: 0; border-top: 1px solid var(--hairline); margin: 40px 0; }
+.member-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+.member-fact { font-size: 34px; margin: 12px 0 0; }
+.member-fact-note { margin-top: 12px; max-width: 360px; color: var(--text-dim); }
+.member-hero-count { border-left: 1px solid var(--hairline); padding-left: 40px; }
+
+/* ---- Live countdowns ---- */
+.cd { display: flex; align-items: flex-end; }
+.cd--block { gap: 22px; flex-wrap: wrap; }
+.cd--inline { gap: 18px; }
+.cd-unit { display: flex; flex-direction: column; }
+.cd--block .cd-unit { gap: 7px; }
+.cd--inline .cd-unit { gap: 4px; }
+.cd-num { line-height: 0.9; font-variant-numeric: tabular-nums; }
+.cd--block .cd-num { font-size: 46px; }
+.cd--inline .cd-num { font-size: 32px; line-height: 0.92; }
+.cd--inline .cd-label { font-size: 9px; letter-spacing: 0.24em; }
+.cd-done { color: var(--ldc-moss); }
+
+/* ---- 2. Still to come ---- */
+.member-reveals { background: var(--ldc-chalk); color: var(--ldc-tarmac); }
+.member-reveals .col { padding-top: 72px; padding-bottom: 72px; }
+.member-section-lead { margin-top: 18px; font-size: 17px; color: var(--text-dim); }
+.member-section-voice { font-size: 20px; margin-top: 14px; }
+
+.reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 40px;
+}
+.reveal-card {
+  background: var(--surface-recess);
+  border: 1px solid var(--hairline);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+.reveal-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.reveal-title { font-size: 28px; margin: 16px 0 0; }
+.redact { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 4px; }
+.redact span {
+  display: block;
+  height: 20px;
+  background: var(--ldc-tarmac);
+  opacity: 0.88;
+  border-radius: 1px;
+}
+.reveal-note { margin-top: 10px; color: var(--text-dim); flex: 1; }
+.reveal-link {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ldc-tarmac);
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline-strong);
+  padding-bottom: 2px;
+  align-self: flex-start;
+  margin-bottom: 22px;
+}
+.reveal-link:hover { color: var(--ldc-redline); border-bottom-color: var(--ldc-redline); }
+.reveal-foot { border-top: 1px solid var(--hairline); padding-top: 18px; }
+.reveal-foot--push { margin-top: auto; }
+
+/* ---- 3. The garage (scorecard) ---- */
+.member-garage {
+  background: var(--ldc-chalk);
+  color: var(--ldc-tarmac);
+  border-top: 1px solid var(--hairline);
+}
+.member-garage .col { padding-top: 72px; padding-bottom: 72px; }
+.member-garage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.member-garage-stats { display: flex; gap: 40px; }
+.member-garage-stats .stat .value { font-size: 44px; line-height: 1; }
+
+.scorecard { border: 1px solid var(--hairline-strong); background: var(--ldc-chalk); }
+.score-band {
+  background: var(--ldc-green);
+  color: var(--ldc-chalk);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+}
+.score-band-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.score-band--foot { color: var(--ldc-chalk-dim); }
+.score-band-label--bright { color: var(--ldc-chalk); }
+.score-band-count { font-size: 16px; letter-spacing: 0.1em; }
+
+.score-cols,
+.score-row {
+  display: grid;
+  grid-template-columns: 62px 1.1fr 1.35fr;
+}
+.score-cols {
+  background: rgba(27, 25, 22, 0.04);
+  border-bottom: 1px solid var(--hairline-strong);
+}
+.score-col { padding: 11px 18px; border-right: 1px solid var(--hairline); }
+.score-col--num { text-align: right; }
+.score-col--last { border-right: none; }
+
+.score-row { border-bottom: 1px solid var(--hairline); }
+.score-row--alt { background: rgba(27, 25, 22, 0.022); }
+.score-cell {
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--hairline);
+  min-width: 0;
+}
+.score-cell--num { justify-content: flex-end; }
+.score-cell--last { border-right: none; }
+.score-n { font-size: 18px; color: var(--ldc-tarmac); }
+.score-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; color: var(--ldc-tarmac); }
+.score-car { font-family: var(--font-body); font-size: 14px; color: var(--text-dim); }
+
+/* ---- 4. On the day ---- */
+.member-onday { background: var(--ldc-tarmac); color: var(--ldc-chalk); }
+.member-onday .col { padding-top: 72px; padding-bottom: 72px; }
+.member-day-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px; /* flush 2px seam — the brand's dense-data pattern */
+  margin-top: 40px;
+}
+.member-day-cell {
+  padding: 28px 28px 30px;
+  background: var(--ldc-tarmac-up);
+  border: 1px solid var(--hairline);
+}
+.member-day-title { font-size: 24px; margin: 14px 0 0; }
+.member-day-body { margin-top: 14px; color: var(--text-dim); }
+
+/* ---- 5. Day sheet ---- */
+.member-daysheet { background: var(--ldc-chalk); color: var(--ldc-tarmac); }
+.member-daysheet .col { padding-top: 72px; padding-bottom: 72px; }
+.ds-list { margin-top: 28px; max-width: 760px; border-top: 1px solid var(--hairline); }
+.ds-row { border-bottom: 1px solid var(--hairline); }
+.ds-toggle {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 4px;
+  text-align: left;
+  color: var(--ldc-tarmac);
+  font: inherit;
+}
+.ds-q { font-size: 19px; }
+.ds-plus {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ldc-tarmac-dim);
+  transition: transform var(--duration-fast) var(--ease-out),
+              color var(--duration-fast) var(--ease-out);
+}
+.ds-row.is-open .ds-plus { color: var(--ldc-redline); transform: rotate(45deg); }
+.ds-answer { display: none; }
+.ds-row.is-open .ds-answer { display: block; }
+.ds-answer p { margin: 0 0 22px; max-width: 640px; color: var(--text-dim); }
+
+.member-foot-meta { padding-top: 40px; padding-bottom: 40px; border-top: none; }
+
+/* ---- members.html — responsive ---- */
+@media (max-width: 860px) {
+  .member-hero-grid { grid-template-columns: 1fr; gap: 32px; }
+  .member-hero-count { border-left: none; padding-left: 0; }
+  .reveal-grid { grid-template-columns: 1fr; }
+  .member-day-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 720px) {
+  .member-nav .badge { display: none; }
+}

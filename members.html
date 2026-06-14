@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Member guard: only admit visitors who carry the access marker from
+     their payment email (members.html#access), already hold a member
+     session, or came through the password gate this session. Anyone else
+     bounces to the gate. Runs before any content paints. (Deterrent, not
+     real security — the file is public; see README.) -->
+<script>
+  (function () {
+    var ok = false;
+    try {
+      ok = sessionStorage.getItem("ldc-member") === "open"
+        || sessionStorage.getItem("ldc-gate") === "open"
+        || location.hash.indexOf("access") !== -1;
+      if (ok) sessionStorage.setItem("ldc-member", "open");
+    } catch (e) { ok = true; } // storage blocked — don't lock anyone out
+    if (!ok) location.replace("index.html#gate");
+  })();
+</script>
+<title>Long Drive Club — Drive 01</title>
+<meta name="description" content="Drive 01, for members. The drive, what's still to come, the garage and the day sheet.">
+<!-- Behind payment: reached from the access link in the payment email.
+     Kept out of search results; the guard above bounces anyone without a
+     member session or the email's access marker back to the gate. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E2A1C">
+
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="assets/site.webmanifest">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
+<link rel="stylesheet" href="styles.css?v=24">
+<script>document.documentElement.classList.remove("no-js");</script>
+</head>
+<body>
+
+<!-- Header — a quieter chrome than the public site: the member is already
+     in, so the right side carries a status, not a call to join. -->
+<div class="site-top">
+  <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
+  <header class="site-header ldc-dark">
+    <div class="col">
+      <a href="index.html" class="wordmark-link" aria-label="Long Drive Club — home">
+        <span class="wordmark" style="font-size:16px">Long Drive Club</span>
+      </a>
+      <nav class="member-nav">
+        <a class="nav-link" href="#drive">The drive</a>
+        <a class="nav-link" href="#reveals">Still to come</a>
+        <a class="nav-link" href="#garage">The garage</a>
+        <a class="nav-link" href="#daysheet">Day sheet</a>
+        <span class="badge">Members only</span>
+      </nav>
+    </div>
+  </header>
+</div>
+
+<main>
+
+  <!-- 1. Masthead — which drive, roughly where (abstract, no place name yet),
+       and how long until the day. The date lives here only as a countdown. -->
+  <section id="drive" class="member-hero ldc-dark">
+    <div class="col">
+      <div class="ldc-rise member-hero-top">
+        <p class="ldc-eyebrow" style="margin:0;color:var(--ldc-chalk-dim)">Members only · Drive 01</p>
+        <span class="badge" id="hero-places" hidden></span>
+      </div>
+
+      <div class="ldc-rise member-hero-mark" data-delay="60">
+        <span class="roundel roundel--on-dark" style="width:120px;height:120px;font-size:30px">01</span>
+        <div class="member-hero-titles">
+          <h1 class="ldc-display member-hero-h1">The first drive</h1>
+          <p class="ldc-voice member-hero-voice">You're in. Clubs in the boot, the good road on the way. We start the way we mean to carry on.</p>
+        </div>
+      </div>
+
+      <hr class="member-rule">
+
+      <div class="member-hero-grid">
+        <div class="ldc-rise" data-delay="80">
+          <p class="ldc-eyebrow" style="margin:0">Region · known now</p>
+          <p class="ldc-display member-fact">Confirmed</p>
+          <p class="ldc-body member-fact-note">About two hours of road each way. Enough to make a morning of it; not so far you'd think twice.</p>
+        </div>
+        <div class="ldc-rise member-hero-count" data-delay="120">
+          <p class="ldc-eyebrow" style="margin:0 0 18px">Drive day · counting down</p>
+          <div class="cd cd--block" data-countdown="event" data-accent="true" aria-live="off"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Still to come — three things sealed, each on its own clock. The held
+       name shows as a redaction; the course links to a top 100 list to guess. -->
+  <section id="reveals" class="member-reveals">
+    <div class="col">
+      <div class="ldc-rise" style="max-width:620px">
+        <h2 class="ldc-redtick">Still to come</h2>
+        <p class="ldc-body member-section-lead">Three things land on their own clocks between now and the day. Nothing's late. It reveals when it's set.</p>
+        <p class="ldc-voice member-section-voice">Half the pleasure is not knowing yet.</p>
+      </div>
+
+      <div class="reveal-grid">
+        <!-- The course -->
+        <div class="ldc-rise reveal-card" data-delay="80">
+          <div class="reveal-card-top">
+            <p class="ldc-eyebrow" style="margin:0">Sealed</p>
+            <span class="badge">~ 6 weeks out</span>
+          </div>
+          <h3 class="ldc-display reveal-title">The course</h3>
+          <div class="redact" aria-hidden="true">
+            <span style="width:128px"></span><span style="width:64px"></span><span style="width:92px"></span>
+          </div>
+          <p class="ldc-body reveal-note">A top 100 course. We're holding the name back. Guess from the list while you wait.</p>
+          <a href="https://www.top100golfcourses.com/golf-courses" class="reveal-link" target="_blank" rel="noopener">See the top 100 ↗</a>
+          <div class="reveal-foot">
+            <p class="ldc-eyebrow" style="margin:0 0 12px">Unlocks in</p>
+            <div class="cd cd--inline" data-countdown="course"></div>
+          </div>
+        </div>
+
+        <!-- The meeting point -->
+        <div class="ldc-rise reveal-card" data-delay="120">
+          <div class="reveal-card-top">
+            <p class="ldc-eyebrow" style="margin:0">Sealed</p>
+            <span class="badge">~ 2 weeks out</span>
+          </div>
+          <h3 class="ldc-display reveal-title">The meeting point</h3>
+          <div class="redact" aria-hidden="true">
+            <span style="width:104px"></span><span style="width:76px"></span>
+          </div>
+          <p class="ldc-body reveal-note">Where the field forms up before we set off. Pinned closer to the day.</p>
+          <div class="reveal-foot reveal-foot--push">
+            <p class="ldc-eyebrow" style="margin:0 0 12px">Unlocks in</p>
+            <div class="cd cd--inline" data-countdown="meeting"></div>
+          </div>
+        </div>
+
+        <!-- The route -->
+        <div class="ldc-rise reveal-card" data-delay="160">
+          <div class="reveal-card-top">
+            <p class="ldc-eyebrow" style="margin:0">Sealed</p>
+            <span class="badge">~ 7 days out</span>
+          </div>
+          <h3 class="ldc-display reveal-title">The route</h3>
+          <div class="redact" aria-hidden="true">
+            <span style="width:88px"></span><span style="width:116px"></span><span style="width:52px"></span>
+          </div>
+          <p class="ldc-body reveal-note">We pick the road, not the fast one. Quiet, well-surfaced, worth the detour. Sent the week of.</p>
+          <div class="reveal-foot reveal-foot--push">
+            <p class="ldc-eyebrow" style="margin:0 0 12px">Unlocks in</p>
+            <div class="cd cd--inline" data-countdown="route"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. The garage — the field, kept like a golf scorecard. One line per
+       place. It grows as each member pays; only confirmed places show. -->
+  <section id="garage" class="member-garage">
+    <div class="col">
+      <div class="ldc-rise member-garage-head">
+        <div style="max-width:560px">
+          <h2 class="ldc-redtick">The garage</h2>
+          <p class="ldc-body member-section-lead">Who's in, and what they're bringing. The card grows as each place is taken.</p>
+          <p class="ldc-voice member-section-voice">Bring the car you'd take anyway.</p>
+        </div>
+        <div class="member-garage-stats">
+          <div class="stat">
+            <span class="ldc-numeral value" id="stat-taken">00</span>
+            <span class="ldc-eyebrow">In the field</span>
+          </div>
+          <div class="stat">
+            <span class="ldc-numeral value" id="stat-open" style="color:var(--ldc-tarmac-dim)">00</span>
+            <span class="ldc-eyebrow">Still open</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ldc-rise scorecard" data-delay="80">
+        <div class="stripe" style="height:4px" aria-hidden="true"><span></span><span></span><span></span></div>
+
+        <!-- title strip -->
+        <div class="score-band ldc-dark">
+          <span class="score-band-label">Scorecard · Drive 01</span>
+          <span class="ldc-numeral score-band-count" id="score-count">00 / 20</span>
+        </div>
+
+        <!-- column header -->
+        <div class="score-cols">
+          <span class="ldc-eyebrow score-col score-col--num">No.</span>
+          <span class="ldc-eyebrow score-col">Member</span>
+          <span class="ldc-eyebrow score-col score-col--last">Car</span>
+        </div>
+
+        <!-- rows (rendered from the roster as the field fills) -->
+        <div id="score-rows"></div>
+
+        <!-- footer total band -->
+        <div class="score-band score-band--foot ldc-dark">
+          <span class="score-band-label" id="score-foot-label">Field 00 · Open 00</span>
+          <span class="score-band-label score-band-label--bright">Twenty when full</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. On the day — the lighter, present-but-unannounced things. -->
+  <section class="member-onday ldc-dark">
+    <div class="col">
+      <div class="ldc-rise" style="max-width:560px">
+        <h2 class="ldc-redtick" style="color:var(--ldc-chalk)">On the day</h2>
+        <p class="ldc-body member-section-lead">A few things we don't spell out. They land better in person.</p>
+      </div>
+      <div class="member-day-grid">
+        <div class="ldc-rise member-day-cell" data-delay="60">
+          <p class="ldc-eyebrow" style="margin:0">Handed out at the bar</p>
+          <h3 class="ldc-display member-day-title">The awards</h3>
+          <p class="ldc-body member-day-body">A few unofficial honours go out on the day. We're not saying for what. That's rather the point.</p>
+        </div>
+        <div class="ldc-rise member-day-cell" data-delay="100">
+          <p class="ldc-eyebrow" style="margin:0">Filmed and shot</p>
+          <h3 class="ldc-display member-day-title">You'll get the footage</h3>
+          <p class="ldc-body member-day-body">The day is filmed and photographed. The good stuff comes to you afterwards. No need to drive one-handed.</p>
+        </div>
+        <div class="ldc-rise member-day-cell" data-delay="140">
+          <p class="ldc-eyebrow" style="margin:0">Included</p>
+          <h3 class="ldc-display member-day-title">Your decal</h3>
+          <p class="ldc-body member-day-body">Every member gets one. The form's still being decided. You'll see it before it's on anything.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Day sheet — the operational reference. A plain expandable list; most
+       of it firms up in the last fortnight. -->
+  <section id="daysheet" class="member-daysheet">
+    <div class="col">
+      <div class="ldc-rise" style="max-width:620px">
+        <h2 class="ldc-redtick">Day sheet</h2>
+        <p class="ldc-body member-section-lead">The running order and the practical bits. Most of this firms up in the last fortnight. We'll fill it in as it does.</p>
+      </div>
+      <div class="ldc-rise ds-list" data-delay="80">
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="true">
+            <span class="ldc-display ds-q">Food timing</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">Bacon rolls from half six, coffee on. Something at the turn. Full timings land on the day sheet the week before.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">Passengers</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">One passenger is fine. Tell us who when we send the sheet, so the field reads right.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">No car on the day</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">Want in without driving? We'll seat you with someone who's got room. Ask us and we'll sort it.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">Detailing</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">There's a wash and quick detail laid on before the lawn shots. Optional. Confirmed closer to the day.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">Driving waves</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">We set off in waves of four, ten minutes apart. No convoy heroics, no one left at lights.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">Fuel stops</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">One planned stop on the way. Brim it before you set off and you'll not need another.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">Conduct</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">Drive like the road's wet and the neighbours are asleep. The point is the drive, not the pace.</p></div>
+        </div>
+        <div class="ds-row">
+          <button type="button" class="ds-toggle" aria-expanded="false">
+            <span class="ldc-display ds-q">Wet weather</span>
+            <span class="ds-plus" aria-hidden="true">+</span>
+          </button>
+          <div class="ds-answer"><p class="ldc-body">We drive whatever the sky does. It's the golf that might move, not the road.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Footer -->
+<div class="ldc-dark">
+  <footer class="site-footer">
+    <div class="col foot-meta member-foot-meta">
+      <span>LONG DRIVE CLUB · DRIVE 01</span>
+      <span>THE ARRIVAL IS PART OF THE ROUND</span>
+      <span>MEMBERS ONLY</span>
+    </div>
+  </footer>
+  <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
+</div>
+
+<script src="members.js?v=1"></script>
+</body>
+</html>
