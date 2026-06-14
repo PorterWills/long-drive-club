@@ -359,14 +359,80 @@
   var pwInput = document.getElementById("f-pw");
   var pwError = document.getElementById("pw-error");
 
-  // The gate ships as a plain text field masked with -webkit-text-security
-  // (see .gate-code in styles.css) so Safari never sees a password field and
-  // never shows its pointless save-password prompt for a gate with no
-  // username. Browsers without that property (Firefox) get a real password
-  // input instead, purely so the characters still mask as dots — they don't
-  // show the Apple prompt.
-  if (pwInput && !("webkitTextSecurity" in pwInput.style || "textSecurity" in pwInput.style)) {
-    pwInput.type = "password";
+  /* ---- Gate masking without a password field ----------------------------
+     Safari (macOS + iOS) pops its "save password" prompt for anything it
+     reads as a password field — that now includes both <input type=password>
+     and a text field masked with -webkit-text-security. The gate is a single
+     shared code with no username, so the prompt is pointless and confusing.
+     So we keep the field an ordinary text input whose *real value is bullet
+     characters*, and hold the actual code in JS. Safari sees plain text and
+     never offers to save. getGateValue() returns the real code for unlock. */
+  var gateValue = "";
+  var jsMasking = false;
+  var BULLET = "•";
+
+  function renderGate(caret) {
+    pwInput.value = new Array(gateValue.length + 1).join(BULLET);
+    if (caret != null) { try { pwInput.setSelectionRange(caret, caret); } catch (e) {} }
+  }
+  function getGateValue() { return jsMasking ? gateValue : (pwInput ? pwInput.value : ""); }
+  function gateSelection() {
+    var s = pwInput.selectionStart, en = pwInput.selectionEnd;
+    if (s == null) { s = en = gateValue.length; }
+    return { s: s, en: en };
+  }
+
+  if (pwInput && "onbeforeinput" in pwInput) {
+    jsMasking = true;
+    pwInput.setAttribute("type", "text");
+
+    pwInput.addEventListener("beforeinput", function (e) {
+      var t = e.inputType || "";
+      var sel = gateSelection(), caret;
+      if (t === "insertFromPaste" || t === "insertFromDrop") {
+        // Handled by the paste listener below; block the native insert so it
+        // can't double-apply.
+        e.preventDefault();
+        return;
+      }
+      if (t.indexOf("insert") === 0) {
+        var data = e.data;
+        if (data == null && e.dataTransfer) data = e.dataTransfer.getData("text");
+        data = data || "";
+        gateValue = gateValue.slice(0, sel.s) + data + gateValue.slice(sel.en);
+        caret = sel.s + data.length;
+      } else if (t === "deleteContentBackward") {
+        if (sel.s === sel.en && sel.s > 0) { gateValue = gateValue.slice(0, sel.s - 1) + gateValue.slice(sel.en); caret = sel.s - 1; }
+        else { gateValue = gateValue.slice(0, sel.s) + gateValue.slice(sel.en); caret = sel.s; }
+      } else if (t === "deleteContentForward") {
+        if (sel.s === sel.en) { gateValue = gateValue.slice(0, sel.s) + gateValue.slice(sel.en + 1); caret = sel.s; }
+        else { gateValue = gateValue.slice(0, sel.s) + gateValue.slice(sel.en); caret = sel.s; }
+      } else if (t.indexOf("delete") === 0) {
+        // Word/line deletes collapse to the current selection (good enough
+        // for a short gate code).
+        gateValue = gateValue.slice(0, sel.s) + gateValue.slice(sel.en); caret = sel.s;
+      } else {
+        return; // history (undo/redo), formatting, etc. — leave alone
+      }
+      e.preventDefault();
+      renderGate(caret);
+      pwError.classList.remove("show");
+    });
+
+    pwInput.addEventListener("paste", function (e) {
+      e.preventDefault();
+      var cd = e.clipboardData || window.clipboardData;
+      var text = cd ? cd.getData("text") : "";
+      if (text == null) text = "";
+      var sel = gateSelection();
+      gateValue = gateValue.slice(0, sel.s) + text + gateValue.slice(sel.en);
+      renderGate(sel.s + text.length);
+      pwError.classList.remove("show");
+    });
+  } else if (pwInput) {
+    // Engines without beforeinput (old): fall back to CSS disc masking. These
+    // predate the iOS heuristic that flags it, so the prompt stays away.
+    pwInput.style.webkitTextSecurity = "disc";
   }
 
   function sha256Hex(text) {
@@ -404,7 +470,7 @@
 
   lock.addEventListener("submit", function (e) {
     e.preventDefault();
-    var guess = pwInput.value.trim();
+    var guess = getGateValue().trim();
     if (!guess) { pwError.classList.add("show"); return; }
 
     pwError.classList.remove("show");
