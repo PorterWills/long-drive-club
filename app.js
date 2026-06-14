@@ -136,21 +136,97 @@
   function formatHandicap(v) {
     return v < 0 ? "<0" : v.toFixed(1);
   }
+  /* The yardage disc: a custom role="slider" handle. The LDC roundel is the
+     thumb and reads the value back; drag to scratch (0) flips it to redline. */
   (function () {
-    var slider = document.getElementById("f-handicap");
-    var readout = document.getElementById("hcp-readout");
-    if (!slider || !readout) return;
-    var min = parseFloat(slider.min), max = parseFloat(slider.max);
-    function update() {
-      var v = parseFloat(slider.value);
-      var label = formatHandicap(v);
-      readout.textContent = label;
-      slider.setAttribute("aria-valuetext", label === "<0" ? "Better than scratch" : label);
-      var pct = (v - min) / (max - min) * 100;
-      slider.style.setProperty("--pct", pct + "%");
+    var lane = document.getElementById("hcp-lane");
+    var fill = document.getElementById("hcp-fill");
+    var discWrap = document.getElementById("hcp-disc-wrap");
+    var discContent = document.getElementById("hcp-disc-content");
+    var hidden = document.getElementById("f-handicap");
+    var ticks = document.getElementById("hcp-ticks");
+    if (!lane || !fill || !discWrap || !discContent || !hidden) return;
+
+    var MIN = 0, MAX = 36, STEP = 0.1;
+    var MAJORS = [0, 9, 18, 27, 36];
+    var MINORS = [3, 6, 12, 15, 21, 24, 30, 33];
+    var value = parseFloat(hidden.value);
+    if (!isFinite(value)) value = 18;
+
+    function clamp(v) { return Math.min(MAX, Math.max(MIN, v)); }
+    function snap(v) { return clamp(Math.round(v / STEP) * STEP); }
+    function posPct(v) { return (v - MIN) / (MAX - MIN) * 100; }
+
+    /* Tachometer ticks: minor hairlines plus numbered majors. */
+    if (ticks && !ticks.childNodes.length) {
+      MINORS.forEach(function (m) {
+        var t = document.createElement("span");
+        t.className = "hcp-tick-minor";
+        t.style.left = posPct(m) + "%";
+        ticks.appendChild(t);
+      });
+      MAJORS.forEach(function (m) {
+        var col = document.createElement("div");
+        col.className = "hcp-tick-major" + (m === MIN ? " is-scratch" : "");
+        col.style.left = posPct(m) + "%";
+        col.innerHTML = '<span class="hcp-tick-mark"></span>' +
+          '<span class="hcp-tick-num ldc-numeral">' + m + "</span>";
+        ticks.appendChild(col);
+      });
     }
-    slider.addEventListener("input", update);
-    update();
+
+    function render() {
+      var pct = posPct(value);
+      var scratch = value <= MIN;
+      fill.style.width = pct + "%";
+      discWrap.style.left = pct + "%";
+      lane.classList.toggle("is-scratch", scratch);
+      if (scratch) {
+        discContent.innerHTML = '<span class="hcp-scratch-tri" aria-hidden="true"></span>' +
+          '<span class="hcp-scratch-zero">0</span>';
+      } else {
+        discContent.textContent = value.toFixed(1);
+      }
+      lane.setAttribute("aria-valuenow", value);
+      lane.setAttribute("aria-valuetext", scratch ? "Scratch or better" : value.toFixed(1) + " handicap");
+      hidden.value = value.toFixed(1);
+    }
+
+    function setFromX(clientX) {
+      var r = lane.getBoundingClientRect();
+      var t = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+      value = snap(MIN + t * (MAX - MIN));
+      render();
+    }
+
+    lane.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      lane.focus();
+      setFromX(e.clientX);
+      function move(ev) { setFromX(ev.clientX); }
+      function up() {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+      }
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
+
+    lane.addEventListener("keydown", function (e) {
+      var v = value;
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") v += e.shiftKey ? 1 : STEP;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowDown") v -= e.shiftKey ? 1 : STEP;
+      else if (e.key === "Home") v = MIN;
+      else if (e.key === "End") v = MAX;
+      else if (e.key === "PageUp") v += 5;
+      else if (e.key === "PageDown") v -= 5;
+      else return;
+      e.preventDefault();
+      value = snap(v);
+      render();
+    });
+
+    render();
   })();
 
   /* ---- The entry sheet -------------------------------------------------- */

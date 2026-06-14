@@ -81,7 +81,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=20">
+<link rel="stylesheet" href="styles.css?v=21">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -249,15 +249,21 @@
           </div>
 
           <div class="field ldc-rise" data-delay="110">
-            <div class="field-label hcp-head">
-              <span class="hcp-name">
-                <span class="ldc-numeral field-num" aria-hidden="true">06</span>
-                <span class="field-name">Handicap</span>
-              </span>
-              <output class="hcp-readout ldc-numeral" id="hcp-readout" for="f-handicap">18.0</output>
+            <div class="field-label">
+              <span class="ldc-numeral field-num" aria-hidden="true">06</span>
+              <span class="field-name">Handicap</span>
             </div>
-            <input type="range" class="hcp-slider" id="f-handicap" name="handicap_value"
-                   min="-0.1" max="36" step="0.1" value="18" aria-label="Handicap" aria-valuetext="18.0">
+            <div class="hcp-lane" id="hcp-lane" role="slider" tabindex="0"
+                 aria-label="Handicap" aria-valuemin="0" aria-valuemax="36"
+                 aria-valuenow="18" aria-valuetext="18.0 handicap">
+              <div class="hcp-track" aria-hidden="true"></div>
+              <div class="hcp-fill" id="hcp-fill" aria-hidden="true"></div>
+              <div class="hcp-disc-wrap" id="hcp-disc-wrap" aria-hidden="true">
+                <div class="hcp-disc"><span class="hcp-disc-content ldc-numeral" id="hcp-disc-content">18.0</span></div>
+              </div>
+            </div>
+            <input type="hidden" name="handicap_value" id="f-handicap" value="18">
+            <div class="hcp-ticks" id="hcp-ticks" aria-hidden="true"></div>
           </div>
 
           <div class="field ldc-rise" data-delay="120">
@@ -437,6 +443,6 @@
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
 </div>
 
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 </body>
 </html>

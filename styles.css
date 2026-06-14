@@ -829,34 +829,57 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
   .manifesto-lines p { font-size: 22px; text-wrap: pretty; }
 }
 
-/* ---- Handicap slider (field 06) ---- */
-.hcp-head { justify-content: space-between; align-items: baseline; }
-.hcp-name { display: flex; align-items: baseline; gap: 10px; }
-.hcp-readout { font-size: 22px; color: var(--ldc-tarmac); font-feature-settings: "tnum" 1; }
-.hcp-slider {
-  -webkit-appearance: none; appearance: none;
-  width: 100%; height: 24px; margin: 16px 0 0; background: transparent; cursor: pointer;
+/* ---- Handicap slider (field 06) — the yardage disc ---- */
+.hcp-lane {
+  position: relative;
+  height: 46px;
+  margin: 18px 0 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  touch-action: none;
+  outline: none;
 }
-.hcp-slider::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 2px;
-  background: linear-gradient(to right, var(--ldc-redline) 0 var(--pct, 50%), var(--hairline-strong) var(--pct, 50%) 100%);
+.hcp-track, .hcp-fill { position: absolute; height: 6px; border-radius: 3px; }
+.hcp-track { left: 0; right: 0; background: rgba(27, 25, 22, 0.20); }
+.hcp-fill { left: 0; width: 50%; background: var(--ldc-green); }
+.hcp-disc-wrap { position: absolute; left: 50%; transform: translateX(-50%); }
+.hcp-disc {
+  width: 50px; height: 50px; border-radius: 50%;
+  background: var(--ldc-chalk);
+  border: 4px solid var(--ldc-tarmac);
+  box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 5px var(--ldc-tarmac);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ldc-tarmac);
 }
-.hcp-slider::-moz-range-track { height: 4px; border-radius: 2px; background: var(--hairline-strong); }
-.hcp-slider::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--ldc-redline); }
-.hcp-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 16px; height: 16px; margin-top: -6px;
-  background: var(--ldc-redline); border: 1px solid var(--ldc-redline-down); border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 2px var(--ldc-chalk);
+.hcp-disc-content {
+  display: flex; align-items: center; justify-content: center; gap: 3px;
+  font-size: 15px; line-height: 1; letter-spacing: 0.01em;
 }
-.hcp-slider::-moz-range-thumb {
-  width: 16px; height: 16px;
-  background: var(--ldc-redline); border: 1px solid var(--ldc-redline-down); border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 2px var(--ldc-chalk);
+.hcp-lane.is-scratch .hcp-disc {
+  border-color: var(--ldc-redline);
+  box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 5px var(--ldc-redline);
+  color: var(--ldc-redline);
 }
-.hcp-slider:focus { outline: none; }
-.hcp-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 4px var(--focus-ring); }
-.hcp-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 4px var(--focus-ring); }
+.hcp-scratch-tri {
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 7px solid var(--ldc-redline);
+}
+.hcp-scratch-zero { font-size: 19px; }
+.hcp-lane:focus-visible { outline: 2px solid var(--ldc-green); outline-offset: 4px; }
+
+.hcp-ticks { position: relative; height: 30px; margin-top: 10px; }
+.hcp-tick-minor {
+  position: absolute; top: 0; width: 1px; height: 6px;
+  background: rgba(27, 25, 22, 0.34); transform: translateX(-0.5px);
+}
+.hcp-tick-major { position: absolute; top: 0; transform: translateX(-50%); text-align: center; }
+.hcp-tick-mark { display: block; width: 1.5px; height: 9px; margin: 0 auto; background: var(--ldc-tarmac); }
+.hcp-tick-num { display: block; margin-top: 6px; font-size: 12px; color: var(--ldc-tarmac-dim); }
+.hcp-tick-major.is-scratch .hcp-tick-mark { background: var(--ldc-redline); }
+.hcp-tick-major.is-scratch .hcp-tick-num { color: var(--ldc-redline); }
 
 /* ---- "Where you're based": overseas country/city reveal ---- */
 .base-overseas { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 22px; }
