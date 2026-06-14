@@ -935,6 +935,10 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
   width: 100%;
   height: clamp(360px, 50vw, 560px);
   object-fit: cover;
+  /* Centre the crop on the route itself (its bounding box centres at
+     ~63% across, ~57% down) so the red line stays centred when cover
+     crops the sides on narrow/mobile viewports. */
+  object-position: 63% 57%;
 }
 .map-chip {
   position: absolute;
