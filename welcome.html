@@ -3,6 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Gate guard: only admit visitors who came through the password gate this
+     session. A shared welcome URL carries no session marker, so it bounces
+     to the gate. Runs before any content paints. (Deterrent, not real
+     security — the file is public; see README.) -->
+<script>
+  (function () {
+    var ok = false;
+    try { ok = sessionStorage.getItem("ldc-gate") === "open"; }
+    catch (e) { ok = true; } // storage blocked — don't lock anyone out
+    if (!ok) location.replace("index.html#gate");
+  })();
+</script>
 <title>Long Drive Club — You're in</title>
 <meta name="description" content="You're in. The drive, the road, the day — and your place to reserve.">
 <!-- Gated content: kept out of search results. -->

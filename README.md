@@ -57,6 +57,21 @@ Put the resulting hex string into `GATE_HASH` near the top of `app.js`.
 Note: the gate reveals booking details; it is presentation, not real
 security, so don't put anything truly sensitive behind it.
 
+### Stopping direct access to `welcome.html`
+
+When the gate is passed, `app.js` sets a `sessionStorage` marker
+(`ldc-gate=open`) before sending the visitor to `welcome.html`. A guard
+script at the top of `welcome.html` redirects back to the gate if that
+marker is missing, so a welcome URL shared with someone who didn't enter
+the password lands them on the password screen instead.
+
+This is a deterrent, not real security: `welcome.html` is a public file
+on GitHub Pages, so anyone determined can still read its source or set
+the marker by hand. Truly restricting access needs server-side gating —
+e.g. putting the site behind Cloudflare Access / Zero Trust, a host with
+built-in password protection, or a serverless function that only returns
+the content after checking the password.
+
 ## Imagery
 
 `assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first
