@@ -1001,6 +1001,8 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .room-lead { font-size: clamp(28px, 4vw, 46px); line-height: 1.26; color: var(--ldc-chalk); margin: 28px 0 0; }
 .room-sub { font-size: clamp(20px, 2.4vw, 27px); line-height: 1.4; color: var(--ldc-chalk-dim); margin: 26px 0 0; }
 .room-note { font-size: 16px; color: var(--ldc-chalk-dim); margin: 30px auto 0; max-width: 540px; }
+/* Balance the wraps so no line is left with an orphan word. */
+.room-lead, .room-sub, .room-note { text-wrap: balance; }
 
 /* 6 + 7. The price, and the reservation. */
 .welcome-price { background: var(--ldc-green); }
