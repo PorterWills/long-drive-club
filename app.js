@@ -359,6 +359,16 @@
   var pwInput = document.getElementById("f-pw");
   var pwError = document.getElementById("pw-error");
 
+  // The gate ships as a plain text field masked with -webkit-text-security
+  // (see .gate-code in styles.css) so Safari never sees a password field and
+  // never shows its pointless save-password prompt for a gate with no
+  // username. Browsers without that property (Firefox) get a real password
+  // input instead, purely so the characters still mask as dots — they don't
+  // show the Apple prompt.
+  if (pwInput && !("webkitTextSecurity" in pwInput.style || "textSecurity" in pwInput.style)) {
+    pwInput.type = "password";
+  }
+
   function sha256Hex(text) {
     var data = new TextEncoder().encode(text);
     return crypto.subtle.digest("SHA-256", data).then(function (buf) {

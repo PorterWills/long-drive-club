@@ -626,6 +626,19 @@ section { scroll-margin-top: 80px; }
 .gate-panel { background: var(--ldc-chalk); color: var(--ldc-tarmac); padding: 34px 34px 36px; }
 .gate-panel h3 { font-size: 24px; margin: 12px 0 0; }
 .gate-panel .pw-field { margin-top: 22px; }
+
+/* Gate code field — a plain text input masked with discs. Presenting a
+   real <input type="password"> makes Safari (macOS + iOS) pop its
+   "save password" prompt even though the gate has no username, and
+   autocomplete="off" is ignored for password fields. -webkit-text-security
+   masks the characters as dots in Safari/Chrome/Edge without it being a
+   password field, so the prompt never fires. app.js falls the field back to
+   type="password" on browsers without this property (Firefox), purely to
+   keep the masking — those browsers don't show the Apple prompt. */
+.gate-code {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
 .gate-panel .unlock-row { display: flex; align-items: center; gap: 16px; margin-top: 24px; flex-wrap: wrap; }
 .gate-panel .aside { font-family: var(--font-voice); font-style: italic; font-size: 14px; color: var(--ldc-tarmac-dim); }
 
