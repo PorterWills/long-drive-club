@@ -24,7 +24,16 @@
     rises.forEach(function (el) { io.observe(el); });
   }
 
-  /* ---- Reserve flow: agree to T&Cs before the payment step -------------- */
+  /* ---- Where the reservation goes after the T&Cs ------------------------
+     Set STRIPE_PAYMENT_URL to the Stripe Payment Link (or Checkout URL)
+     when payment is ready. Once it's set, agreeing to the T&Cs sends the
+     user straight to Stripe. While it's empty, the card advances to a
+     placeholder payment step so the whole journey can be tested end to end
+     bar the final hop. */
+  var STRIPE_PAYMENT_URL = "";
+
+  /* ---- Reserve flow: agree to T&Cs before the payment step --------------
+     The Reserve button opens the T&Cs; agreeing is what kicks off payment. */
   var modal = document.getElementById("terms-modal");
   var reserveBtn = document.getElementById("reserve-btn");
   var agreeCheck = document.getElementById("terms-agree-check");
@@ -58,10 +67,12 @@
     continueBtn.addEventListener("click", function () {
       if (!agreeCheck.checked) return;
       closeModal();
-      // Swap the reserve card into its held state.
+      // T&Cs agreed: this is the hand-off to payment. When Stripe is wired,
+      // go straight there; until then, show the placeholder payment step.
+      if (STRIPE_PAYMENT_URL) { window.location.href = STRIPE_PAYMENT_URL; return; }
       document.getElementById("reserve-copy").hidden = true;
       document.getElementById("reserve-action").hidden = true;
-      document.getElementById("held-copy").hidden = false;
+      document.getElementById("payment-next").hidden = false;
     });
 
     modal.querySelectorAll("[data-close]").forEach(function (el) {
