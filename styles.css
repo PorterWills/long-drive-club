@@ -854,7 +854,7 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 }
 .hcp-disc-content {
   display: flex; align-items: center; justify-content: center; gap: 3px;
-  font-size: 15px; line-height: 1; letter-spacing: 0.01em;
+  font-size: 13px; line-height: 1; letter-spacing: -0.01em;
 }
 .hcp-lane.is-scratch .hcp-disc {
   border-color: var(--ldc-redline);
