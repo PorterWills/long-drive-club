@@ -11,6 +11,14 @@
 (function () {
   "use strict";
 
+  /* ---- Tidy the access marker out of the address bar --------------------
+     The guard in the head admits members arriving on members.html#access
+     and remembers it for the session; strip the marker now so it doesn't
+     linger in the URL or interfere with the in-page anchor nav. */
+  if (location.hash.indexOf("access") !== -1 && window.history && history.replaceState) {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
   /* ---- The moving parts ------------------------------------------------- */
 
   // Drive day — the fixed point everything hangs off. Shown only as a

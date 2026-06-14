@@ -3,11 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Member guard: only admit visitors who carry the access marker from
+     their payment email (members.html#access), already hold a member
+     session, or came through the password gate this session. Anyone else
+     bounces to the gate. Runs before any content paints. (Deterrent, not
+     real security — the file is public; see README.) -->
+<script>
+  (function () {
+    var ok = false;
+    try {
+      ok = sessionStorage.getItem("ldc-member") === "open"
+        || sessionStorage.getItem("ldc-gate") === "open"
+        || location.hash.indexOf("access") !== -1;
+      if (ok) sessionStorage.setItem("ldc-member", "open");
+    } catch (e) { ok = true; } // storage blocked — don't lock anyone out
+    if (!ok) location.replace("index.html#gate");
+  })();
+</script>
 <title>Long Drive Club — Drive 01</title>
 <meta name="description" content="Drive 01, for members. The drive, what's still to come, the garage and the day sheet.">
-<!-- Behind payment: reached from the link in the payment email, not the
-     public gate. Kept out of search results; no session guard here, since
-     members arrive by email rather than through the password gate. -->
+<!-- Behind payment: reached from the access link in the payment email.
+     Kept out of search results; the guard above bounces anyone without a
+     member session or the email's access marker back to the gate. -->
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0E2A1C">
 
@@ -103,7 +120,7 @@
             <span style="width:128px"></span><span style="width:64px"></span><span style="width:92px"></span>
           </div>
           <p class="ldc-body reveal-note">A top 100 course. We're holding the name back. Guess from the list while you wait.</p>
-          <a href="#top100" class="reveal-link">See the top 100 ↗</a>
+          <a href="https://www.top100golfcourses.com/golf-courses" class="reveal-link" target="_blank" rel="noopener">See the top 100 ↗</a>
           <div class="reveal-foot">
             <p class="ldc-eyebrow" style="margin:0 0 12px">Unlocks in</p>
             <div class="cd cd--inline" data-countdown="course"></div>
