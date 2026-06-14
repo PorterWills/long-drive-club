@@ -1117,7 +1117,7 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .member-nav .badge { color: var(--ldc-chalk-dim); }
 
 /* ---- 1. Masthead ---- */
-.member-hero { background: var(--ldc-green); }
+.member-hero { background: var(--ldc-tarmac); }
 .member-hero .col { padding-top: 72px; padding-bottom: 64px; }
 .member-hero-top {
   display: flex;
