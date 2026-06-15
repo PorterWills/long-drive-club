@@ -707,6 +707,35 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 }
 .foot-legal a:hover { color: var(--ldc-chalk); text-decoration: underline; text-underline-offset: 3px; }
 
+/* ---- Footer social (Instagram / Substack) ----
+   Hairline square tiles — square corners, no shadows, chalk-dim → chalk. */
+.foot-connect { display: flex; flex-direction: column; align-items: flex-end; gap: 24px; }
+.foot-connect .foot-legal { margin-top: 0; }
+.foot-social { display: flex; gap: 12px; }
+.foot-social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--ldc-hairline-on-dark);
+  border-radius: var(--radius-sm);
+  color: var(--ldc-chalk-dim);
+  transition: color var(--duration-fast) var(--ease-out),
+              border-color var(--duration-fast) var(--ease-out);
+}
+.foot-social a:hover {
+  color: var(--ldc-chalk);
+  border-color: var(--ldc-hairline-on-dark-strong);
+}
+.foot-social svg { width: 18px; height: 18px; fill: currentColor; display: block; }
+/* Centred variant for the minimal footers (welcome / members) */
+.foot-social--center { justify-content: center; padding-top: 48px; }
+
+@media (max-width: 640px) {
+  .foot-connect { align-items: flex-start; }
+}
+
 /* ---- T&Cs modal ---- */
 .modal { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(27, 25, 22, 0.72); }
