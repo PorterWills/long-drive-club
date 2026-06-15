@@ -1367,7 +1367,33 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 .ds-row.is-open .ds-answer { display: block; }
 .ds-answer p { margin: 0 0 22px; max-width: 640px; color: var(--text-dim); }
 
-.member-foot-meta { padding-top: 40px; padding-bottom: 40px; border-top: none; }
+/* Members footer — justified bar (club id left, social right), hairline, then the brand line centred. */
+.member-foot { padding-top: 40px; padding-bottom: 48px; }
+.member-foot-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--ldc-hairline-on-dark);
+}
+.member-foot-id { font-size: 12px; letter-spacing: 0.08em; color: var(--ldc-chalk-dim); }
+.member-foot-base {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding-top: 24px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ldc-chalk-dim);
+  text-align: center;
+}
+.member-foot-sep { color: var(--ldc-tarmac-dim); }
+@media (max-width: 600px) {
+  .member-foot-bar { flex-direction: column; gap: 22px; align-items: center; }
+}
 
 /* ---- members.html — responsive ---- */
 @media (max-width: 860px) {
