@@ -39,28 +39,12 @@
   // `PLACES_TAKEN` is how many of the roster are paid up; raise it as the
   // field fills.
   var TOTAL_PLACES = 20;
-  var PLACES_TAKEN = 0; // no one's paid yet — raise as the field fills
+  // Real confirmed places only, in the order they paid. Add a line per new
+  // member and raise PLACES_TAKEN to match. Names are stored as first name +
+  // surname initial; the card never shows full names.
+  var PLACES_TAKEN = 1; // Michael P — the first confirmed place
   var ROSTER = [
-    { name: "Tom Fairclough", car: "Porsche 911 Carrera T" },
-    { name: "Priya Anand", car: "BMW M2" },
-    { name: "Will Hutchings", car: "Alpine A110" },
-    { name: "Sam Okonkwo", car: "Lotus Emira" },
-    { name: "Greg Lawson", car: "Caterham 420R" },
-    { name: "Marcus Reid", car: "Audi RS4 Avant" },
-    { name: "Dan Whitlock", car: "Toyota GR Yaris" },
-    { name: "Henry Cole", car: "Jaguar F-Type R" },
-    { name: "Olu Adeyemi", car: "BMW M3 Touring" },
-    { name: "Rich Tan", car: "Honda Civic Type R" },
-    { name: "Andrew Mure", car: "Morgan Plus Four" },
-    { name: "Joe Bannerman", car: "Ford Focus RS" },
-    { name: "Niall Kerr", car: "Mazda MX-5" },
-    { name: "Steve Pardoe", car: "Mercedes-AMG A45 S" },
-    { name: "Cal Trevena", car: "Subaru Impreza WRX STI" },
-    { name: "Faye Goring", car: "Mini John Cooper Works" },
-    { name: "Patrick Salt", car: "Nissan 350Z" },
-    { name: "Lewis Carragher", car: "Ford Mustang GT" },
-    { name: "Sanjay Mehta", car: "Audi TT RS" },
-    { name: "Rory Maddox", car: "Vauxhall VX220" },
+    { name: "Michael P", car: "BMW M2 (G82)" },
   ];
 
   function pad2(n) { return String(n).padStart(2, "0"); }
