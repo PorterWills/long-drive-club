@@ -331,7 +331,20 @@ section { scroll-margin-top: 80px; }
 }
 
 /* ---- Hero (split / livery) ---- */
-.hero { background: var(--ldc-green); }
+.hero { position: relative; overflow: hidden; background: var(--ldc-green); }
+/* Animated "Slipstream" livery — fills the hero behind all content.
+   Falls back to the flat green above until the canvas paints. */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+/* Keep existing hero content above the animated background. */
+.hero > .col,
+.hero > .stripe { position: relative; z-index: 1; }
 .hero-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
