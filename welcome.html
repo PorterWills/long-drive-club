@@ -31,7 +31,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=29">
+<link rel="stylesheet" href="styles.css?v=30">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -73,6 +73,7 @@
 
   <!-- 2. The drive, as character — the headline of the whole page. -->
   <section id="drive" class="welcome-drive ldc-dark">
+    <canvas class="hero-bg" id="drive-bg" aria-hidden="true"></canvas>
     <div class="stripe stripe--thin" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="col">
       <div class="ldc-rise">
@@ -398,5 +399,12 @@
 </div>
 
 <script src="welcome.js?v=3"></script>
+<script src="slipstream.js?v=1"></script>
+<script>
+  (function () {
+    var canvas = document.getElementById("drive-bg");
+    if (canvas && window.LDCSlipstream) LDCSlipstream.init(canvas, { intensity: 32 });
+  })();
+</script>
 </body>
 </html>

@@ -959,7 +959,10 @@ html.no-js .ldc-rise { opacity: 1; transform: none; }
 }
 
 /* 2. The drive, as character — the headline of the whole page. */
-.welcome-drive { background: var(--ldc-green); }
+.welcome-drive { position: relative; overflow: hidden; background: var(--ldc-green); }
+/* Keep the drive section's content above the animated Slipstream background. */
+.welcome-drive > .col,
+.welcome-drive > .stripe { position: relative; z-index: 1; }
 .welcome-drive .col { padding-top: 84px; padding-bottom: 92px; }
 .drive-headline {
   font-size: clamp(50px, 8.4vw, 116px);
