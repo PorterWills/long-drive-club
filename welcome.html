@@ -399,11 +399,17 @@
 </div>
 
 <script src="welcome.js?v=3"></script>
-<script src="nightfall.js?v=1"></script>
+<script src="nightfall.js?v=2"></script>
 <script>
   (function () {
     var canvas = document.getElementById("drive-bg");
-    if (canvas && window.LDCNightfall) LDCNightfall.init(canvas, { intensity: 4 });
+    if (!canvas || !window.LDCNightfall) return;
+    // On narrow screens the slow-drifting redline can sit across the stacked
+    // text column, so park it to the left; desktop keeps the default field.
+    var mq = window.matchMedia("(max-width: 768px)");
+    var fx = LDCNightfall.init(canvas, { intensity: 4, alignRedline: mq.matches ? 0.06 : null });
+    var onMq = function (e) { fx.set({ alignRedline: e.matches ? 0.06 : null }); };
+    if (mq.addEventListener) mq.addEventListener("change", onMq); else mq.addListener(onMq);
   })();
 </script>
 </body>
