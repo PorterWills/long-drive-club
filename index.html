@@ -475,8 +475,8 @@
     // On narrow screens the slow-drifting redline can sit across the stacked
     // text column, so park it to the left; desktop keeps the default field.
     var mq = window.matchMedia("(max-width: 768px)");
-    var fx = LDCNightfall.init(canvas, { intensity: 4, alignRedline: mq.matches ? 0.9 : null });
-    var onMq = function (e) { fx.set({ alignRedline: e.matches ? 0.9 : null }); };
+    var fx = LDCNightfall.init(canvas, { intensity: 4, alignRedline: mq.matches ? 1.1 : null });
+    var onMq = function (e) { fx.set({ alignRedline: e.matches ? 1.1 : null }); };
     if (mq.addEventListener) mq.addEventListener("change", onMq); else mq.addListener(onMq);
   })();
 </script>
