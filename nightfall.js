@@ -65,13 +65,17 @@
     parallax: true,             // bands shift slightly with the pointer
     parallaxAmount: 22,         // px the field translates at the pointer edge
     respectReducedMotion: true, // freeze auto-drift if user prefers reduced motion
-    pauseWhenOffscreen: true    // stop the rAF loop when the canvas is scrolled away
+    pauseWhenOffscreen: true,   // stop the rAF loop when the canvas is scrolled away
+    alignRedline: null          // null = off; else 0..1 — park the redline band at
+                                // this horizontal fraction of the canvas (mid-height)
+                                // on first paint, so it clears narrow text columns.
   };
 
   function buildLivery() {
-    var stripes = [], period = 0;
+    var stripes = [], period = 0, redlineLocal = null;
     for (var i = 0; i < SEQUENCE.length; i++) {
       var s = SEQUENCE[i];
+      if (s[0] === 'redline') redlineLocal = period + s[1] / 2; // band centre within a period
       stripes.push({
         col: PALETTE[s[0]],
         wd: s[1],
@@ -80,7 +84,7 @@
       });
       period += s[1];
     }
-    return { stripes: stripes, period: period };
+    return { stripes: stripes, period: period, redlineLocal: redlineLocal };
   }
 
   function init(canvas, options) {
@@ -146,7 +150,17 @@
                     H / 2 + (opt.parallax ? mouse.y * (opt.parallaxAmount * 0.64) : 0));
       ctx.rotate(angle);
       var stripes = livery.stripes, period = livery.period;
-      var offset = (t * 30 * mo) % period; // 30 px/s reference drift
+      // Optionally park the redline band at a chosen horizontal fraction (taken at
+      // mid-height) so it starts clear of a narrow text column. Derived from the
+      // live geometry, so it self-adjusts to any canvas height; the slow drift
+      // then carries it from there.
+      var phase = 0;
+      if (opt.alignRedline != null && livery.redlineLocal != null) {
+        var a0 = opt.angleDeg * Math.PI / 180;
+        var desired = (opt.alignRedline * W - W / 2) * Math.cos(a0);
+        phase = ((livery.redlineLocal - R - desired) % period + period) % period;
+      }
+      var offset = (t * 30 * mo + phase) % period; // 30 px/s reference drift
       var x = -R - (offset % period);
       while (x < R) {
         for (var i = 0; i < stripes.length; i++) {
