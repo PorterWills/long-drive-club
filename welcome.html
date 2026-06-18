@@ -73,7 +73,6 @@
 
   <!-- 2. The drive, as character — the headline of the whole page. -->
   <section id="drive" class="welcome-drive ldc-dark">
-    <canvas class="hero-bg" id="drive-bg" aria-hidden="true"></canvas>
     <div class="stripe stripe--thin" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="col">
       <div class="ldc-rise">
@@ -399,18 +398,5 @@
 </div>
 
 <script src="welcome.js?v=3"></script>
-<script src="nightfall.js?v=2"></script>
-<script>
-  (function () {
-    var canvas = document.getElementById("drive-bg");
-    if (!canvas || !window.LDCNightfall) return;
-    // On narrow screens the slow-drifting redline can sit across the stacked
-    // text column, so park it to the left; desktop keeps the default field.
-    var mq = window.matchMedia("(max-width: 768px)");
-    var fx = LDCNightfall.init(canvas, { intensity: 3, alignRedline: mq.matches ? 1.1 : null });
-    var onMq = function (e) { fx.set({ alignRedline: e.matches ? 1.1 : null }); };
-    if (mq.addEventListener) mq.addEventListener("change", onMq); else mq.addListener(onMq);
-  })();
-</script>
 </body>
 </html>

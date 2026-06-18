@@ -121,7 +121,6 @@
 
   <!-- Hero — split, racing green, photo right with redline edge -->
   <section id="top" class="hero ldc-dark">
-    <canvas class="hero-bg" id="hero-bg" aria-hidden="true"></canvas>
     <div class="col">
       <div class="hero-grid">
         <div class="hero-copy">
@@ -467,18 +466,5 @@
 </div>
 
 <script src="app.js?v=20"></script>
-<script src="nightfall.js?v=2"></script>
-<script>
-  (function () {
-    var canvas = document.getElementById("hero-bg");
-    if (!canvas || !window.LDCNightfall) return;
-    // On narrow screens the slow-drifting redline can sit across the stacked
-    // text column, so park it to the left; desktop keeps the default field.
-    var mq = window.matchMedia("(max-width: 768px)");
-    var fx = LDCNightfall.init(canvas, { intensity: 3, alignRedline: mq.matches ? 1.1 : null });
-    var onMq = function (e) { fx.set({ alignRedline: e.matches ? 1.1 : null }); };
-    if (mq.addEventListener) mq.addEventListener("change", onMq); else mq.addListener(onMq);
-  })();
-</script>
 </body>
 </html>
