@@ -570,7 +570,7 @@
       // not real security; see README.) On failure, surface the error.
       if (ok) {
         try { sessionStorage.setItem("ldc-gate", "open"); } catch (e) {}
-        window.location.href = "welcome.html";
+        window.location.href = "/welcome";
         return;
       }
       if (unlockBtn) unlockBtn.disabled = false;

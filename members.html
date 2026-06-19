@@ -17,7 +17,7 @@
         || location.hash.indexOf("access") !== -1;
       if (ok) sessionStorage.setItem("ldc-member", "open");
     } catch (e) { ok = true; } // storage blocked — don't lock anyone out
-    if (!ok) location.replace("index.html#gate");
+    if (!ok) location.replace("/#gate");
   })();
 </script>
 <title>Long Drive Club | Drive 01</title>
@@ -49,7 +49,7 @@
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
   <header class="site-header ldc-dark">
     <div class="col">
-      <a href="index.html" class="wordmark-link" aria-label="Long Drive Club — home">
+      <a href="/" class="wordmark-link" aria-label="Long Drive Club — home">
         <span class="wordmark" style="font-size:16px">Long Drive Club</span>
       </a>
       <nav class="member-nav">
