@@ -12,7 +12,7 @@
     var ok = false;
     try { ok = sessionStorage.getItem("ldc-gate") === "open"; }
     catch (e) { ok = true; } // storage blocked — don't lock anyone out
-    if (!ok) location.replace("index.html#gate");
+    if (!ok) location.replace("/#gate");
   })();
 </script>
 <title>Long Drive Club | You're in</title>
@@ -41,7 +41,7 @@
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
   <header class="site-header ldc-dark">
     <div class="col">
-      <a href="index.html" class="wordmark-link" aria-label="Long Drive Club — home">
+      <a href="/" class="wordmark-link" aria-label="Long Drive Club — home">
         <span class="wordmark" style="font-size:16px">Long Drive Club</span>
       </a>
       <nav>
@@ -387,7 +387,7 @@
       <label class="check">
         <input type="checkbox" id="terms-agree-check">
         <span class="box" aria-hidden="true"></span>
-        <span>I have read and agree to the Terms &amp; Conditions and the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+        <span>I have read and agree to the Terms &amp; Conditions and the <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span>
       </label>
       <div class="modal-actions">
         <button type="button" class="btn btn--md btn--ghost" data-close><span class="label">Cancel</span></button>
