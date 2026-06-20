@@ -242,6 +242,46 @@
   var formError = document.getElementById("form-error");
   var submitBtn = document.getElementById("submit-btn");
 
+  /* ---- Meta Pixel funnel events ----------------------------------------
+     Silent, browser-only signals that map the steps toward applying so the
+     drop-off is visible in Events Manager. No personal data is sent, and
+     each step fires at most once per page load. Guarded on window.fbq so
+     nothing breaks if the pixel is blocked.
+       ViewContent      -> visitor scrolled far enough to see the entry sheet
+       InitiateCheckout -> visitor started filling the form (first field touch)
+       Lead             -> visitor submitted (fired in the submit handler) */
+  function trackPixel(name) {
+    if (typeof window.fbq === "function") window.fbq("track", name);
+  }
+  (function () {
+    var sheet = document.getElementById("apply-sheet");
+    // Step: saw the form. Fire once when the entry sheet enters the viewport.
+    if (sheet && "IntersectionObserver" in window) {
+      var seen = false;
+      var vio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting || seen) return;
+          seen = true;
+          trackPixel("ViewContent");
+          vio.disconnect();
+        });
+      }, { threshold: 0.3 });
+      vio.observe(sheet);
+    } else if (sheet) {
+      trackPixel("ViewContent");
+    }
+    // Step: started the form. Fire once on the first real interaction with
+    // any field inside the entry sheet.
+    if (form) {
+      var started = false;
+      form.addEventListener("focusin", function () {
+        if (started) return;
+        started = true;
+        trackPixel("InitiateCheckout");
+      });
+    }
+  })();
+
   function setFieldError(name, message) {
     var el = form.querySelector('[data-error-for="' + name + '"]');
     var hint = form.querySelector('[data-hint-for="' + name + '"]');
