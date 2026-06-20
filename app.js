@@ -388,6 +388,12 @@
     submitBtn.setAttribute("aria-busy", "true");
 
     saveApplication(f).then(function () {
+      // Meta Pixel: a completed application is our one real conversion.
+      // "Lead" is Meta's standard event for an interest form being submitted.
+      // No personal data is passed (name/email/phone stay out of Meta) —
+      // see the privacy policy. Guarded so the form still works if the pixel
+      // is blocked or hasn't loaded.
+      if (typeof window.fbq === "function") window.fbq("track", "Lead");
       showSubmitted(f.name);
     }).catch(function () {
       submitBtn.disabled = false;
