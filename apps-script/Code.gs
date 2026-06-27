@@ -3,12 +3,12 @@
  * Receives entry-form submissions from longdriveclub.com and keeps each one in
  * a Google Sheet. The form is a two-step flow, so submissions arrive in stages:
  *
- *   stage "step1"  -> name, email, phone and the car. Upserts the lead (keyed
- *                     on email) at status "step1_complete" and mints a recovery
+ *   stage "step1"  -> name, email and the car. Upserts the lead (keyed on
+ *                     email) at status "step1_complete" and mints a recovery
  *                     token. This is a real, contactable lead even if step two
  *                     never arrives.
- *   stage "step2"  -> the golf and the day. Merges into the same row, marks it
- *                     "complete", and sends the "application received" email.
+ *   stage "step2"  -> phone, the golf and the day. Merges into the same row,
+ *                     marks it "complete", and sends the "received" email.
  *   (no stage)     -> a whole-form submission, kept for backwards compatibility.
  *
  * A lead left at "step1_complete" past a delay gets a recovery email (see
@@ -127,10 +127,10 @@ function upsertStep1(data) {
   if (!email) throw new Error('step1 without an email');
 
   var row = findRowByEmail(sheet, headers, email);
+  // Phone is collected in step two now, so step one never carries it.
   var fields = {
     name: data.name || '',
     email: email,
-    phone: data.phone || '',
     make: data.make || '',
     model: data.model || '',
     car: data.car || ''
@@ -167,6 +167,7 @@ function mergeStep2(data) {
             (email && findRowByEmail(sheet, headers, email)) || null;
 
   var fields = {
+    phone: data.phone || '',
     work: data.work || '',
     handicap: data.handicap || '',
     base: data.base || '',

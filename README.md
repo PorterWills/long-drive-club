@@ -35,13 +35,13 @@ Propagation is usually minutes, occasionally up to a day.
 
 ## Where applications go
 
-The entry sheet is a two-step flow. Step one (name, email, phone, car)
-POSTs to the deployed Google Apps Script web app (`APPS_SCRIPT_URL` near
-the top of `app.js`) and is saved immediately as a `step1_complete` lead,
-keyed on email — so a drop-off before step two is still a contactable,
-recoverable lead in the sheet. Step two (the golf and the day) POSTs
-again and merges into that same row, marking it `complete` and sending
-the applicant the confirmation email. Because Apps Script web apps don't
+The entry sheet is a two-step flow. Step one (name, email, car) POSTs to
+the deployed Google Apps Script web app (`APPS_SCRIPT_URL` near the top
+of `app.js`) and is saved immediately as a `step1_complete` lead, keyed
+on email — so a drop-off before step two is still a contactable,
+recoverable lead in the sheet. Step two (phone, the golf and the day)
+POSTs again and merges into that same row, marking it `complete` and
+sending the applicant the confirmation email. Because Apps Script web apps don't
 return CORS headers, the form posts with `mode: "no-cors"` and a
 plain-text body and treats a resolved request as success. To point the
 form at a different deployment, update `APPS_SCRIPT_URL`.

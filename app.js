@@ -343,7 +343,7 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   }
 
-  /* ---- Car make/model picker (field 04) --------------------------------
+  /* ---- Car make/model picker (field 03) --------------------------------
      Two linked selects. Make populates from the local car-makes-models.json
      (read once, no live API at runtime); choosing a make fills and enables
      the model select. carCtl.apply lets a recovered lead drop its make/model
@@ -492,14 +492,13 @@
     return {
       name: step1Form.elements.name.value,
       email: step1Form.elements.email.value,
-      phone: step1Form.elements.phone.value,
       make: make,
       model: model,
       car: [make, model].filter(Boolean).join(" ")
     };
   }
 
-  // Field 04 is satisfied by a make plus, when the model select offers any,
+  // Field 03 is satisfied by a make plus, when the model select offers any,
   // a model. Makes with no model list (or the typed fallback) need the make
   // alone.
   function validateCar() {
@@ -525,22 +524,29 @@
       if (!emailOk(ev)) { setFieldError("email", "That email doesn't look right."); return false; }
       setFieldError("email"); return true;
     }
-    if (name === "phone") {
-      var pv = step1Form.elements.phone.value;
-      if (!pv.trim()) { setFieldError("phone", "A number, in case the day moves."); return false; }
-      if (!phoneOk(pv)) { setFieldError("phone", "That number doesn't look right."); return false; }
-      setFieldError("phone"); return true;
-    }
     if (name === "car") return validateCar();
     return true;
   }
 
+  // Phone moved to step two (keeping step one as light as possible), but stays
+  // required — the committee reads it on every completed application.
+  function validatePhone() {
+    var el = step2Form.elements.phone;
+    var pv = el ? el.value : "";
+    if (!pv.trim()) { setFieldError("phone", "A number, in case the day moves."); return false; }
+    if (!phoneOk(pv)) { setFieldError("phone", "That number doesn't look right."); return false; }
+    setFieldError("phone"); return true;
+  }
+
   // Inline validation on blur, not only on submit. Only nags a field the
   // visitor has already left, and only once it's in an error state.
-  ["name", "email", "phone"].forEach(function (n) {
+  ["name", "email"].forEach(function (n) {
     var el = step1Form.elements[n];
     if (el) el.addEventListener("blur", function () { validateField(n); });
   });
+  if (step2Form.elements.phone) {
+    step2Form.elements.phone.addEventListener("blur", validatePhone);
+  }
   // Re-check the car only to clear a standing error as the selection completes
   // — never to raise the "and the model" nag mid-pick. Submit does the asserting.
   step1Form.addEventListener("change", function (e) {
@@ -551,7 +557,7 @@
 
   step1Form.addEventListener("submit", function (e) {
     e.preventDefault();
-    var ok = ["name", "email", "phone", "car"]
+    var ok = ["name", "email", "car"]
       .map(function (n) { return validateField(n); })
       .every(Boolean);
     if (!ok) return;
@@ -564,7 +570,7 @@
     saveStep1(f).then(function () {
       // The lead now exists server-side at step1_complete: a real, recoverable
       // conversion. "Lead" is Meta's standard event for an interest form sent.
-      // No personal data is passed (name/email/phone stay out of Meta).
+      // No personal data is passed (name and email stay out of Meta).
       trackPixel("Lead");
       storeLead({ email: f.email.trim(), name: f.name, make: f.make, model: f.model, car: f.car });
       step1Submit.disabled = false;
@@ -635,6 +641,7 @@
   function collectStep2() {
     var loc = resolveBase(step2Form);
     return {
+      phone: step2Form.elements.phone.value,
       work: step2Form.elements.work.value,
       handicap: formatHandicap(parseFloat(step2Form.elements.handicap_value.value)),
       base: loc.base,
@@ -648,6 +655,7 @@
 
   step2Form.addEventListener("submit", function (e) {
     e.preventDefault();
+    if (!validatePhone()) return;
     var f = collectStep2();
     var lead = readLead();
 
@@ -693,7 +701,6 @@
       stage: "step1",
       name: f.name.trim(),
       email: f.email.trim(),
-      phone: f.phone.trim(),
       make: f.make,
       model: f.model,
       car: f.car.trim()
@@ -705,6 +712,7 @@
       stage: "step2",
       email: (lead.email || "").trim(),
       token: lead.token || "",
+      phone: f.phone.trim(),
       work: f.work.trim(),
       handicap: f.handicap,
       base: f.base,
@@ -746,7 +754,8 @@
       if (!lead) return; // token unknown or offline: leave them on step one
       if (step1Form.elements.name) step1Form.elements.name.value = lead.name || "";
       if (step1Form.elements.email) step1Form.elements.email.value = lead.email || "";
-      if (step1Form.elements.phone) step1Form.elements.phone.value = lead.phone || "";
+      // Phone lives in step two now; prefill it there if the lead already has one.
+      if (step2Form.elements.phone) step2Form.elements.phone.value = lead.phone || "";
       // Make/model land in the linked selects once they're built.
       carCtl.prefill = { make: lead.make || "", model: lead.model || "" };
       if (carCtl.apply) carCtl.apply(lead.make || "", lead.model || "");
