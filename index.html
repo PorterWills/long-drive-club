@@ -110,7 +110,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=39">
+<link rel="stylesheet" href="styles.css?v=40">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -206,18 +206,27 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
     <div class="stripe stripe--thin" aria-hidden="true"><span></span><span></span><span></span></div>
   </section>
 
-  <!-- The entry sheet -->
+  <!-- The entry sheet — two steps, with the lead saved after step one -->
   <section id="apply" class="apply">
     <div class="col">
 
-      <div class="sheet" id="apply-sheet">
+      <!-- Polite live region: announces the bridge and confirmation to
+           screen readers when the flow changes state. -->
+      <p class="sr-only" id="flow-live" aria-live="polite" role="status"></p>
+
+      <!-- ============ STEP 1 — you and the car ============ -->
+      <div class="sheet flow-state" id="step1" data-state="step1">
         <div class="ldc-rise">
-          <p class="ldc-redtick">Request a place</p>
-          <h2 class="ldc-display">The entry sheet</h2>
-          <p class="ldc-voice lede">No ticket link. You ask, we read, we choose. Tell us enough to picture you on the day.</p>
+          <div class="progress" aria-hidden="true">
+            <span class="progress-seg is-on"></span>
+            <span class="progress-seg"></span>
+          </div>
+          <p class="ldc-redtick step-eyebrow">Step 1 of 2</p>
+          <h2 class="ldc-display" id="step1-head" tabindex="-1">Request a place</h2>
+          <p class="ldc-voice lede">The entry sheet. The car first. Enough that we can write back.</p>
         </div>
 
-        <form id="entry-form" novalidate>
+        <form id="step1-form" novalidate>
           <div class="field ldc-rise">
             <label class="field-label" for="f-name">
               <span class="ldc-numeral field-num" aria-hidden="true">01</span>
@@ -225,7 +234,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             </label>
             <input id="f-name" name="name" type="text" autocomplete="name">
             <span class="ldc-voice hint" data-hint-for="name">As it'll read on the sheet.</span>
-            <p class="field-error" data-error-for="name"></p>
+            <p class="field-error" data-error-for="name"><span class="fe-ico" aria-hidden="true"></span><span class="fe-txt"></span></p>
           </div>
 
           <div class="field ldc-rise" data-delay="40">
@@ -234,8 +243,8 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
               <span class="field-name">Email</span>
             </label>
             <input id="f-email" name="email" type="email" autocomplete="email">
-            <span class="ldc-voice hint" data-hint-for="email">Where the password would land.</span>
-            <p class="field-error" data-error-for="email"></p>
+            <span class="ldc-voice hint" data-hint-for="email">Where the answer would land.</span>
+            <p class="field-error" data-error-for="email"><span class="fe-ico" aria-hidden="true"></span><span class="fe-txt"></span></p>
           </div>
 
           <div class="field ldc-rise" data-delay="60">
@@ -245,21 +254,12 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             </label>
             <input id="f-phone" name="phone" type="tel" autocomplete="tel">
             <span class="ldc-voice hint" data-hint-for="phone">In case the day moves.</span>
-            <p class="field-error" data-error-for="phone"></p>
+            <p class="field-error" data-error-for="phone"><span class="fe-ico" aria-hidden="true"></span><span class="fe-txt"></span></p>
           </div>
 
           <div class="field ldc-rise" data-delay="80">
-            <label class="field-label" for="f-work">
-              <span class="ldc-numeral field-num" aria-hidden="true">04</span>
-              <span class="field-name">What you do</span>
-            </label>
-            <input id="f-work" name="work" type="text">
-            <span class="ldc-voice hint">Roughly. We're curious, not checking.</span>
-          </div>
-
-          <div class="field ldc-rise" data-delay="100">
             <span class="field-label">
-              <span class="ldc-numeral field-num" aria-hidden="true">05</span>
+              <span class="ldc-numeral field-num" aria-hidden="true">04</span>
               <span class="field-name">What you drive</span>
             </span>
             <div class="car-picker">
@@ -274,10 +274,59 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
                 </select>
               </span>
             </div>
-            <span class="ldc-voice hint">The one you'd bring.</span>
+            <span class="ldc-voice hint" data-hint-for="car">Make and model. The one you'd bring.</span>
+            <p class="field-error" data-error-for="car"><span class="fe-ico" aria-hidden="true"></span><span class="fe-txt"></span></p>
           </div>
 
-          <div class="field ldc-rise" data-delay="110">
+          <div class="form-foot ldc-rise" data-delay="120">
+            <div class="send-row">
+              <button type="submit" class="btn btn--lg btn--green" id="step1-submit"><span class="tick" aria-hidden="true"></span><span class="label">Request a place</span></button>
+              <span class="ldc-voice aside">We'll only write if it's a yes, or a not yet.</span>
+            </div>
+            <p class="form-error" id="step1-error" role="alert"></p>
+          </div>
+        </form>
+      </div>
+
+      <!-- ============ BRIDGE — the micro-commitment ============ -->
+      <div class="sheet flow-state bridge" id="bridge" data-state="bridge" hidden>
+        <div class="progress" aria-hidden="true">
+          <span class="progress-seg is-on"></span>
+          <span class="progress-seg"></span>
+        </div>
+        <h2 class="ldc-display" id="bridge-head" tabindex="-1">Your name's down.</h2>
+        <p class="ldc-voice lede">We've got enough to write back. A few more and we can picture you on the day.</p>
+        <div class="bridge-actions">
+          <button type="button" class="btn btn--lg btn--green" id="bridge-continue"><span class="tick" aria-hidden="true"></span><span class="label">Finish the sheet</span></button>
+          <button type="button" class="bridge-later" id="bridge-later">Do the rest later</button>
+        </div>
+      </div>
+
+      <!-- ============ STEP 2 — the golf and the day ============ -->
+      <div class="sheet flow-state" id="step2" data-state="step2" hidden>
+        <div class="ldc-rise">
+          <div class="progress" aria-hidden="true">
+            <span class="progress-seg is-on"></span>
+            <span class="progress-seg is-on"></span>
+          </div>
+          <button type="button" class="step-back" id="step2-back"><span aria-hidden="true">←</span> Back</button>
+          <p class="ldc-redtick step-eyebrow">Step 2 of 2</p>
+          <h2 class="ldc-display" id="step2-head" tabindex="-1">The rest of the sheet</h2>
+          <p class="ldc-voice lede">Now the golf. And how you'd take the day.</p>
+          <p class="ldc-voice car-echo" id="car-echo" hidden></p>
+        </div>
+
+        <form id="step2-form" novalidate>
+          <div class="field ldc-rise">
+            <label class="field-label" for="f-work">
+              <span class="ldc-numeral field-num" aria-hidden="true">05</span>
+              <span class="field-name">What you do</span>
+            </label>
+            <input id="f-work" name="work" type="text">
+            <span class="ldc-voice hint">Roughly. We're curious, not checking.</span>
+          </div>
+
+          <div class="field ldc-rise" data-delay="40">
             <div class="field-label">
               <span class="ldc-numeral field-num" aria-hidden="true">06</span>
               <span class="field-name">Handicap</span>
@@ -295,7 +344,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             <div class="hcp-ticks" id="hcp-ticks" aria-hidden="true"></div>
           </div>
 
-          <div class="field ldc-rise" data-delay="120">
+          <div class="field ldc-rise" data-delay="60">
             <label class="field-label" for="f-play">
               <span class="ldc-numeral field-num" aria-hidden="true">07</span>
               <span class="field-name">How often you play</span>
@@ -311,7 +360,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             </span>
           </div>
 
-          <div class="field ldc-rise" data-delay="140">
+          <div class="field ldc-rise" data-delay="80">
             <label class="field-label" for="f-party">
               <span class="ldc-numeral field-num" aria-hidden="true">08</span>
               <span class="field-name">On your own, or sharing a car</span>
@@ -326,7 +375,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             <span class="ldc-voice hint">Anyone in the car with you is a player too, with their own application and their own place.</span>
           </div>
 
-          <div class="field ldc-rise" data-delay="150">
+          <div class="field ldc-rise" data-delay="100">
             <label class="field-label" for="f-base">
               <span class="ldc-numeral field-num" aria-hidden="true">09</span>
               <span class="field-name">Where you're based</span>
@@ -361,7 +410,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             </div>
           </div>
 
-          <fieldset class="field day-group ldc-rise" data-delay="160" style="border:none;padding:0;margin:0">
+          <fieldset class="field day-group ldc-rise" data-delay="120" style="border:none;padding:0;margin:0">
             <legend class="field-label" style="padding:0">
               <span class="ldc-numeral field-num" aria-hidden="true">10</span>
               <span class="field-name">Which days interest you</span>
@@ -376,40 +425,24 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
             </span>
           </fieldset>
 
-          <div class="form-foot ldc-rise" data-delay="180">
+          <div class="form-foot ldc-rise" data-delay="140">
             <label class="check"><input type="checkbox" name="consent"><span class="box" aria-hidden="true"></span><span>Keep me on the list for future drives.</span></label>
             <div class="send-row">
-              <button type="submit" class="btn btn--lg btn--green" id="submit-btn"><span class="tick" aria-hidden="true"></span><span class="label">Request a place</span></button>
-              <span class="ldc-voice aside">We'll only write if it's a yes, or a not yet.</span>
+              <button type="submit" class="btn btn--lg btn--green" id="step2-submit"><span class="tick" aria-hidden="true"></span><span class="label">That's the sheet</span></button>
+              <span class="ldc-voice aside">We read every one. We'll write either way.</span>
             </div>
-            <p class="form-error" id="form-error" role="alert"></p>
+            <p class="form-error" id="step2-error" role="alert"></p>
           </div>
         </form>
       </div>
 
-      <!-- Submitted state -->
-      <div class="sheet submitted" id="apply-done" hidden>
+      <!-- ============ CONFIRMATION ============ -->
+      <div class="sheet flow-state submitted" id="confirmation" data-state="confirmation" hidden>
         <div>
           <p class="ldc-eyebrow" style="margin:0 0 12px">Application in</p>
-          <h2 class="ldc-display" id="done-headline">You're on the list</h2>
-          <p class="ldc-voice lede">If you're in, a password lands in your inbox. That's what opens the place.</p>
+          <h2 class="ldc-display" id="confirm-head" tabindex="-1">It's with the committee.</h2>
+          <p class="ldc-voice lede">20 places. We read every sheet. A yes, or a not yet, either way you'll hear from us.</p>
         </div>
-        <div class="steps">
-          <div class="step">
-            <span class="ldc-numeral n">01</span>
-            <div><div class="ldc-display t">20 places</div><div class="d">More people want one than that.</div></div>
-          </div>
-          <div class="step">
-            <span class="ldc-numeral n">02</span>
-            <div><div class="ldc-display t">48 hours</div><div class="d">That's how long until you hear.</div></div>
-          </div>
-          <div class="step">
-            <span class="ldc-numeral n">03</span>
-            <div><div class="ldc-display t">One password</div><div class="d">Yours, once you're in.</div></div>
-          </div>
-        </div>
-        <p class="ldc-body keep">Not this time isn't never. We'll keep your details for the next drive.</p>
-        <a class="to-gate" href="#gate">Already have a password? →</a>
       </div>
 
     </div>
@@ -482,6 +515,6 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
 </div>
 
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>

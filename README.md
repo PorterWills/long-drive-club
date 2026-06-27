@@ -35,13 +35,34 @@ Propagation is usually minutes, occasionally up to a day.
 
 ## Where applications go
 
-The entry sheet POSTs each application to a deployed Google Apps Script
-web app (the `APPS_SCRIPT_URL` near the top of `app.js`). The script
-saves the submission to a Google Sheet and sends the applicant a
-confirmation email. Because Apps Script web apps don't return CORS
-headers, the form posts with `mode: "no-cors"` and a plain-text body and
-treats a resolved request as success. To point the form at a different
-deployment, update `APPS_SCRIPT_URL`.
+The entry sheet is a two-step flow. Step one (name, email, phone, car)
+POSTs to the deployed Google Apps Script web app (`APPS_SCRIPT_URL` near
+the top of `app.js`) and is saved immediately as a `step1_complete` lead,
+keyed on email — so a drop-off before step two is still a contactable,
+recoverable lead in the sheet. Step two (the golf and the day) POSTs
+again and merges into that same row, marking it `complete` and sending
+the applicant the confirmation email. Because Apps Script web apps don't
+return CORS headers, the form posts with `mode: "no-cors"` and a
+plain-text body and treats a resolved request as success. To point the
+form at a different deployment, update `APPS_SCRIPT_URL`.
+
+### Recovery email
+
+A lead left at `step1_complete` past a delay gets a recovery email (one
+nudge at `RECOVERY_DELAY_1_HOURS`, a final one at
+`RECOVERY_DELAY_2_HOURS`, both in `apps-script/Code.gs`). Reaching
+`complete` cancels it. The email's **Finish the sheet** button links to
+`/?recover=TOKEN`; the site reads the step-one data back through the
+Apps Script `doGet` recover endpoint and drops the applicant into step
+two with name, email, phone and car already loaded — no re-entry.
+
+### Apps Script setup
+
+After deploying `apps-script/Code.gs`, run these once each by hand
+(select the function ▸ Run): `setupColumns` (adds the new columns to an
+existing sheet), `installApprovalTrigger` (the status-column email
+trigger), and `installRecoveryTrigger` (the timed recovery-email sweep).
+Re-deploy a new version after any edit.
 
 ## Changing the gate password
 

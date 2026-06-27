@@ -1,108 +1,226 @@
 /* Long Drive Club — application backend.
  *
- * Receives entry-form submissions from longdriveclub.com, appends every one
- * to a Google Sheet, then sends the applicant the "application received"
- * email through Resend.
+ * Receives entry-form submissions from longdriveclub.com and keeps each one in
+ * a Google Sheet. The form is a two-step flow, so submissions arrive in stages:
  *
- * It also reacts to the owner editing the sheet: typing a word in the
- * "status" column triggers the matching email. Currently wired:
+ *   stage "step1"  -> name, email, phone and the car. Upserts the lead (keyed
+ *                     on email) at status "step1_complete" and mints a recovery
+ *                     token. This is a real, contactable lead even if step two
+ *                     never arrives.
+ *   stage "step2"  -> the golf and the day. Merges into the same row, marks it
+ *                     "complete", and sends the "application received" email.
+ *   (no stage)     -> a whole-form submission, kept for backwards compatibility.
+ *
+ * A lead left at "step1_complete" past a delay gets a recovery email (see
+ * sendRecoveryEmails); reaching "complete" cancels it. The recovery email links
+ * back to /?recover=TOKEN, and the site reads the step-one data back through the
+ * doGet "recover" endpoint so the applicant lands in step two with no re-entry.
+ *
+ * It also reacts to the owner editing the sheet: typing a word in the "status"
+ * column triggers the matching email. Currently wired:
  *   approved  -> generates a unique, car-based password and sends the
  *                "You're in" email (email_application_approved).
- * (paid / declined / the nudges come next.)
  *
- * Set the three values in Script Properties (File ▸ Project Settings ▸
- * Script Properties), NOT inline — that keeps the Resend key out of the code:
+ * Set these in Script Properties (File ▸ Project Settings ▸ Script Properties),
+ * NOT inline — that keeps the Resend key out of the code:
  *   SHEET_ID         the spreadsheet id (from its URL)
  *   RESEND_API_KEY   your Resend API key (starts re_...)
  *   FROM             the from line, e.g.  Long Drive Club <hello@longdriveclub.com>
  *
- * Re-deploy (Deploy ▸ Manage deployments ▸ edit ▸ Version: New) after any edit.
+ * Run setupColumns once, then installApprovalTrigger and installRecoveryTrigger
+ * once each, by hand (select the function ▸ Run). Re-deploy (Deploy ▸ Manage
+ * deployments ▸ edit ▸ Version: New) after any edit.
  */
 
 var SHEET_TAB = 'Applications';
 
+// Where the recovery email's "Finish the sheet" link points.
+var SITE_URL = 'https://longdriveclub.com';
+
+// Recovery email timing, in hours from the step-one submit. First nudge, then a
+// second and final one if the lead is still partial. (Confirm with Michael.)
+var RECOVERY_DELAY_1_HOURS = 1;
+var RECOVERY_DELAY_2_HOURS = 72;
+
 // Where the unsubscribe link in the email points. A mailto keeps it dependency-free.
 var UNSUBSCRIBE_URL = 'mailto:hello@longdriveclub.com?subject=Unsubscribe';
 
-// Column order written to the sheet. The header row is created automatically.
-// The first ten are filled by the form; the last three are filled by the
-// owner / the approval flow.
-var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'party', 'days', 'consent',
-               'status', 'password', 'approved_at'];
+// Column order written to fresh sheets. Existing sheets keep their order; any
+// columns below that they're missing get appended (see ensureColumns). All
+// reads and writes go through the header map, never fixed indexes, so order
+// never matters at runtime.
+//   form fields:   timestamp..days, consent
+//   flow bookkeeping: status, token, step1_at, completed_at, recovery_sent
+//   approval flow:    password, approved_at
+var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'make', 'model', 'car', 'work',
+               'handicap', 'play', 'party', 'base', 'city', 'days', 'consent',
+               'status', 'token', 'step1_at', 'completed_at', 'recovery_sent',
+               'password', 'approved_at'];
 
 function doPost(e) {
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000); // serialise the read-then-write upsert
+  } catch (lockErr) {
+    return jsonOut({ ok: false, error: 'busy' });
+  }
   try {
     var data = JSON.parse(e.postData.contents);
-    saveRow(data);
-    sendApplicationReceived(data);
+    var stage = String(data.stage || '').toLowerCase();
+    if (stage === 'step1') {
+      upsertStep1(data);
+    } else if (stage === 'step2') {
+      mergeStep2(data);
+    } else {
+      saveFullSubmission(data); // legacy single-submit
+    }
     return jsonOut({ ok: true });
   } catch (err) {
     // Surface the error to the execution log so a failed submit is debuggable.
     console.error(err);
     return jsonOut({ ok: false, error: String(err) });
+  } finally {
+    lock.releaseLock();
   }
 }
 
-// Handles two things:
-//  - ?password=XXX&callback=YYY  the site gate asking if a password is valid.
-//    Replies as JSONP (YYY({"ok":true})) so a static page can read it without
-//    CORS. ok:true when the password matches an approved applicant.
+// Handles three things:
+//  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
+//    a recovery token, so it can prefill step two. Replies as JSONP.
+//  - ?password=XXX&callback=YYY  the gate asking if a password is valid.
 //  - no params: a plain liveness check, handy in a browser.
 function doGet(e) {
   var params = (e && e.parameter) || {};
+  if (params.recover) {
+    var lead = leadByToken(params.recover);
+    var payload = lead
+      ? { ok: true, name: lead.name, email: lead.email, phone: lead.phone,
+          make: lead.make, model: lead.model, car: lead.car }
+      : { ok: false };
+    return jsonpOrJson(payload, params.callback);
+  }
   if (params.password) {
-    var body = JSON.stringify({ ok: passwordValid(params.password) });
-    if (params.callback) {
-      return ContentService
-        .createTextOutput(params.callback + '(' + body + ')')
-        .setMimeType(ContentService.MimeType.JAVASCRIPT);
-    }
-    return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
+    return jsonpOrJson({ ok: passwordValid(params.password) }, params.callback);
   }
   return jsonOut({ ok: true, service: 'ldc-applications' });
 }
 
-// True when the guess matches a generated password in the sheet. A password
-// only exists once a row is approved, so a match means an approved applicant.
-// Case-insensitive, so "bmw6291" works as well as "BMW6291".
-function passwordValid(guess) {
-  var g = String(guess || '').trim().toUpperCase();
-  if (!g) return false;
-  var sheet = getSheet();
-  var col = headerMap(sheet)['password'];
-  if (!col) return false;
-  var last = sheet.getLastRow();
-  if (last < 2) return false;
-  var values = sheet.getRange(2, col, last - 1, 1).getValues();
-  for (var i = 0; i < values.length; i++) {
-    var stored = String(values[i][0]).trim().toUpperCase();
-    if (stored && stored === g) return true;
+function jsonpOrJson(obj, callback) {
+  var body = JSON.stringify(obj);
+  if (callback) {
+    return ContentService
+      .createTextOutput(callback + '(' + body + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
   }
-  return false;
+  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
 }
 
-// Run this once by hand (select setupColumns ▸ Run) to add the status,
-// password and approved_at columns to an existing sheet.
-function setupColumns() {
-  ensureColumns(getSheet());
-}
+/* ---- Writing the lead -------------------------------------------------- */
 
-function saveRow(data) {
+// Step one: create or update the lead, keyed on email. Never downgrades a row
+// that's already further along (e.g. complete/approved); just refreshes the
+// contact details and the car.
+function upsertStep1(data) {
   var sheet = getSheet();
-  var days = Array.isArray(data.days) ? data.days.join(', ') : (data.days || '');
-  sheet.appendRow([
-    new Date(),
-    data.name || '',
-    data.email || '',
-    data.phone || '',
-    data.work || '',
-    data.car || '',
-    data.play || '',
-    data.party || '',
-    days,
-    data.consent ? 'yes' : 'no'
-  ]);
+  var headers = headerMap(sheet);
+  var email = String(data.email || '').trim();
+  if (!email) throw new Error('step1 without an email');
+
+  var row = findRowByEmail(sheet, headers, email);
+  var fields = {
+    name: data.name || '',
+    email: email,
+    phone: data.phone || '',
+    make: data.make || '',
+    model: data.model || '',
+    car: data.car || ''
+  };
+
+  if (row) {
+    var status = String(readCell(sheet, row, headers, 'status') || '').toLowerCase();
+    if (!status || status === 'step1_complete') {
+      fields.status = 'step1_complete';
+    }
+    if (!readCell(sheet, row, headers, 'token')) fields.token = Utilities.getUuid();
+    if (!readCell(sheet, row, headers, 'step1_at')) fields.step1_at = new Date();
+    writeFields(sheet, row, headers, fields);
+  } else {
+    fields.timestamp = new Date();
+    fields.status = 'step1_complete';
+    fields.token = Utilities.getUuid();
+    fields.step1_at = new Date();
+    fields.recovery_sent = '';
+    writeFields(sheet, newRow(sheet), headers, fields);
+  }
+  // No email at step one — the recovery email is the only step-one message.
 }
+
+// Step two: merge the golf/day fields into the lead, mark it complete, cancel
+// the recovery email (status != step1_complete means the sweep skips it), and
+// send the "application received" confirmation.
+function mergeStep2(data) {
+  var sheet = getSheet();
+  var headers = headerMap(sheet);
+  var email = String(data.email || '').trim();
+
+  var row = (data.token && findRowByToken(sheet, headers, data.token)) ||
+            (email && findRowByEmail(sheet, headers, email)) || null;
+
+  var fields = {
+    work: data.work || '',
+    handicap: data.handicap || '',
+    base: data.base || '',
+    city: data.baseCity || '',
+    play: data.play || '',
+    party: data.party || '',
+    days: Array.isArray(data.days) ? data.days.join(', ') : (data.days || ''),
+    consent: data.consent ? 'yes' : 'no',
+    status: 'complete',
+    completed_at: new Date()
+  };
+
+  if (row) {
+    writeFields(sheet, row, headers, fields);
+    email = String(readCell(sheet, row, headers, 'email') || email).trim();
+  } else {
+    // No step-one row to merge into (rare). Keep the data rather than drop it.
+    fields.timestamp = new Date();
+    fields.email = email;
+    writeFields(sheet, newRow(sheet), headers, fields);
+  }
+
+  if (email) sendApplicationReceived({ email: email });
+}
+
+// Legacy whole-form submission (kept so an older cached page still works).
+function saveFullSubmission(data) {
+  var sheet = getSheet();
+  var headers = headerMap(sheet);
+  var email = String(data.email || '').trim();
+  var fields = {
+    timestamp: new Date(),
+    name: data.name || '',
+    email: email,
+    phone: data.phone || '',
+    make: data.make || '',
+    model: data.model || '',
+    car: data.car || '',
+    work: data.work || '',
+    handicap: data.handicap || '',
+    play: data.play || '',
+    party: data.party || '',
+    base: data.base || '',
+    city: data.baseCity || '',
+    days: Array.isArray(data.days) ? data.days.join(', ') : (data.days || ''),
+    consent: data.consent ? 'yes' : 'no',
+    status: 'complete',
+    completed_at: new Date()
+  };
+  writeFields(sheet, newRow(sheet), headers, fields);
+  if (email) sendApplicationReceived({ email: email });
+}
+
+/* ---- Sheet helpers ----------------------------------------------------- */
 
 function getSheet() {
   var id = props_('SHEET_ID');
@@ -117,8 +235,14 @@ function getSheet() {
   return sheet;
 }
 
-// Adds any COLUMNS that aren't already in the header row, on the end.
-// Leaves existing columns and their order untouched.
+// Run this once by hand (select setupColumns ▸ Run) to add any new columns to
+// an existing sheet without touching the rows.
+function setupColumns() {
+  ensureColumns(getSheet());
+}
+
+// Adds any COLUMNS not already in the header row, on the end. Leaves existing
+// columns and their order untouched.
 function ensureColumns(sheet) {
   var have = headerMap(sheet);
   var missing = COLUMNS.filter(function (c) { return !have[c]; });
@@ -138,6 +262,144 @@ function headerMap(sheet) {
     if (name) map[String(name).trim().toLowerCase()] = i + 1;
   });
   return map;
+}
+
+// The 1-based index of the next empty row (writing a cell there extends the sheet).
+function newRow(sheet) {
+  return sheet.getLastRow() + 1;
+}
+
+// Writes only the provided fields, each into its named column. Unknown headers
+// are skipped silently.
+function writeFields(sheet, row, headers, obj) {
+  Object.keys(obj).forEach(function (key) {
+    var col = headers[key];
+    if (col) sheet.getRange(row, col).setValue(obj[key]);
+  });
+}
+
+function readCell(sheet, row, headers, name) {
+  var col = headers[name];
+  return col ? sheet.getRange(row, col).getValue() : '';
+}
+
+function findRowByEmail(sheet, headers, email) {
+  return findRowByColumn(sheet, headers, 'email', email, true);
+}
+
+function findRowByToken(sheet, headers, token) {
+  return findRowByColumn(sheet, headers, 'token', token, false);
+}
+
+// Returns the 1-based row whose column matches, or null. Scans bottom-up so the
+// most recent match wins. Case-insensitive when asked (emails).
+function findRowByColumn(sheet, headers, name, value, ci) {
+  var col = headers[name];
+  var needle = String(value || '').trim();
+  if (!col || !needle) return null;
+  if (ci) needle = needle.toLowerCase();
+  var last = sheet.getLastRow();
+  if (last < 2) return null;
+  var values = sheet.getRange(2, col, last - 1, 1).getValues();
+  for (var i = values.length - 1; i >= 0; i--) {
+    var cell = String(values[i][0]).trim();
+    if (ci) cell = cell.toLowerCase();
+    if (cell && cell === needle) return i + 2;
+  }
+  return null;
+}
+
+// Reads a whole lead row into an object keyed by header name.
+function leadByToken(token) {
+  var sheet = getSheet();
+  var headers = headerMap(sheet);
+  var row = findRowByToken(sheet, headers, token);
+  if (!row) return null;
+  var lead = {};
+  Object.keys(headers).forEach(function (name) {
+    lead[name] = sheet.getRange(row, headers[name]).getValue();
+  });
+  return lead;
+}
+
+/* ---- Recovery email ----------------------------------------------------
+   Time-driven sweep. For every lead still at step1_complete, sends the first
+   nudge once it's older than RECOVERY_DELAY_1_HOURS and the second once it's
+   older than RECOVERY_DELAY_2_HOURS. recovery_sent ('', '1', '2') makes each
+   fire exactly once; a lead that has reached "complete" is skipped entirely. */
+
+// Run once by hand to schedule the sweep.
+function installRecoveryTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'sendRecoveryEmails') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('sendRecoveryEmails').timeBased().everyMinutes(30).create();
+}
+
+function sendRecoveryEmails() {
+  var sheet = getSheet();
+  var headers = headerMap(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return;
+  var now = new Date().getTime();
+
+  for (var row = 2; row <= last; row++) {
+    var status = String(readCell(sheet, row, headers, 'status') || '').toLowerCase();
+    if (status !== 'step1_complete') continue;
+
+    var token = String(readCell(sheet, row, headers, 'token') || '');
+    var email = String(readCell(sheet, row, headers, 'email') || '').trim();
+    if (!token || !email) continue;
+
+    var startedAt = readCell(sheet, row, headers, 'step1_at');
+    var started = (startedAt instanceof Date) ? startedAt.getTime() : NaN;
+    if (isNaN(started)) continue;
+    var ageHours = (now - started) / 3600000;
+
+    var sent = String(readCell(sheet, row, headers, 'recovery_sent') || '');
+
+    if (sent === '' && ageHours >= RECOVERY_DELAY_1_HOURS) {
+      sendRecoveryEmail(email, token);
+      writeFields(sheet, row, headers, { recovery_sent: '1' });
+    } else if (sent === '1' && ageHours >= RECOVERY_DELAY_2_HOURS) {
+      sendRecoveryEmail(email, token);
+      writeFields(sheet, row, headers, { recovery_sent: '2' });
+    }
+  }
+}
+
+function sendRecoveryEmail(email, token) {
+  var finishUrl = SITE_URL + '/?recover=' + encodeURIComponent(token) + '#apply';
+  var html = renderEmail('email_recovery', {
+    finish_url: finishUrl,
+    unsubscribe_url: UNSUBSCRIBE_URL
+  });
+  sendViaResend({
+    to: email,
+    subject: "Your name's down. The sheet isn't finished.",
+    html: html
+  });
+}
+
+/* ---- Gate -------------------------------------------------------------- */
+
+// True when the guess matches a generated password in the sheet. A password
+// only exists once a row is approved, so a match means an approved applicant.
+// Case-insensitive, so "bmw6291" works as well as "BMW6291".
+function passwordValid(guess) {
+  var g = String(guess || '').trim().toUpperCase();
+  if (!g) return false;
+  var sheet = getSheet();
+  var col = headerMap(sheet)['password'];
+  if (!col) return false;
+  var last = sheet.getLastRow();
+  if (last < 2) return false;
+  var values = sheet.getRange(2, col, last - 1, 1).getValues();
+  for (var i = 0; i < values.length; i++) {
+    var stored = String(values[i][0]).trim().toUpperCase();
+    if (stored && stored === g) return true;
+  }
+  return false;
 }
 
 /* ---- Approval flow ----------------------------------------------------- */
