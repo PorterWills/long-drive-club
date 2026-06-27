@@ -8,7 +8,7 @@
      APPS_SCRIPT_URL: the deployed Google Apps Script web app. It saves each
      application to a Google Sheet and sends the confirmation email. Apps
      Script web apps don't return CORS headers, so submissions are posted
-     with mode: "no-cors" and a plain-text body (see saveApplication).
+     with mode: "no-cors" and a plain-text body (see postLead).
      GATE_HASH: SHA-256 of a developer/master password that always unlocks
      the gate, for testing. Real applicant passwords are unique per person
      and checked against the Google Sheet via the Apps Script (see the gate
@@ -237,25 +237,70 @@
     render();
   })();
 
-  /* ---- The entry sheet -------------------------------------------------- */
-  var form = document.getElementById("entry-form");
-  var formError = document.getElementById("form-error");
-  var submitBtn = document.getElementById("submit-btn");
+  /* ---- The entry sheet: a two-step flow --------------------------------
+     Four states in sequence — step1, bridge, step2, confirmation. Step one
+     saves the lead on its own submit (see saveStep1 / the backend's "step1"
+     stage), so a drop-off at the bridge or step two is still a contactable,
+     recoverable lead. Step two merges into that same record, keyed on email.
+
+     CAR_ECHO: the optional silent confirmation at the top of step two that
+     echoes the make from step one ("The Porsche it is."). Behind a flag so it
+     can be switched off without touching the flow; ?echo=0 overrides it off. */
+  var CAR_ECHO = true;
+  if (/[?&]echo=0\b/.test(window.location.search)) CAR_ECHO = false;
+
+  // Shared by the car picker (below) and the recovery prefill: lets recovered
+  // make/model land in the two linked selects once they've been built.
+  var carCtl = { prefill: null, apply: null };
+
+  var step1Form = document.getElementById("step1-form");
+  var step2Form = document.getElementById("step2-form");
+  var step1Error = document.getElementById("step1-error");
+  var step2Error = document.getElementById("step2-error");
+  var step1Submit = document.getElementById("step1-submit");
+  var step2Submit = document.getElementById("step2-submit");
+  var liveRegion = document.getElementById("flow-live");
+  var applySection = document.getElementById("apply");
+
+  /* ---- Flow state machine ----------------------------------------------
+     One state visible at a time. Transitions move focus to the new heading
+     and push a short line into the polite live region so the bridge and
+     confirmation are announced to screen readers, not silently swapped. */
+  var FLOW_HEADS = {
+    step1: "step1-head", bridge: "bridge-head",
+    step2: "step2-head", confirmation: "confirm-head"
+  };
+  function showState(id, opts) {
+    opts = opts || {};
+    Object.keys(FLOW_HEADS).forEach(function (s) {
+      var el = document.getElementById(s);
+      if (el) el.hidden = (s !== id);
+    });
+    if (opts.scroll && applySection) {
+      window.scrollTo({ top: applySection.offsetTop - 40, behavior: "smooth" });
+    }
+    if (opts.announce && liveRegion) liveRegion.textContent = opts.announce;
+    if (opts.focus) {
+      var head = document.getElementById(FLOW_HEADS[id]);
+      if (head) { try { head.focus({ preventScroll: true }); } catch (e) { head.focus(); } }
+    }
+  }
 
   /* ---- Meta Pixel funnel events ----------------------------------------
      Silent, browser-only signals that map the steps toward applying so the
      drop-off is visible in Events Manager. No personal data is sent, and
      each step fires at most once per page load. Guarded on window.fbq so
      nothing breaks if the pixel is blocked.
-       ViewContent      -> visitor scrolled far enough to see the entry sheet
-       InitiateCheckout -> visitor started filling the form (first field touch)
-       Lead             -> visitor submitted (fired in the submit handler) */
+       ViewContent      -> visitor scrolled far enough to see step one
+       InitiateCheckout -> visitor started filling step one (first field touch)
+       Lead             -> step one submitted: a real, recoverable lead exists
+       CompleteRegistration -> step two merged in, the full sheet is done */
   function trackPixel(name) {
     if (typeof window.fbq === "function") window.fbq("track", name);
   }
   (function () {
-    var sheet = document.getElementById("apply-sheet");
-    // Step: saw the form. Fire once when the entry sheet enters the viewport.
+    var sheet = document.getElementById("step1");
+    // Step: saw the form. Fire once when step one enters the viewport.
     if (sheet && "IntersectionObserver" in window) {
       var seen = false;
       var vio = new IntersectionObserver(function (entries) {
@@ -271,10 +316,10 @@
       trackPixel("ViewContent");
     }
     // Step: started the form. Fire once on the first real interaction with
-    // any field inside the entry sheet.
-    if (form) {
+    // any field inside step one.
+    if (step1Form) {
       var started = false;
-      form.addEventListener("focusin", function () {
+      step1Form.addEventListener("focusin", function () {
         if (started) return;
         started = true;
         trackPixel("InitiateCheckout");
@@ -282,12 +327,15 @@
     }
   })();
 
+  // Errors live anywhere inside #apply; the message goes in the .fe-txt span
+  // so the paired icon (drawn in CSS) stays put — colour is never the only cue.
   function setFieldError(name, message) {
-    var el = form.querySelector('[data-error-for="' + name + '"]');
-    var hint = form.querySelector('[data-hint-for="' + name + '"]');
+    var el = applySection.querySelector('[data-error-for="' + name + '"]');
     if (!el) return;
-    el.textContent = message || "";
+    var txt = el.querySelector(".fe-txt");
+    if (txt) txt.textContent = message || ""; else el.textContent = message || "";
     el.classList.toggle("show", !!message);
+    var hint = applySection.querySelector('[data-hint-for="' + name + '"]');
     if (hint) hint.style.display = message ? "none" : "";
   }
 
@@ -295,10 +343,11 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
   }
 
-  /* ---- Car make/model picker (field 05) --------------------------------
+  /* ---- Car make/model picker (field 03) --------------------------------
      Two linked selects. Make populates from the local car-makes-models.json
      (read once, no live API at runtime); choosing a make fills and enables
-     the model select. */
+     the model select. carCtl.apply lets a recovered lead drop its make/model
+     back in once the list has built (see the recovery deep-link below). */
   (function () {
     var makeSel = document.getElementById("f-make");
     var modelSel = document.getElementById("f-model");
@@ -326,17 +375,32 @@
         if (popular.length) makeSel.appendChild(group("Popular makes", popular));
         makeSel.appendChild(group("All makes", Object.keys(makes)));
 
-        makeSel.addEventListener("change", function () {
+        function fillModels(make) {
           modelSel.innerHTML = "";
           modelSel.appendChild(option("", "Model"));
-          var models = makes[makeSel.value] || [];
+          var models = makes[make] || [];
           if (models.length) {
             models.forEach(function (m) { modelSel.appendChild(option(m)); });
             modelSel.disabled = false;
           } else {
             modelSel.disabled = true;
           }
-        });
+        }
+
+        makeSel.addEventListener("change", function () { fillModels(makeSel.value); });
+
+        // Reinstate a recovered make/model in the linked selects.
+        carCtl.apply = function (make, model) {
+          if (!make) return;
+          makeSel.value = make;
+          fillModels(make);
+          if (model && !modelSel.disabled) {
+            var has = Array.prototype.some.call(modelSel.options, function (o) { return o.value === model; });
+            if (!has) modelSel.appendChild(option(model));
+            modelSel.value = model;
+          }
+        };
+        if (carCtl.prefill) carCtl.apply(carCtl.prefill.make, carCtl.prefill.model);
       })
       .catch(function () {
         // If the list can't load, fall back to a typed make so the field
@@ -349,6 +413,11 @@
         input.placeholder = "Make and model";
         makeSel.replaceWith(input);
         modelSel.closest(".select-wrap").style.display = "none";
+        // Recovery prefill into the typed fallback: make and model, joined.
+        carCtl.apply = function (make, model) {
+          input.value = [make, model].filter(Boolean).join(" ");
+        };
+        if (carCtl.prefill) carCtl.apply(carCtl.prefill.make, carCtl.prefill.model);
       });
   })();
 
@@ -395,94 +464,312 @@
     return { base: sel, city: "" };
   }
 
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    var loc = resolveBase(form);
-    var f = {
-      name: form.elements.name.value,
-      email: form.elements.email.value,
-      phone: form.elements.phone.value,
-      work: form.elements.work.value,
-      make: form.elements.make.value,
-      model: form.elements.model.value,
-      handicap: formatHandicap(parseFloat(form.elements.handicap_value.value)),
-      base: loc.base,
-      baseCity: loc.city,
-      play: form.elements.play.value,
-      party: form.elements.party.value,
-      days: form.elements.days.value,
-      consent: form.elements.consent.checked
-    };
-    f.car = [f.make, f.model].filter(Boolean).join(" ");
+  // Permissive phone check: international formats welcome. We only insist on
+  // enough digits to be a real number and no out-of-place characters.
+  function phoneOk(v) {
+    var s = String(v || "").trim();
+    if (!/^[+0-9 ()\-.]+$/.test(s)) return false;
+    return (s.match(/[0-9]/g) || []).length >= 7;
+  }
 
-    var ok = true;
-    if (!f.name.trim()) { setFieldError("name", "We'll need a name for the sheet."); ok = false; } else setFieldError("name");
-    if (!f.email.trim()) { setFieldError("email", "We'll need somewhere to send the password."); ok = false; }
-    else if (!emailOk(f.email)) { setFieldError("email", "That email doesn't look right."); ok = false; }
-    else setFieldError("email");
-    if (!f.phone.trim()) { setFieldError("phone", "A number, in case the day moves."); ok = false; } else setFieldError("phone");
+  /* ---- The lead, kept on the device between steps -----------------------
+     Step one's record lives in the database; here we keep only what step two
+     needs to key the merge (email) and to recover gracefully (token), plus
+     the make for the car echo. Stored in sessionStorage so a refresh of the
+     bridge or step two doesn't lose the thread. */
+  function storeLead(o) {
+    try { sessionStorage.setItem("ldc-lead", JSON.stringify(o || {})); } catch (e) {}
+  }
+  function readLead() {
+    try { return JSON.parse(sessionStorage.getItem("ldc-lead") || "null") || {}; } catch (e) { return {}; }
+  }
+
+  /* ---- Step one — you and the car --------------------------------------- */
+
+  function collectStep1() {
+    var make = step1Form.elements.make ? step1Form.elements.make.value : "";
+    var model = step1Form.elements.model ? step1Form.elements.model.value : "";
+    return {
+      name: step1Form.elements.name.value,
+      email: step1Form.elements.email.value,
+      make: make,
+      model: model,
+      car: [make, model].filter(Boolean).join(" ")
+    };
+  }
+
+  // Field 03 is satisfied by a make plus, when the model select offers any,
+  // a model. Makes with no model list (or the typed fallback) need the make
+  // alone.
+  function validateCar() {
+    var make = step1Form.elements.make ? step1Form.elements.make.value.trim() : "";
+    if (!make) { setFieldError("car", "We'll need the car for the sheet."); return false; }
+    var modelEl = document.getElementById("f-model");
+    if (modelEl && modelEl.tagName === "SELECT" && !modelEl.disabled && !modelEl.value.trim()) {
+      setFieldError("car", "And the model."); return false;
+    }
+    setFieldError("car");
+    return true;
+  }
+
+  function validateField(name) {
+    if (name === "name") {
+      var nv = step1Form.elements.name.value;
+      if (!nv.trim()) { setFieldError("name", "We'll need a name for the sheet."); return false; }
+      setFieldError("name"); return true;
+    }
+    if (name === "email") {
+      var ev = step1Form.elements.email.value;
+      if (!ev.trim()) { setFieldError("email", "We'll need somewhere to write back."); return false; }
+      if (!emailOk(ev)) { setFieldError("email", "That email doesn't look right."); return false; }
+      setFieldError("email"); return true;
+    }
+    if (name === "car") return validateCar();
+    return true;
+  }
+
+  // Phone moved to step two (keeping step one as light as possible), but stays
+  // required — the committee reads it on every completed application.
+  function validatePhone() {
+    var el = step2Form.elements.phone;
+    var pv = el ? el.value : "";
+    if (!pv.trim()) { setFieldError("phone", "A number, in case the day moves."); return false; }
+    if (!phoneOk(pv)) { setFieldError("phone", "That number doesn't look right."); return false; }
+    setFieldError("phone"); return true;
+  }
+
+  // Inline validation on blur, not only on submit. Only nags a field the
+  // visitor has already left, and only once it's in an error state.
+  ["name", "email"].forEach(function (n) {
+    var el = step1Form.elements[n];
+    if (el) el.addEventListener("blur", function () { validateField(n); });
+  });
+  if (step2Form.elements.phone) {
+    step2Form.elements.phone.addEventListener("blur", validatePhone);
+  }
+  // Re-check the car only to clear a standing error as the selection completes
+  // — never to raise the "and the model" nag mid-pick. Submit does the asserting.
+  step1Form.addEventListener("change", function (e) {
+    if (!e.target || (e.target.id !== "f-make" && e.target.id !== "f-model")) return;
+    var errEl = applySection.querySelector('[data-error-for="car"]');
+    if (errEl && errEl.classList.contains("show")) validateCar();
+  });
+
+  step1Form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var ok = ["name", "email", "car"]
+      .map(function (n) { return validateField(n); })
+      .every(Boolean);
     if (!ok) return;
 
-    formError.classList.remove("show");
-    submitBtn.disabled = true;
-    submitBtn.setAttribute("aria-busy", "true");
+    var f = collectStep1();
+    step1Error.classList.remove("show");
+    step1Submit.disabled = true;
+    step1Submit.setAttribute("aria-busy", "true");
 
-    saveApplication(f).then(function () {
-      // Meta Pixel: a completed application is our one real conversion.
-      // "Lead" is Meta's standard event for an interest form being submitted.
-      // No personal data is passed (name/email/phone stay out of Meta) —
-      // see the privacy policy. Guarded so the form still works if the pixel
-      // is blocked or hasn't loaded.
-      if (typeof window.fbq === "function") window.fbq("track", "Lead");
-      showSubmitted(f.name);
+    saveStep1(f).then(function () {
+      // The lead now exists server-side at step1_complete: a real, recoverable
+      // conversion. "Lead" is Meta's standard event for an interest form sent.
+      // No personal data is passed (name and email stay out of Meta).
+      trackPixel("Lead");
+      storeLead({ email: f.email.trim(), name: f.name, make: f.make, model: f.model, car: f.car });
+      step1Submit.disabled = false;
+      step1Submit.removeAttribute("aria-busy");
+      showState("bridge", {
+        focus: true, scroll: true,
+        announce: "Your name's down. We've got enough to write back."
+      });
     }).catch(function () {
-      submitBtn.disabled = false;
-      submitBtn.removeAttribute("aria-busy");
-      formError.textContent = "That didn't send. Give it another go.";
-      formError.classList.add("show");
+      step1Submit.disabled = false;
+      step1Submit.removeAttribute("aria-busy");
+      step1Error.textContent = "That didn't send. Give it another go.";
+      step1Error.classList.add("show");
     });
   });
 
-  // Each application is posted to the Google Apps Script web app, which
-  // saves it to the Sheet and sends the confirmation email. Apps Script
-  // doesn't return CORS headers, so we post with mode: "no-cors" and a
-  // plain-text content type — anything else triggers a preflight Apps
-  // Script can't answer. The response is opaque, so a resolved fetch is
-  // treated as success.
-  function saveApplication(f) {
+  /* ---- Bridge — both paths complete step one ---------------------------- */
+
+  var bridgeContinue = document.getElementById("bridge-continue");
+  var bridgeLater = document.getElementById("bridge-later");
+  var bridgeActions = bridgeContinue ? bridgeContinue.parentNode : null;
+
+  if (bridgeContinue) bridgeContinue.addEventListener("click", function () {
+    setCarEcho();
+    showState("step2", {
+      focus: true, scroll: true,
+      announce: "Step 2 of 2. The rest of the sheet."
+    });
+  });
+
+  // The quiet alternative. The lead is already step1_complete; leaving it there
+  // is what schedules the recovery email (the backend sweeps any lead that
+  // sits at step1_complete past the delay). No further field, no cancel.
+  if (bridgeLater) bridgeLater.addEventListener("click", function () {
+    if (bridgeActions) bridgeActions.hidden = true;
+    showState("bridge", {
+      focus: true,
+      announce: "Your name's down. We've got enough to write back. We'll write either way."
+    });
+  });
+
+  /* ---- Step two — the golf and the day ---------------------------------- */
+
+  var step2Back = document.getElementById("step2-back");
+  if (step2Back) step2Back.addEventListener("click", function () {
+    // Back to the bridge without wiping anything entered on step two.
+    if (bridgeActions) bridgeActions.hidden = false;
+    showState("bridge", {
+      focus: true, scroll: true,
+      announce: "Your name's down. We've got enough to write back."
+    });
+  });
+
+  // Optional silent confirmation: "The Porsche it is." Only when the make is a
+  // single clean token; anything awkward (multi-word makes, hyphens) is omitted.
+  function setCarEcho() {
+    var echo = document.getElementById("car-echo");
+    if (!echo) return;
+    echo.hidden = true;
+    echo.textContent = "";
+    if (!CAR_ECHO) return;
+    var make = (readLead().make || "").trim();
+    if (!make || !/^[A-Za-z0-9]+$/.test(make)) return;
+    echo.textContent = "The " + make + " it is.";
+    echo.hidden = false;
+  }
+
+  function collectStep2() {
+    var loc = resolveBase(step2Form);
+    return {
+      phone: step2Form.elements.phone.value,
+      work: step2Form.elements.work.value,
+      handicap: formatHandicap(parseFloat(step2Form.elements.handicap_value.value)),
+      base: loc.base,
+      baseCity: loc.city,
+      play: step2Form.elements.play.value,
+      party: step2Form.elements.party.value,
+      days: step2Form.elements.days.value,
+      consent: step2Form.elements.consent.checked
+    };
+  }
+
+  step2Form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!validatePhone()) return;
+    var f = collectStep2();
+    var lead = readLead();
+
+    step2Error.classList.remove("show");
+    step2Submit.disabled = true;
+    step2Submit.setAttribute("aria-busy", "true");
+
+    saveStep2(f, lead).then(function () {
+      // The full sheet is in. "CompleteRegistration" marks the completed flow,
+      // distinct from the step-one "Lead". No personal data is passed.
+      trackPixel("CompleteRegistration");
+      try { sessionStorage.removeItem("ldc-lead"); } catch (err) {}
+      showState("confirmation", {
+        focus: true, scroll: true,
+        announce: "It's with the committee. We read every sheet."
+      });
+    }).catch(function () {
+      step2Submit.disabled = false;
+      step2Submit.removeAttribute("aria-busy");
+      step2Error.textContent = "That didn't send. Give it another go.";
+      step2Error.classList.add("show");
+    });
+  });
+
+  /* ---- Persistence ------------------------------------------------------
+     Two posts to the Google Apps Script web app. Step one creates (or updates)
+     the lead at status step1_complete before step two renders; step two merges
+     into the same record, keyed on email, and marks it complete. Apps Script
+     returns no CORS headers, so we post with mode: "no-cors" and a plain-text
+     content type — anything else triggers a preflight it can't answer. The
+     response is opaque, so a resolved fetch is treated as success. */
+  function postLead(payload) {
     return fetch(APPS_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        name: f.name.trim(),
-        email: f.email.trim(),
-        phone: f.phone.trim(),
-        work: f.work.trim(),
-        car: f.car.trim(),
-        make: f.make,
-        model: f.model,
-        handicap: f.handicap,
-        base: f.base,
-        baseCity: f.baseCity,
-        play: f.play,
-        party: f.party,
-        days: f.days,
-        consent: f.consent
-      })
+      body: JSON.stringify(payload)
     });
   }
 
-  function showSubmitted(name) {
-    var first = (name || "").trim().split(/\s+/)[0];
-    var headline = document.getElementById("done-headline");
-    if (first) headline.textContent = "You're on the list, " + first;
-    document.getElementById("apply-sheet").hidden = true;
-    var done = document.getElementById("apply-done");
-    done.hidden = false;
-    var apply = document.getElementById("apply");
-    window.scrollTo({ top: apply.offsetTop - 40, behavior: "smooth" });
+  function saveStep1(f) {
+    return postLead({
+      stage: "step1",
+      name: f.name.trim(),
+      email: f.email.trim(),
+      make: f.make,
+      model: f.model,
+      car: f.car.trim()
+    });
   }
+
+  function saveStep2(f, lead) {
+    return postLead({
+      stage: "step2",
+      email: (lead.email || "").trim(),
+      token: lead.token || "",
+      phone: f.phone.trim(),
+      work: f.work.trim(),
+      handicap: f.handicap,
+      base: f.base,
+      baseCity: f.baseCity,
+      play: f.play,
+      party: f.party,
+      days: f.days,
+      consent: f.consent
+    });
+  }
+
+  /* ---- Recovery deep-link -----------------------------------------------
+     The recovery email links back to /?recover=TOKEN. We ask the backend for
+     the step-one data behind that token (JSONP, the same CORS-free trick the
+     gate uses), prefill it, and drop the visitor straight into step two with
+     no re-entry of name or email. */
+  function recoverLead(token) {
+    return new Promise(function (resolve) {
+      var cb = "ldcRecover" + Date.now() + Math.floor(Math.random() * 1000);
+      var script = document.createElement("script");
+      var timer = setTimeout(function () { cleanup(); resolve(null); }, 8000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (err) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (data) { cleanup(); resolve(data && data.ok ? data : null); };
+      script.onerror = function () { cleanup(); resolve(null); };
+      script.src = APPS_SCRIPT_URL + "?recover=" + encodeURIComponent(token) + "&callback=" + cb;
+      document.head.appendChild(script);
+    });
+  }
+
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var token = params.get("recover");
+    if (!token) return;
+    recoverLead(token).then(function (lead) {
+      if (!lead) return; // token unknown or offline: leave them on step one
+      if (step1Form.elements.name) step1Form.elements.name.value = lead.name || "";
+      if (step1Form.elements.email) step1Form.elements.email.value = lead.email || "";
+      // Phone lives in step two now; prefill it there if the lead already has one.
+      if (step2Form.elements.phone) step2Form.elements.phone.value = lead.phone || "";
+      // Make/model land in the linked selects once they're built.
+      carCtl.prefill = { make: lead.make || "", model: lead.model || "" };
+      if (carCtl.apply) carCtl.apply(lead.make || "", lead.model || "");
+      storeLead({
+        email: (lead.email || "").trim(), token: token,
+        name: lead.name, make: lead.make, model: lead.model, car: lead.car
+      });
+      setCarEcho();
+      showState("step2", {
+        focus: true, scroll: true,
+        announce: "Step 2 of 2. The rest of the sheet."
+      });
+    });
+  })();
 
   /* ---- The gate ---------------------------------------------------------- */
   var lock = document.getElementById("gate-lock");
