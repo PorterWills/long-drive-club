@@ -5,8 +5,8 @@
  *
  *   stage "step1"  -> name, email and the car. Upserts the lead (keyed on
  *                     email) at status "step1_complete" and mints a recovery
- *                     token. This is a real, contactable lead even if step two
- *                     never arrives.
+ *                     token. A real, contactable lead even if step two never
+ *                     arrives.
  *   stage "step2"  -> phone, the golf and the day. Merges into the same row,
  *                     marks it "complete", and sends the "received" email.
  *   (no stage)     -> a whole-form submission, kept for backwards compatibility.
@@ -16,20 +16,22 @@
  * back to /?recover=TOKEN, and the site reads the step-one data back through the
  * doGet "recover" endpoint so the applicant lands in step two with no re-entry.
  *
- * It also reacts to the owner editing the sheet: typing a word in the "status"
- * column triggers the matching email. Currently wired:
- *   approved  -> generates a unique, car-based password and sends the
- *                "You're in" email (email_application_approved).
+ * It also reacts to the owner editing the sheet: typing a word in the
+ * "status" column triggers the matching email:
+ *   approved  -> unique car-based password + "You're in" email
+ *   paid      -> "Place confirmed" email
+ *   declined  -> "Not this time" email
+ * And an hourly timer nudges approved-but-unpaid applicants at 4h / 24h / 48h.
  *
- * Set these in Script Properties (File ▸ Project Settings ▸ Script Properties),
- * NOT inline — that keeps the Resend key out of the code:
+ * Set the three values in Script Properties (File ▸ Project Settings ▸
+ * Script Properties), NOT inline — that keeps the Resend key out of the code:
  *   SHEET_ID         the spreadsheet id (from its URL)
  *   RESEND_API_KEY   your Resend API key (starts re_...)
  *   FROM             the from line, e.g.  Long Drive Club <hello@longdriveclub.com>
  *
- * Run setupColumns once, then installApprovalTrigger and installRecoveryTrigger
- * once each, by hand (select the function ▸ Run). Re-deploy (Deploy ▸ Manage
- * deployments ▸ edit ▸ Version: New) after any edit.
+ * One-time setup after pasting: run setupColumns, installApprovalTrigger,
+ * installNudgeTrigger, and installRecoveryTrigger once each. Re-deploy (Deploy
+ * ▸ Manage deployments) after editing doGet/doPost.
  */
 
 var SHEET_TAB = 'Applications';
@@ -38,7 +40,7 @@ var SHEET_TAB = 'Applications';
 var SITE_URL = 'https://longdriveclub.com';
 
 // Recovery email timing, in hours from the step-one submit. First nudge, then a
-// second and final one if the lead is still partial. (Confirm with Michael.)
+// second and final one if the lead is still partial.
 var RECOVERY_DELAY_1_HOURS = 1;
 var RECOVERY_DELAY_2_HOURS = 72;
 
@@ -48,14 +50,13 @@ var UNSUBSCRIBE_URL = 'mailto:hello@longdriveclub.com?subject=Unsubscribe';
 // Column order written to fresh sheets. Existing sheets keep their order; any
 // columns below that they're missing get appended (see ensureColumns). All
 // reads and writes go through the header map, never fixed indexes, so order
-// never matters at runtime.
-//   form fields:   timestamp..days, consent
-//   flow bookkeeping: status, token, step1_at, completed_at, recovery_sent
-//   approval flow:    password, approved_at
-var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'make', 'model', 'car', 'work',
-               'handicap', 'play', 'party', 'base', 'city', 'days', 'consent',
-               'status', 'token', 'step1_at', 'completed_at', 'recovery_sent',
-               'password', 'approved_at'];
+// never matters at runtime. The block after nudge3_at is new for the two-step
+// flow and will be appended to the live sheet on the right.
+var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'party', 'days', 'consent',
+               'status', 'password', 'approved_at', 'paid_at', 'declined_at',
+               'nudge1_at', 'nudge2_at', 'nudge3_at',
+               'make', 'model', 'handicap', 'base', 'city',
+               'token', 'step1_at', 'completed_at', 'recovery_sent'];
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -76,7 +77,6 @@ function doPost(e) {
     }
     return jsonOut({ ok: true });
   } catch (err) {
-    // Surface the error to the execution log so a failed submit is debuggable.
     console.error(err);
     return jsonOut({ ok: false, error: String(err) });
   } finally {
@@ -242,8 +242,8 @@ function setupColumns() {
   ensureColumns(getSheet());
 }
 
-// Adds any COLUMNS not already in the header row, on the end. Leaves existing
-// columns and their order untouched.
+// Adds any COLUMNS that aren't already in the header row, on the end. Leaves
+// existing columns and their order untouched.
 function ensureColumns(sheet) {
   var have = headerMap(sheet);
   var missing = COLUMNS.filter(function (c) { return !have[c]; });
@@ -327,7 +327,9 @@ function leadByToken(token) {
    Time-driven sweep. For every lead still at step1_complete, sends the first
    nudge once it's older than RECOVERY_DELAY_1_HOURS and the second once it's
    older than RECOVERY_DELAY_2_HOURS. recovery_sent ('', '1', '2') makes each
-   fire exactly once; a lead that has reached "complete" is skipped entirely. */
+   fire exactly once; a lead that has reached "complete" is skipped entirely.
+   (Separate from the approval nudges below: those act on approved-but-unpaid
+   rows, this acts on step1_complete rows — the two never overlap.) */
 
 // Run once by hand to schedule the sweep.
 function installRecoveryTrigger() {
@@ -419,9 +421,9 @@ function installApprovalTrigger() {
     .create();
 }
 
-// Installable "On edit" trigger (created by installApprovalTrigger, NOT named
-// onEdit — a simple trigger can't call Resend). Fires whenever the sheet is
-// edited; we only act when the edited cell is the status column.
+// Installable "On edit" trigger. Fires whenever the sheet is edited; we only
+// act when the edited cell is the status column. (Programmatic status writes —
+// step1_complete / complete — don't fire this, so they never send an email.)
 function onApprovalEdit(e) {
   var range = e.range;
   var sheet = range.getSheet();
@@ -437,14 +439,16 @@ function onApprovalEdit(e) {
 
   if (value === 'approved') {
     handleApproved(sheet, row, headers);
+  } else if (value === 'paid') {
+    handlePaid(sheet, row, headers);
+  } else if (value === 'declined') {
+    handleDeclined(sheet, row, headers);
   }
-  // 'paid' and 'declined' will be wired here next.
 }
 
 function handleApproved(sheet, row, headers) {
-  // Already sent? Don't send a second password.
   var approvedCell = sheet.getRange(row, headers['approved_at']);
-  if (approvedCell.getValue()) return;
+  if (approvedCell.getValue()) return; // already sent
 
   var email = String(sheet.getRange(row, headers['email']).getValue()).trim();
   if (!email) return;
@@ -462,6 +466,32 @@ function handleApproved(sheet, row, headers) {
   approvedCell.setValue(new Date());
 }
 
+function handlePaid(sheet, row, headers) {
+  var cell = sheet.getRange(row, headers['paid_at']);
+  if (cell.getValue()) return; // already sent
+
+  var email = String(sheet.getRange(row, headers['email']).getValue()).trim();
+  if (!email) return;
+
+  var html = renderEmail('email_place_confirmed', { unsubscribe_url: UNSUBSCRIBE_URL });
+  sendViaResend({ to: email, subject: "That's you confirmed", html: html });
+
+  cell.setValue(new Date());
+}
+
+function handleDeclined(sheet, row, headers) {
+  var cell = sheet.getRange(row, headers['declined_at']);
+  if (cell.getValue()) return; // already sent
+
+  var email = String(sheet.getRange(row, headers['email']).getValue()).trim();
+  if (!email) return;
+
+  var html = renderEmail('email_declined', { unsubscribe_url: UNSUBSCRIBE_URL });
+  sendViaResend({ to: email, subject: 'Not this time', html: html });
+
+  cell.setValue(new Date());
+}
+
 // A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
 // Falls back to DRIVER#### when no car was given.
 function makePassword(car) {
@@ -469,6 +499,60 @@ function makePassword(car) {
   if (!brand) brand = 'DRIVER';
   var digits = String(Math.floor(1000 + Math.random() * 9000));
   return brand + digits;
+}
+
+/* ---- Nudges ------------------------------------------------------------ */
+
+// Run this ONCE by hand (select installNudgeTrigger ▸ Run) to wire the hourly
+// timer that sends the unpaid nudges. Safe to re-run: clears old copies first.
+function installNudgeTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'sendNudges') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('sendNudges').timeBased().everyHours(1).create();
+}
+
+// Runs hourly. For each approved-but-unpaid applicant, sends the nudge for the
+// tier their wait has reached (4h / 24h / 48h since approved_at). Stops once
+// the row is paid or declined. Each nudge sends once, and only the current
+// tier goes out per run, so nobody gets a burst.
+function sendNudges() {
+  var sheet = getSheet();
+  var headers = headerMap(sheet);
+  var last = sheet.getLastRow();
+  if (last < 2) return;
+
+  var data = sheet.getRange(2, 1, last - 1, sheet.getLastColumn()).getValues();
+  var now = Date.now();
+
+  var STAMP = ['', 'nudge1_at', 'nudge2_at', 'nudge3_at'];
+  var TEMPLATE = ['', 'email_nudge_password_unused', 'email_nudge_password_unused', 'email_nudge_hold_expiry'];
+  var SUBJECT = ['', "Your place is still here", "Your place is still here", 'Nearly out of time'];
+
+  for (var i = 0; i < data.length; i++) {
+    var rowNum = i + 2;
+    var cell = function (name) { return data[i][headers[name] - 1]; };
+
+    var approvedAt = cell('approved_at');
+    if (!approvedAt) continue;         // never approved
+    if (cell('paid_at')) continue;     // paid -> stop nudging
+    if (cell('declined_at')) continue; // declined -> stop nudging
+
+    var email = String(cell('email')).trim();
+    if (!email) continue;
+
+    var hours = (now - new Date(approvedAt).getTime()) / 3600000;
+    var tier = 0;
+    if (hours >= 48) tier = 3;
+    else if (hours >= 24) tier = 2;
+    else if (hours >= 4) tier = 1;
+    if (tier === 0) continue;          // not due yet
+    if (cell(STAMP[tier])) continue;   // current tier already sent
+
+    var html = renderEmail(TEMPLATE[tier], { unsubscribe_url: UNSUBSCRIBE_URL });
+    sendViaResend({ to: email, subject: SUBJECT[tier], html: html });
+    sheet.getRange(rowNum, headers[STAMP[tier]]).setValue(new Date());
+  }
 }
 
 /* ---- Email ------------------------------------------------------------- */

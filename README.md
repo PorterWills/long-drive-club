@@ -61,8 +61,10 @@ two with name, email, phone and car already loaded — no re-entry.
 After deploying `apps-script/Code.gs`, run these once each by hand
 (select the function ▸ Run): `setupColumns` (adds the new columns to an
 existing sheet), `installApprovalTrigger` (the status-column email
-trigger), and `installRecoveryTrigger` (the timed recovery-email sweep).
-Re-deploy a new version after any edit.
+trigger), `installNudgeTrigger` (the hourly approved-but-unpaid nudges),
+and `installRecoveryTrigger` (the timed recovery-email sweep). Re-running
+any installer is safe — each clears its old copy first. Re-deploy a new
+version after any edit.
 
 ## Changing the gate password
 
