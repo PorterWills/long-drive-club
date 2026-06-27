@@ -670,7 +670,7 @@
       try { sessionStorage.removeItem("ldc-lead"); } catch (err) {}
       showState("confirmation", {
         focus: true, scroll: true,
-        announce: "It's with the committee. We read every sheet."
+        announce: "It's with us now. We read every sheet."
       });
     }).catch(function () {
       step2Submit.disabled = false;
