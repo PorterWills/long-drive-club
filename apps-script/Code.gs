@@ -124,6 +124,11 @@ var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
   'declined_at', 'nudge1_at', 'nudge2_at', 'nudge3_at', 'make', 'model',
   'handicap', 'base', 'city', 'step1_at', 'completed_at', 'recovery_sent'];
 
+// A simple settings tab (key in column A, value in column B) the owners can
+// edit by hand — follower count, event name, etc. — so those don't live in
+// code. Created and pre-filled automatically the first time it's read.
+var SETTINGS_TAB = 'Dashboard';
+
 function dashboardPayload(guess) {
   var raw = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
   if (!raw) return { ok: false };
@@ -155,7 +160,50 @@ function dashboardPayload(guess) {
       if (any) rows.push(rec);
     }
   }
-  return { ok: true, updatedAt: new Date().toISOString(), rows: rows };
+  var settings = {};
+  try { settings = readSettings(); } catch (e) { settings = {}; }
+  return { ok: true, updatedAt: new Date().toISOString(), rows: rows, settings: settings };
+}
+
+// Reads the Dashboard settings tab into a { key: value } map (keys lower-cased).
+// Creates the tab, pre-filled with sensible defaults, the first time it's
+// missing — so the owners get an editable tab in their sheet without any setup.
+function readSettings() {
+  var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+  var sheet = ss.getSheetByName(SETTINGS_TAB);
+  if (!sheet) sheet = seedSettingsTab(ss);
+  if (!sheet) return {};
+  var last = sheet.getLastRow();
+  if (last < 1) return {};
+  var vals = sheet.getRange(1, 1, last, 2).getValues();
+  var out = {};
+  for (var i = 0; i < vals.length; i++) {
+    var k = String(vals[i][0] || '').trim().toLowerCase();
+    if (!k || k === 'setting' || k === 'key') continue; // skip a header row
+    out[k] = vals[i][1];
+  }
+  return out;
+}
+
+function seedSettingsTab(ss) {
+  var sheet;
+  try {
+    sheet = ss.insertSheet(SETTINGS_TAB);
+  } catch (e) {
+    return ss.getSheetByName(SETTINGS_TAB); // lost a race; use the existing one
+  }
+  sheet.getRange(1, 1, 1, 2).setValues([['setting', 'value']]).setFontWeight('bold');
+  sheet.getRange(2, 1, 6, 2).setValues([
+    ['event_name', 'THE FIRST DRIVE'],
+    ['places_target', 20],
+    ['ig_show', 'yes'],
+    ['ig_followers', 21],
+    ['ig_change', ''],
+    ['ig_reach', '']
+  ]);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, 2);
+  return sheet;
 }
 
 function jsonpOrJson(obj, callback) {
