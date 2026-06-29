@@ -21,12 +21,13 @@
     // The deployed Apps Script web app (same backend the entry form posts to).
     APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec",
 
-    eventName: "THE OCTOBER DRIVE", // heading; change per event
-    placesTarget: 20,               // capacity the "places filled" bar fills toward
+    eventName: "THE FIRST DRIVE", // heading; change per event
+    placesTarget: 20,             // capacity the "places filled" bar fills toward
 
-    // Instagram is not in the sheet, so it's off by default. Flip `show` to
-    // true and keep these numbers current by hand if you want the strip back.
-    instagram: { show: false, followers: "1,284", change: "47", reach: "8.9k" }
+    // Instagram is not in the sheet, so these are entered by hand. `change`
+    // (vs last check) and `reach` are optional — leave them "" to hide them
+    // and show just the follower count.
+    instagram: { show: true, followers: "20", change: "", reach: "" }
   };
 
   var SS_KEY = "ldc-dash-pw";
@@ -334,8 +335,8 @@
   function rowHTML(p) {
     var dimOp = (p.stage === "declined") ? "0.55" : "1";
     return '<div class="sd-row" data-open="' + p.num + '" style="display:flex;align-items:center;gap:18px;padding:13px 0;border-bottom:1px solid var(--hairline);opacity:' + dimOp + ';cursor:pointer">' +
-      '<span style="flex:0 0 44px"><span class="roundel roundel--on-light" style="width:40px;height:40px;font-size:14px">' + esc(p.num) + '</span></span>' +
-      '<span style="flex:1;min-width:0">' +
+      '<span class="sd-col-roundel" style="flex:0 0 44px"><span class="roundel roundel--on-light" style="width:40px;height:40px;font-size:14px">' + esc(p.num) + '</span></span>' +
+      '<span class="sd-col-name" style="flex:1;min-width:0">' +
         '<span class="sd-disp" style="font-size:16px;display:block">' + esc(p.name) + '</span>' +
         '<span style="font-size:12.5px;color:var(--text-dim)">' + esc(p.carCity) + '</span>' +
       '</span>' +
@@ -344,19 +345,20 @@
         '<span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:' + p.contactDot + '"></span>' +
         '<span style="font-size:12.5px;color:' + p.contactColor + '">' + esc(p.touch) + '</span>' +
       '</span>' +
-      '<span style="flex:0 0 124px">' + chipHTML(p) + '</span>' +
-      '<span style="flex:0 0 16px;color:var(--text-dim);font-size:15px">→</span>' +
+      '<span class="sd-col-stage" style="flex:0 0 124px">' + chipHTML(p) + '</span>' +
+      '<span class="sd-col-arrow" style="flex:0 0 16px;color:var(--text-dim);font-size:15px">→</span>' +
     '</div>';
   }
 
   function render(vm, state) {
     var ig = CONFIG.instagram;
+    var igChange = ig.change ? '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--ldc-moss);border-radius:3px;color:var(--ldc-moss);font-size:12px;font-weight:700;letter-spacing:.04em">↑ ' + esc(ig.change) + ' <span style="font-weight:400;letter-spacing:0">since last check</span></span>' : "";
+    var igReach = ig.reach ? '<span style="font-size:13px;color:var(--text-dim)">' + esc(ig.reach) + ' reach this week</span>' : "";
     var igHTML = ig.show ?
-      '<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;padding:18px 30px;background:var(--ldc-chalk);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)">' +
+      '<div class="sd-pad" style="display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;padding:18px 30px;background:var(--ldc-chalk);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)">' +
         '<span class="sd-eyebrow" style="color:var(--text-dim)">Instagram · top of funnel</span>' +
         '<span style="display:flex;align-items:baseline;gap:9px"><span class="sd-num" style="font-size:30px">' + esc(ig.followers) + '</span><span style="font-size:12px;color:var(--text-dim)">followers</span></span>' +
-        '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--ldc-moss);border-radius:3px;color:var(--ldc-moss);font-size:12px;font-weight:700;letter-spacing:.04em">↑ ' + esc(ig.change) + ' <span style="font-weight:400;letter-spacing:0">since last check</span></span>' +
-        '<span style="font-size:13px;color:var(--text-dim)">' + esc(ig.reach) + ' reach this week</span>' +
+        igChange + igReach +
       '</div>' : "";
 
     var funnelHTML = vm.funnel.map(function (s) {
@@ -385,10 +387,10 @@
       : '<div style="padding:34px 0;text-align:center;color:var(--text-dim);font-size:14px">No applicants in this view yet.</div>';
 
     return '' +
-      '<div style="max-width:1200px;margin:0 auto;min-height:100vh;background:var(--ldc-chalk);color:var(--ldc-tarmac)">' +
+      '<div style="width:100%;min-height:100vh;background:var(--ldc-chalk);color:var(--ldc-tarmac)">' +
         '<div class="stripe" aria-hidden="true" style="height:4px"><span></span><span></span><span></span></div>' +
 
-        '<div class="ldc-dark" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-end;padding:22px 30px 20px;background:var(--ldc-green);color:var(--ldc-chalk)">' +
+        '<div class="ldc-dark sd-pad" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-end;padding:22px 30px 20px;background:var(--ldc-green);color:var(--ldc-chalk)">' +
           '<div><div class="sd-eyebrow" style="color:var(--ldc-chalk-dim);margin-bottom:7px">Event signups</div><div class="sd-disp" style="font-size:27px">' + esc(vm.eventName) + '</div></div>' +
           '<div style="display:flex;align-items:center;gap:16px">' +
             '<span id="updatedLabel" style="font-size:12px;color:var(--ldc-chalk-dim)">From Google Sheet · ' + esc(state.updatedLabel) + '</span>' +
@@ -397,13 +399,13 @@
         '</div>' +
 
         '<div style="display:flex;flex-wrap:wrap;gap:1px;background:var(--hairline)">' +
-          '<div class="ldc-dark" style="flex:1 1 300px;padding:28px 30px;background:var(--ldc-green);color:var(--ldc-chalk)">' +
+          '<div class="ldc-dark sd-pad" style="flex:1 1 300px;padding:28px 30px;background:var(--ldc-green);color:var(--ldc-chalk)">' +
             '<div class="sd-eyebrow" style="color:var(--ldc-chalk-dim);margin-bottom:14px">Places filled</div>' +
             '<div style="display:flex;align-items:baseline;gap:10px"><span class="sd-num" style="font-size:84px;color:var(--ldc-chalk)">' + vm.placesFilled + '</span><span class="sd-num" style="font-size:34px;color:var(--ldc-chalk-dim)">/ ' + vm.target + '</span></div>' +
             '<div style="height:14px;background:var(--ldc-tarmac);margin-top:20px;display:flex"><span style="width:' + vm.pctFilledStr + ';background:var(--ldc-chalk);display:block"></span><span style="width:3px;background:var(--ldc-redline);display:block"></span></div>' +
             '<div style="display:flex;justify-content:space-between;margin-top:9px;font-size:12px;color:var(--ldc-chalk-dim)"><span>' + vm.pctFilledStr + ' full</span><span>' + vm.placesLeft + ' places left</span></div>' +
           '</div>' +
-          '<div style="flex:2 1 420px;padding:28px 30px;background:var(--ldc-chalk)">' +
+          '<div class="sd-pad" style="flex:2 1 420px;padding:28px 30px;background:var(--ldc-chalk)">' +
             '<div class="sd-eyebrow" style="color:var(--text-dim);margin-bottom:18px">Journey · ' + vm.signedUp + ' signed up</div>' +
             funnelHTML +
           '</div>' +
@@ -413,21 +415,21 @@
 
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:1px;background:var(--hairline);border-bottom:1px solid var(--hairline)">' + statHTML + '</div>' +
 
-        '<div style="padding:24px 30px 0;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+        '<div class="sd-pad" style="padding:24px 30px 0;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
           '<p class="ldc-redtick" style="color:var(--text-body)">Applicants</p>' +
           '<div style="display:flex;align-items:center;gap:7px"><span class="sd-eyebrow" style="color:var(--text-dim);margin-right:4px">Sort</span>' + sortHTML + '</div>' +
         '</div>' +
 
-        '<div style="padding:14px 30px 4px;display:flex;flex-wrap:wrap;gap:9px">' + filtersHTML + '</div>' +
+        '<div class="sd-pad" style="padding:14px 30px 4px;display:flex;flex-wrap:wrap;gap:9px">' + filtersHTML + '</div>' +
 
-        '<div style="padding:8px 30px 40px">' +
+        '<div class="sd-pad" style="padding:8px 30px 40px">' +
           '<div class="sd-head-row" style="display:flex;align-items:center;gap:18px;padding:0 0 9px;border-bottom:1px solid var(--hairline-strong)">' +
-            '<span style="flex:0 0 44px"></span>' +
-            '<span class="sd-eyebrow" style="flex:1;color:var(--text-dim)">Name · car</span>' +
+            '<span class="sd-col-roundel" style="flex:0 0 44px"></span>' +
+            '<span class="sd-eyebrow sd-col-name" style="flex:1;color:var(--text-dim)">Name · car</span>' +
             '<span class="sd-eyebrow sd-col-party" style="flex:0 0 110px;color:var(--text-dim)">Party</span>' +
             '<span class="sd-eyebrow sd-col-contact" style="flex:0 0 168px;color:var(--text-dim)">Contact · nudges</span>' +
-            '<span class="sd-eyebrow" style="flex:0 0 124px;color:var(--text-dim)">Stage</span>' +
-            '<span style="flex:0 0 16px"></span>' +
+            '<span class="sd-eyebrow sd-col-stage" style="flex:0 0 124px;color:var(--text-dim)">Stage</span>' +
+            '<span class="sd-col-arrow" style="flex:0 0 16px"></span>' +
           '</div>' +
           rowsHTML +
         '</div>' +
