@@ -122,9 +122,18 @@
 }
 .drawer.is-open { transform: translateX(0); }
 
-/* ---- Mobile: let the applicant table breathe ---- */
-@media (max-width: 720px) {
-  .sd-row, .sd-head-row { flex-wrap: wrap !important; }
-  .sd-col-party, .sd-col-contact { flex-basis: auto !important; }
-  .sd-head-row .sd-col-party, .sd-head-row .sd-col-contact { display: none; }
+/* ---- Full-bleed: never let the page scroll sideways ---- */
+html, .dash-body { overflow-x: hidden; max-width: 100%; }
+
+/* ---- Mobile: fit to the screen, give the name room, shrink the rest ----
+   The applicant rows use fixed pixel columns on desktop; on a phone those add
+   up wider than the screen, squeezing the name and forcing a sideways scroll.
+   Here we drop the side padding, hide the party/contact/arrow columns, let the
+   name flex to fill, and size the stage chip to its own content. */
+@media (max-width: 640px) {
+  .sd-pad { padding-left: 16px !important; padding-right: 16px !important; }
+  .sd-head-row, .sd-row { gap: 12px !important; }
+  .sd-col-party, .sd-col-contact, .sd-col-arrow { display: none !important; }
+  .sd-col-name { flex: 1 1 auto !important; min-width: 0 !important; }
+  .sd-col-stage { flex: 0 0 auto !important; }
 }
