@@ -107,13 +107,24 @@
   transition: opacity .26s ease;
 }
 .drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
-.drawer {
+/* Full-viewport clipping layer: when the drawer is parked off to the right,
+   this hides the overflow so it can't widen the page (the iOS zoom/pan bug).
+   Transparent and click-through when closed; the drawer itself re-enables
+   pointer events. */
+.drawer-host {
   position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 100;
+}
+.drawer {
+  position: absolute;
   top: 0; right: 0; bottom: 0;
   width: min(460px, 100%);
   background: var(--ldc-chalk);
   color: var(--ldc-tarmac);
-  z-index: 100;
+  pointer-events: auto;
   transform: translateX(100%);
   transition: transform .28s cubic-bezier(.4, 0, .2, 1);
   display: flex;

@@ -265,11 +265,11 @@
     });
 
     var statCards = [
-      { value: pad(paid),             label: "Paid",                color: green },
-      { value: pad(approved),         label: "Approved · not paid", color: moss },
-      { value: pad(awaitingApproval), label: "Awaiting approval",   color: "var(--text-body)" },
-      { value: pad(formIncomplete),   label: "Form not completed",  color: "var(--text-body)" },
-      { value: pad(declined),         label: "Declined",            color: dim },
+      { value: pad(paid),             label: "Paid",             color: green },
+      { value: pad(approved),         label: "Approved, unpaid", color: moss },
+      { value: pad(awaitingApproval), label: "Awaiting approval", color: "var(--text-body)" },
+      { value: pad(formIncomplete),   label: "Form incomplete",  color: "var(--text-body)" },
+      { value: pad(declined),         label: "Declined",         color: dim },
       { value: pad(alone) + " / " + pad(guest), label: "Alone / guest", color: "var(--text-body)" }
     ];
 
@@ -392,7 +392,7 @@
     }).join("");
 
     var statHTML = vm.statCards.map(function (s) {
-      return '<div style="background:var(--ldc-chalk);padding:18px 22px"><div class="sd-num" style="font-size:30px;color:' + s.color + '">' + esc(s.value) + '</div><div class="sd-eyebrow" style="color:var(--text-dim);margin-top:9px">' + esc(s.label) + '</div></div>';
+      return '<div style="background:var(--ldc-chalk);padding:18px 22px"><div class="sd-num" style="font-size:30px;color:' + s.color + '">' + esc(s.value) + '</div><div class="sd-eyebrow" style="color:var(--text-dim);margin-top:9px;line-height:1.4;text-wrap:balance">' + esc(s.label) + '</div></div>';
     }).join("");
 
     var sortHTML = vm.sortOptions.map(function (o) {
