@@ -1,0 +1,130 @@
+/* Signup Dashboard — Long Drive Club
+ *
+ * A faithful static build of the Claude Design "Signup Dashboard.dc.html".
+ * The colour, type and component tokens all come from styles.css ("The
+ * Livery"); this file adds only the dashboard-specific type utilities, the
+ * password gate, and the slide-over detail drawer. The dashboard markup
+ * itself is rendered by dashboard.js with inline styles that mirror the
+ * original design one-to-one. */
+
+.dash-body {
+  margin: 0;
+  background: var(--ldc-tarmac);
+  color: var(--ldc-tarmac);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Type utilities carried over from the design ---- */
+.sd-eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: .32em;
+  text-transform: uppercase;
+  font-weight: 600;
+  font-variation-settings: "wdth" 112;
+}
+.sd-num {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 122;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: .02em;
+  line-height: 1;
+}
+.sd-disp {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 122;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  line-height: 1.04;
+}
+
+/* ---- Password gate ---- */
+.gate {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+.gate-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--ldc-chalk);
+  color: var(--ldc-tarmac);
+}
+.gate-inner { padding: 38px 34px 34px; }
+.gate-eyebrow { color: var(--text-dim); margin: 22px 0 10px; }
+.gate-title { font-size: 30px; margin: 0 0 12px; }
+.gate-sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0 0 24px;
+}
+#gateForm { display: flex; flex-direction: column; gap: 12px; }
+.gate-input {
+  font-family: var(--font-body);
+  font-size: 15px;
+  padding: 13px 14px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--ldc-chalk);
+  color: var(--ldc-tarmac);
+  outline: none;
+}
+.gate-input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.gate-card .btn { justify-content: center; width: 100%; }
+.gate-error {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ldc-redline);
+  margin: 14px 0 0;
+}
+
+/* ---- App shell ---- */
+.app { display: block; }
+
+/* Applicant rows get a recess on hover (the design's style-hover). */
+.sd-row { transition: background var(--duration-fast) var(--ease-out); }
+.sd-row:hover { background: var(--surface-recess); }
+
+.sd-tab, .sd-chip, .sd-sort { cursor: pointer; }
+
+/* ---- Detail drawer ---- */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 25, 22, 0.55);
+  z-index: 90;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .26s ease;
+}
+.drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: min(460px, 100%);
+  background: var(--ldc-chalk);
+  color: var(--ldc-tarmac);
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform .28s cubic-bezier(.4, 0, .2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -1px 0 0 var(--hairline);
+}
+.drawer.is-open { transform: translateX(0); }
+
+/* ---- Mobile: let the applicant table breathe ---- */
+@media (max-width: 720px) {
+  .sd-row, .sd-head-row { flex-wrap: wrap !important; }
+  .sd-col-party, .sd-col-contact { flex-basis: auto !important; }
+  .sd-head-row .sd-col-party, .sd-head-row .sd-col-contact { display: none; }
+}

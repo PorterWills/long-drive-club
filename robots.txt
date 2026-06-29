@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard.html
 
 Sitemap: https://longdriveclub.com/sitemap.xml

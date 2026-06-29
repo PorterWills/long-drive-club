@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signup Dashboard — Long Drive Club</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="dash-body">
+
+  <!-- Password gate. The data never loads until the server accepts the
+       password, so an unauthenticated visitor sees only this screen. -->
+  <section id="gate" class="gate">
+    <div class="gate-card ldc-light">
+      <div class="stripe" aria-hidden="true" style="height:4px"><span></span><span></span><span></span></div>
+      <div class="gate-inner">
+        <span class="wordmark" style="font-size:18px">Long Drive Club</span>
+        <p class="sd-eyebrow gate-eyebrow">Signup dashboard</p>
+        <h1 class="sd-disp gate-title">Members only</h1>
+        <p class="gate-sub">Enter the dashboard password to see the entry sheet.</p>
+        <form id="gateForm" autocomplete="off">
+          <input id="gatePassword" class="gate-input" type="password" name="dashboard-password"
+                 placeholder="Password" aria-label="Dashboard password" autocomplete="current-password">
+          <button id="gateSubmit" class="btn btn--green btn--md" type="submit">
+            <span class="tick" aria-hidden="true"></span><span class="label">Open</span>
+          </button>
+        </form>
+        <p id="gateError" class="gate-error" role="alert" hidden>That password didn't work. Try again.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- The dashboard itself. Rendered by dashboard.js once the password is
+       accepted. -->
+  <main id="app" class="app" hidden></main>
+
+  <!-- Slide-over applicant detail. Lives outside #app so it overlays everything. -->
+  <div id="backdrop" class="drawer-backdrop"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true"></aside>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

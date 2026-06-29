@@ -112,6 +112,52 @@ is public, so the `#access` marker is visible to anyone who reads the
 email or the source. Server-side gating (as above) is the only way to
 truly restrict it.
 
+## The signup dashboard
+
+`dashboard.html` is a private, password-gated read-out of the application
+sheet — the same `Applications` tab the entry form fills. It shows places
+filled against a target, the sign-up → form → approved → paid funnel, a row
+of counts, and a sortable, filterable applicant list; clicking a row opens a
+slide-over with the full record and a timeline. It's a faithful static build
+of the Claude Design "Signup Dashboard" (`dashboard.css` and `dashboard.js`
+carry the layout and logic; the colour, type and components reuse `styles.css`
+— "The Livery").
+
+Unlike the welcome/members guards, this one is **real** gating: the data
+never ships in the page. `dashboard.js` asks the Apps Script web app for the
+rows over JSONP, and `doGet` only returns them when the supplied password
+matches the `DASHBOARD_PASSWORD` Script Property. A wrong password gets
+nothing. The token and the generated gate passwords are never exposed — only
+the columns in `DASHBOARD_FIELDS` (`Code.gs`) are sent.
+
+### Setup
+
+1. In the Apps Script project, **Project Settings ▸ Script Properties**, add
+   `DASHBOARD_PASSWORD`. Set it to the password(s) the dashboard should accept,
+   separated by commas — one per viewer, e.g. `ABC123, DEF456`. These can be
+   the same passwords the viewers already use at the site gate. The check is
+   case-insensitive. (Keep the real values here, never in the repo.)
+2. **Deploy ▸ Manage deployments ▸ Edit ▸ New version** so the updated
+   `doGet` goes live (the `/exec` URL stays the same).
+3. Visit `https://longdriveclub.com/dashboard.html`, enter the password.
+
+The password is held in `sessionStorage` for the tab's life, so Refresh and
+reloads don't re-prompt; closing the tab clears it. The page is `noindex` and
+disallowed in `robots.txt`, and isn't linked from anywhere on the site.
+
+### Tuning it
+
+The top of `dashboard.js` has a `CONFIG` block:
+
+- `eventName` — the heading (e.g. `"THE OCTOBER DRIVE"`).
+- `placesTarget` — capacity the "places filled" bar fills toward (default 20).
+- `instagram` — an optional top-of-funnel strip. It's **off** by default
+  because those numbers aren't in the sheet; set `show: true` and keep
+  `followers` / `change` / `reach` current by hand if you want it.
+
+`APPS_SCRIPT_URL` is the same deployment the entry form uses; update both if
+you ever redeploy to a new URL.
+
 ## Imagery
 
 `assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first
