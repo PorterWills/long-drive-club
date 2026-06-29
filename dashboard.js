@@ -32,6 +32,27 @@
 
   var SS_KEY = "ldc-dash-pw";
 
+  // Live overrides from the sheet's "Dashboard" tab. Anything set there wins
+  // over the CONFIG defaults above, so the owners can change the follower
+  // count, event name, etc. by editing a cell — no code, no redeploy.
+  function applySettings(s) {
+    if (!s || typeof s !== "object") return;
+    var truthy = function (v) {
+      var t = String(v).trim().toLowerCase();
+      return t === "true" || t === "yes" || t === "y" || t === "1" || t === "on";
+    };
+    var nonEmpty = function (k) { return s[k] != null && String(s[k]).trim() !== ""; };
+    if (nonEmpty("event_name")) CONFIG.eventName = String(s.event_name).trim();
+    if (nonEmpty("places_target")) {
+      var n = parseInt(s.places_target, 10);
+      if (!isNaN(n) && n > 0) CONFIG.placesTarget = n;
+    }
+    if (nonEmpty("ig_show")) CONFIG.instagram.show = truthy(s.ig_show);
+    if (nonEmpty("ig_followers")) CONFIG.instagram.followers = String(s.ig_followers).trim();
+    if ("ig_change" in s) CONFIG.instagram.change = s.ig_change == null ? "" : String(s.ig_change).trim();
+    if ("ig_reach" in s) CONFIG.instagram.reach = s.ig_reach == null ? "" : String(s.ig_reach).trim();
+  }
+
   /* ---- Small helpers --------------------------------------------------- */
 
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -519,6 +540,7 @@
     fetchData(pw).then(function (data) {
       if (data && data.ok) {
         state.rows = data.rows || [];
+        applySettings(data.settings);
         state.updatedLabel = "just now";
         paint();
       }
@@ -537,6 +559,7 @@
 
   function showDashboard(data) {
     state.rows = (data && data.rows) || [];
+    applySettings(data && data.settings);
     state.updatedLabel = "just now";
     gateEl.hidden = true;
     appEl.hidden = false;

@@ -145,18 +145,29 @@ The password is held in `sessionStorage` for the tab's life, so Refresh and
 reloads don't re-prompt; closing the tab clears it. The page is `noindex` and
 disallowed in `robots.txt`, and isn't linked from anywhere on the site.
 
-### Tuning it
+### Tuning it (no code)
 
-The top of `dashboard.js` has a `CONFIG` block:
+The display values live in a **`Dashboard` tab** in the spreadsheet — a plain
+two-column `setting` / `value` list. Edit a cell, hit **Refresh** on the
+dashboard, done. The tab is created and pre-filled automatically the first
+time the dashboard loads after deploy, so there's nothing to set up.
 
-- `eventName` — the heading (e.g. `"THE OCTOBER DRIVE"`).
-- `placesTarget` — capacity the "places filled" bar fills toward (default 20).
-- `instagram` — an optional top-of-funnel strip. It's **off** by default
-  because those numbers aren't in the sheet; set `show: true` and keep
-  `followers` / `change` / `reach` current by hand if you want it.
+| setting | what it does |
+| --- | --- |
+| `event_name` | the heading (e.g. `THE FIRST DRIVE`) |
+| `places_target` | capacity the "places filled" bar fills toward |
+| `ig_show` | `yes`/`no` — show the Instagram strip |
+| `ig_followers` | follower count shown |
+| `ig_change` | optional "↑ N since last check" pill — blank hides it |
+| `ig_reach` | optional "N reach this week" — blank hides it |
 
-`APPS_SCRIPT_URL` is the same deployment the entry form uses; update both if
-you ever redeploy to a new URL.
+Under the hood: `Code.gs` `readSettings()` returns this tab in the dashboard
+feed, and `applySettings()` in `dashboard.js` lets any value present override
+the matching default in the `CONFIG` block at the top of `dashboard.js`. So
+`CONFIG` is just the fallback if a row is missing or the tab is empty.
+
+`APPS_SCRIPT_URL` (in `CONFIG`) is the same deployment the entry form uses;
+update both if you ever redeploy to a new URL.
 
 ## Imagery
 
