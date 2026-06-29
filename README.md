@@ -133,8 +133,10 @@ the columns in `DASHBOARD_FIELDS` (`Code.gs`) are sent.
 ### Setup
 
 1. In the Apps Script project, **Project Settings ▸ Script Properties**, add
-   `DASHBOARD_PASSWORD` and set it to a password to share with the (two)
-   people who need access.
+   `DASHBOARD_PASSWORD`. Set it to the password(s) the dashboard should accept,
+   separated by commas — one per viewer, e.g. `ABC123, DEF456`. These can be
+   the same passwords the viewers already use at the site gate. The check is
+   case-insensitive. (Keep the real values here, never in the repo.)
 2. **Deploy ▸ Manage deployments ▸ Edit ▸ New version** so the updated
    `doGet` goes live (the `/exec` URL stays the same).
 3. Visit `https://longdriveclub.com/dashboard.html`, enter the password.

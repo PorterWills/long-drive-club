@@ -110,11 +110,14 @@ function doGet(e) {
 
 /* ---- Dashboard feed -----------------------------------------------------
    The private signup dashboard (dashboard.html on the site) reads the whole
-   applications table through here, behind a single shared password held in
-   Script Properties (DASHBOARD_PASSWORD) — NOT in the static page, so the
-   applicant PII never ships in the public file. A wrong or missing password
-   returns { ok:false } and no rows. Only the columns in DASHBOARD_FIELDS are
-   exposed: the recovery token and the generated gate password stay private. */
+   applications table through here, behind a short allow-list of passwords
+   held in Script Properties (DASHBOARD_PASSWORD) — NOT in the static page, so
+   the applicant PII never ships in the public file. The property holds one or
+   more passwords separated by commas (e.g. "ABC123, DEF456"), so each viewer
+   can keep their own; the check is case-insensitive. A wrong or missing
+   password returns { ok:false } and no rows. Only the columns in
+   DASHBOARD_FIELDS are exposed: the recovery token and the generated gate
+   password stay private. */
 
 var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
   'play', 'party', 'days', 'consent', 'status', 'approved_at', 'paid_at',
@@ -122,8 +125,13 @@ var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
   'handicap', 'base', 'city', 'step1_at', 'completed_at', 'recovery_sent'];
 
 function dashboardPayload(guess) {
-  var expected = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
-  if (!expected || String(guess) !== expected) return { ok: false };
+  var raw = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
+  if (!raw) return { ok: false };
+  var g = String(guess || '').trim().toUpperCase();
+  if (!g) return { ok: false };
+  var allowed = raw.split(/[,\s]+/).map(function (p) { return p.trim().toUpperCase(); })
+                   .filter(function (p) { return p; });
+  if (allowed.indexOf(g) < 0) return { ok: false };
 
   var sheet = getSheet();
   var headers = headerMap(sheet);
