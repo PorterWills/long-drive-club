@@ -378,8 +378,10 @@
     var igHTML = ig.show ?
       '<div class="sd-pad" style="display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;padding:18px 30px;background:var(--ldc-chalk);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)">' +
         '<span class="sd-eyebrow" style="color:var(--text-dim)">Instagram · top of funnel</span>' +
-        '<span style="display:flex;align-items:baseline;gap:9px"><span class="sd-num" style="font-size:30px">' + esc(ig.followers) + '</span><span style="font-size:12px;color:var(--text-dim)">followers</span></span>' +
-        igChange + igReach +
+        '<span style="display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 22px">' +
+          '<span style="display:flex;align-items:baseline;gap:9px"><span class="sd-num" style="font-size:30px">' + esc(ig.followers) + '</span><span style="font-size:12px;color:var(--text-dim)">followers</span></span>' +
+          igChange + igReach +
+        '</span>' +
       '</div>' : "";
 
     var funnelHTML = vm.funnel.map(function (s) {
