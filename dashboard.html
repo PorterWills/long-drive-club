@@ -42,9 +42,13 @@
        accepted. -->
   <main id="app" class="app" hidden></main>
 
-  <!-- Slide-over applicant detail. Lives outside #app so it overlays everything. -->
+  <!-- Slide-over applicant detail. Lives outside #app so it overlays everything.
+       The host clips the drawer when it's parked off-screen, so its hidden
+       (translated) width can never widen the page on mobile. -->
   <div id="backdrop" class="drawer-backdrop"></div>
-  <aside id="drawer" class="drawer" aria-hidden="true"></aside>
+  <div class="drawer-host">
+    <aside id="drawer" class="drawer" aria-hidden="true"></aside>
+  </div>
 
   <script src="dashboard.js"></script>
 </body>
