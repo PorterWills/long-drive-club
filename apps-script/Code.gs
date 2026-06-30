@@ -122,7 +122,7 @@ function doPost(e) {
   return jsonOut(handleSubmission(data));
 }
 
-// Handles five things, all JSONP (a <script src> the site loads, whose
+// Handles seven things, all JSONP (a <script src> the site loads, whose
 // response calls back into the page) since Apps Script can't send CORS
 // headers a normal fetch could read:
 //  - ?submit=JSON&callback=YYY  a step1/step2 application submission. The
@@ -131,6 +131,10 @@ function doPost(e) {
 //  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
 //    a recovery token, so it can prefill step two.
 //  - ?password=XXX&callback=YYY  the gate asking if a password is valid.
+//  - ?dashboard=PASSWORD&callback=YYY  the dashboard's data feed.
+//  - ?action=JSON&callback=YYY  the dashboard's Approve / Decline / Mark paid
+//    buttons — see dashboardAction.
+//  - ?meta=1&callback=YYY  public, non-sensitive display settings.
 //  - no params: a plain liveness check, handy in a browser.
 function doGet(e) {
   var params = (e && e.parameter) || {};
@@ -157,6 +161,15 @@ function doGet(e) {
   }
   if (params.dashboard) {
     return jsonpOrJson(dashboardPayload(params.dashboard), params.callback);
+  }
+  if (params.action) {
+    var actionData;
+    try {
+      actionData = JSON.parse(params.action);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(dashboardAction(actionData), params.callback);
   }
   if (params.meta) {
     return jsonpOrJson(publicMeta(), params.callback);
@@ -185,17 +198,22 @@ var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
 // code. Created and pre-filled automatically the first time it's read.
 var SETTINGS_TAB = 'Dashboard';
 
-function dashboardPayload(guess) {
+// Shared by the dashboard data feed and the approve/decline/paid action
+// endpoint below — same password, same 15-guesses-per-10-minutes lockout
+// either way, since both expose or change applicant data.
+function dashboardPasswordValid(guess) {
   var raw = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
-  if (!raw) return { ok: false };
+  if (!raw) return false;
   var g = String(guess || '').trim().toUpperCase();
-  if (!g) return { ok: false };
-  // 15 guesses per 10 minutes, shared across all guessers. The dashboard
-  // exposes applicant PII, so this gate is tighter than the public one.
-  if (!rateLimitOk('dash_guess', 15, 600)) return { ok: false };
+  if (!g) return false;
+  if (!rateLimitOk('dash_guess', 15, 600)) return false;
   var allowed = raw.split(/[,\s]+/).map(function (p) { return p.trim().toUpperCase(); })
                    .filter(function (p) { return p; });
-  if (allowed.indexOf(g) < 0) return { ok: false };
+  return allowed.indexOf(g) >= 0;
+}
+
+function dashboardPayload(guess) {
+  if (!dashboardPasswordValid(guess)) return { ok: false };
 
   var sheet = getSheet();
   var headers = headerMap(sheet);
@@ -678,6 +696,47 @@ function handleDeclined(sheet, row, headers) {
   sendViaResend({ to: email, subject: 'Not this time', html: html });
 
   cell.setValue(new Date());
+}
+
+/* ---- Dashboard actions --------------------------------------------------
+   Approve / Decline / Mark paid, triggered from a button on the dashboard
+   instead of by hand-editing the status column. Reuses the exact same
+   handleApproved/handlePaid/handleDeclined functions the sheet-edit trigger
+   calls, so the result — email sent, timestamp stamped — is identical either
+   way, and each stays idempotent (a repeat call, e.g. a double-click, is a
+   no-op because the timestamp cell is already set). */
+function dashboardAction(payload) {
+  if (!dashboardPasswordValid(payload.password)) return { ok: false, error: 'denied' };
+
+  var email = String(payload.email || '').trim();
+  var action = String(payload.action || '').trim().toLowerCase();
+  if (!email || ['approve', 'decline', 'paid'].indexOf(action) < 0) {
+    return { ok: false, error: 'bad request' };
+  }
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+  } catch (lockErr) {
+    return { ok: false, error: 'busy' };
+  }
+  try {
+    var sheet = getSheet();
+    var headers = headerMap(sheet);
+    var row = findRowByEmail(sheet, headers, email);
+    if (!row) return { ok: false, error: 'not_found' };
+
+    if (action === 'approve') handleApproved(sheet, row, headers);
+    else if (action === 'decline') handleDeclined(sheet, row, headers);
+    else if (action === 'paid') handlePaid(sheet, row, headers);
+
+    return { ok: true };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
