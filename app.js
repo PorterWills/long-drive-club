@@ -685,16 +685,55 @@
   /* ---- Persistence ------------------------------------------------------
      Two posts to the Google Apps Script web app. Step one creates (or updates)
      the lead at status step1_complete before step two renders; step two merges
-     into the same record, keyed on email, and marks it complete. Apps Script
-     returns no CORS headers, so we post with mode: "no-cors" and a plain-text
-     content type — anything else triggers a preflight it can't answer. The
-     response is opaque, so a resolved fetch is treated as success. */
-  function postLead(payload) {
+     into the same record, keyed on email, and marks it complete.
+
+     Primary path is JSONP (the doGet "?submit=" endpoint): a real ok/error
+     comes back, so a genuine rejection (e.g. rate_limited) surfaces to the
+     applicant instead of a false "It's with us now". If that doesn't answer —
+     network hiccup, or an older deployment that doesn't have the ?submit=
+     endpoint yet — we fall back to the original no-cors POST, which is opaque
+     but still gets the data there, so a deploy-timing gap never blocks a
+     genuine application. */
+  function postLeadJSONP(payload) {
+    return new Promise(function (resolve, reject) {
+      var cb = "ldcSubmit" + Date.now() + Math.floor(Math.random() * 1000);
+      var script = document.createElement("script");
+      var timer = setTimeout(function () { cleanup(); reject(new Error("timeout")); }, 12000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (data) {
+        cleanup();
+        if (data && typeof data === "object") resolve(data); else reject(new Error("bad response"));
+      };
+      script.onerror = function () { cleanup(); reject(new Error("network")); };
+      script.src = APPS_SCRIPT_URL + "?submit=" + encodeURIComponent(JSON.stringify(payload)) + "&callback=" + cb;
+      document.head.appendChild(script);
+    });
+  }
+
+  function postLeadNoCors(payload) {
     return fetch(APPS_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
+    });
+  }
+
+  function postLead(payload) {
+    return postLeadJSONP(payload).then(function (res) {
+      if (res.ok) return res;
+      // The backend was reached and explicitly rejected the submission (e.g.
+      // rate_limited) — a real failure, not a deploy-lag fallback case.
+      var err = new Error(res.error || "rejected");
+      err.serverRejected = true;
+      throw err;
+    }).catch(function (err) {
+      if (err && err.serverRejected) throw err;
+      return postLeadNoCors(payload);
     });
   }
 

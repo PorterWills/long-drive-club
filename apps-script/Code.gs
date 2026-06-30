@@ -65,18 +65,15 @@ var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'pa
                'make', 'model', 'handicap', 'base', 'city',
                'token', 'step1_at', 'completed_at', 'recovery_sent'];
 
-function doPost(e) {
-  var data;
-  try {
-    data = JSON.parse(e.postData.contents);
-  } catch (parseErr) {
-    return jsonOut({ ok: false, error: 'bad request' });
-  }
-
+// The actual submission logic, shared by both entry points below. Returns a
+// plain {ok:true} / {ok:false, error} object rather than writing the
+// response itself, since doPost answers via plain JSON and doGet's ?submit=
+// path (see doGet) answers as JSONP.
+function handleSubmission(data) {
   // Honeypot: "company" is a hidden field real applicants never see or fill.
   // A bot that fills every field trips it. Report success but write nothing,
   // so the bot has no signal the field is a trap.
-  if (data.hp) return jsonOut({ ok: true });
+  if (data.hp) return { ok: true };
 
   // Per-email throttle. Apps Script doesn't expose the caller's IP, so this
   // is the best available key. Generous enough that a real applicant retrying
@@ -84,14 +81,14 @@ function doPost(e) {
   // the endpoint directly (it's a public URL, reachable without the site).
   var rlEmail = String(data.email || '').trim().toLowerCase();
   if (rlEmail && !rateLimitOk('rl_post_' + rlEmail, 8, 3600)) {
-    return jsonOut({ ok: false, error: 'rate_limited' });
+    return { ok: false, error: 'rate_limited' };
   }
 
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000); // serialise the read-then-write upsert
   } catch (lockErr) {
-    return jsonOut({ ok: false, error: 'busy' });
+    return { ok: false, error: 'busy' };
   }
   try {
     var stage = String(data.stage || '').toLowerCase();
@@ -102,22 +99,54 @@ function doPost(e) {
     } else {
       saveFullSubmission(data); // legacy single-submit
     }
-    return jsonOut({ ok: true });
+    return { ok: true };
   } catch (err) {
     console.error(err);
-    return jsonOut({ ok: false, error: String(err) });
+    return { ok: false, error: String(err) };
   } finally {
     lock.releaseLock();
   }
 }
 
-// Handles three things:
+// Legacy entry point. Apps Script web apps send no CORS headers, so a plain
+// POST's response is opaque to the browser (the site can fire one but never
+// read the answer) — kept only so an old cached copy of the site, which still
+// posts here and ignores the response, keeps working.
+function doPost(e) {
+  var data;
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (parseErr) {
+    return jsonOut({ ok: false, error: 'bad request' });
+  }
+  return jsonOut(handleSubmission(data));
+}
+
+// Handles seven things, all JSONP (a <script src> the site loads, whose
+// response calls back into the page) since Apps Script can't send CORS
+// headers a normal fetch could read:
+//  - ?submit=JSON&callback=YYY  a step1/step2 application submission. The
+//    current site uses this (not doPost) so it can see a real ok/error back
+//    rather than assuming success.
 //  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
-//    a recovery token, so it can prefill step two. Replies as JSONP.
+//    a recovery token, so it can prefill step two.
 //  - ?password=XXX&callback=YYY  the gate asking if a password is valid.
+//  - ?dashboard=PASSWORD&callback=YYY  the dashboard's data feed.
+//  - ?action=JSON&callback=YYY  the dashboard's Approve / Decline / Mark paid
+//    buttons — see dashboardAction.
+//  - ?meta=1&callback=YYY  public, non-sensitive display settings.
 //  - no params: a plain liveness check, handy in a browser.
 function doGet(e) {
   var params = (e && e.parameter) || {};
+  if (params.submit) {
+    var data;
+    try {
+      data = JSON.parse(params.submit);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(handleSubmission(data), params.callback);
+  }
   if (params.recover) {
     var lead = leadByToken(params.recover);
     var payload = { ok: false };
@@ -132,6 +161,15 @@ function doGet(e) {
   }
   if (params.dashboard) {
     return jsonpOrJson(dashboardPayload(params.dashboard), params.callback);
+  }
+  if (params.action) {
+    var actionData;
+    try {
+      actionData = JSON.parse(params.action);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(dashboardAction(actionData), params.callback);
   }
   if (params.meta) {
     return jsonpOrJson(publicMeta(), params.callback);
@@ -160,17 +198,22 @@ var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
 // code. Created and pre-filled automatically the first time it's read.
 var SETTINGS_TAB = 'Dashboard';
 
-function dashboardPayload(guess) {
+// Shared by the dashboard data feed and the approve/decline/paid action
+// endpoint below — same password, same 15-guesses-per-10-minutes lockout
+// either way, since both expose or change applicant data.
+function dashboardPasswordValid(guess) {
   var raw = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
-  if (!raw) return { ok: false };
+  if (!raw) return false;
   var g = String(guess || '').trim().toUpperCase();
-  if (!g) return { ok: false };
-  // 15 guesses per 10 minutes, shared across all guessers. The dashboard
-  // exposes applicant PII, so this gate is tighter than the public one.
-  if (!rateLimitOk('dash_guess', 15, 600)) return { ok: false };
+  if (!g) return false;
+  if (!rateLimitOk('dash_guess', 15, 600)) return false;
   var allowed = raw.split(/[,\s]+/).map(function (p) { return p.trim().toUpperCase(); })
                    .filter(function (p) { return p; });
-  if (allowed.indexOf(g) < 0) return { ok: false };
+  return allowed.indexOf(g) >= 0;
+}
+
+function dashboardPayload(guess) {
+  if (!dashboardPasswordValid(guess)) return { ok: false };
 
   var sheet = getSheet();
   var headers = headerMap(sheet);
@@ -653,6 +696,47 @@ function handleDeclined(sheet, row, headers) {
   sendViaResend({ to: email, subject: 'Not this time', html: html });
 
   cell.setValue(new Date());
+}
+
+/* ---- Dashboard actions --------------------------------------------------
+   Approve / Decline / Mark paid, triggered from a button on the dashboard
+   instead of by hand-editing the status column. Reuses the exact same
+   handleApproved/handlePaid/handleDeclined functions the sheet-edit trigger
+   calls, so the result — email sent, timestamp stamped — is identical either
+   way, and each stays idempotent (a repeat call, e.g. a double-click, is a
+   no-op because the timestamp cell is already set). */
+function dashboardAction(payload) {
+  if (!dashboardPasswordValid(payload.password)) return { ok: false, error: 'denied' };
+
+  var email = String(payload.email || '').trim();
+  var action = String(payload.action || '').trim().toLowerCase();
+  if (!email || ['approve', 'decline', 'paid'].indexOf(action) < 0) {
+    return { ok: false, error: 'bad request' };
+  }
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+  } catch (lockErr) {
+    return { ok: false, error: 'busy' };
+  }
+  try {
+    var sheet = getSheet();
+    var headers = headerMap(sheet);
+    var row = findRowByEmail(sheet, headers, email);
+    if (!row) return { ok: false, error: 'not_found' };
+
+    if (action === 'approve') handleApproved(sheet, row, headers);
+    else if (action === 'decline') handleDeclined(sheet, row, headers);
+    else if (action === 'paid') handlePaid(sheet, row, headers);
+
+    return { ok: true };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
