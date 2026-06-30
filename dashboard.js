@@ -27,7 +27,7 @@
     // Drive day and the reveal countdowns — these mirror members.js so the
     // dashboard shows the same four clocks members see. `eventDate` is editable
     // from the sheet (event_date); the reveal offsets match the members page.
-    eventDate: "2026-09-05T07:00:00",
+    eventDate: "2026-08-20T07:00:00",
     revealOffsets: { course: 42, meeting: 14, route: 7 }, // days before drive day
 
     // Instagram is not in the sheet, so these are entered by hand. `change`

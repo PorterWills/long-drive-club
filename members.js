@@ -23,7 +23,7 @@
 
   // Drive day — the fixed point everything hangs off. Shown only as a
   // countdown on the page (no calendar name yet), per the brief.
-  var EVENT = new Date("2026-09-05T07:00:00");
+  var EVENT = new Date("2026-08-20T07:00:00");
   function minusDays(d) { return EVENT.getTime() - d * 86400000; }
 
   // Reveal unlocks, derived from drive day so the clocks stay consistent.
