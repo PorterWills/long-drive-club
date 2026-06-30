@@ -105,6 +105,9 @@ function doGet(e) {
   if (params.dashboard) {
     return jsonpOrJson(dashboardPayload(params.dashboard), params.callback);
   }
+  if (params.meta) {
+    return jsonpOrJson(publicMeta(), params.callback);
+  }
   return jsonOut({ ok: true, service: 'ldc-applications' });
 }
 
@@ -183,6 +186,19 @@ function readSettings() {
     out[k] = vals[i][1];
   }
   return out;
+}
+
+// Public, non-sensitive display settings — safe to serve without a password
+// and with no applicant data. The members page reads drive day (event_date)
+// from here so the date lives in one place (the sheet) for both pages.
+function publicMeta() {
+  var s = {};
+  try { s = readSettings(); } catch (e) { s = {}; }
+  return {
+    ok: true,
+    event_name: s.event_name || '',
+    event_date: s.event_date || ''
+  };
 }
 
 function seedSettingsTab(ss) {

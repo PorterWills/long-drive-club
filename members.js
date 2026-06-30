@@ -21,8 +21,14 @@
 
   /* ---- The moving parts ------------------------------------------------- */
 
+  // The dashboard's Apps Script. The members page reads drive day (event_date)
+  // from the same sheet so the date lives in one place for both pages.
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec";
+
   // Drive day — the fixed point everything hangs off. Shown only as a
-  // countdown on the page (no calendar name yet), per the brief.
+  // countdown on the page (no calendar name yet), per the brief. This is the
+  // instant fallback; the live value is fetched from the sheet below and, if
+  // valid, replaces it (the clocks re-derive automatically).
   var EVENT = new Date("2026-08-20T07:00:00");
   function minusDays(d) { return EVENT.getTime() - d * 86400000; }
 
@@ -115,6 +121,41 @@
   }
   tick();
   setInterval(tick, 1000);
+
+  /* ---- Drive day from the sheet -----------------------------------------
+     Pull event_date from the same place the dashboard reads it (the sheet's
+     Dashboard tab) so the date is set once and both pages follow. JSONP,
+     since Apps Script can't send CORS headers. If it's slow, fails, or
+     returns nothing usable, the hardcoded EVENT above already has the page
+     running — this only ever corrects it. */
+  (function syncDriveDay() {
+    var cb = "__ldcmeta_" + Date.now();
+    var script = document.createElement("script");
+    var timer = setTimeout(cleanup, 8000);
+    function cleanup() {
+      clearTimeout(timer);
+      try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cb] = function (data) {
+      cleanup();
+      if (!data || !data.event_date) return;
+      var t = Date.parse(data.event_date);
+      if (isNaN(t)) return;
+      EVENT = new Date(t);
+      TARGETS.event = EVENT.getTime();
+      TARGETS.course = minusDays(42);
+      TARGETS.meeting = minusDays(14);
+      TARGETS.route = minusDays(7);
+      // A clock marked "Revealed" under the old date may not be under the new
+      // one — clear the flags so each re-evaluates on the next tick.
+      clocks.forEach(function (el) { delete el.dataset.done; });
+      tick();
+    };
+    script.onerror = cleanup;
+    script.src = APPS_SCRIPT_URL + "?meta=1&callback=" + cb;
+    document.body.appendChild(script);
+  })();
 
   /* ---- The garage: a scorecard that grows with the field ---------------- */
 

@@ -164,10 +164,13 @@ time the dashboard loads after deploy, so there's nothing to set up.
 
 The **Counting down** section shows the same four reveal clocks as the members
 page (drive day, the course, the meeting point, the route). They all derive
-from `event_date` using the same offsets as `members.js` (course −42 days,
-meeting −14, route −7), so set `event_date` to match drive day on the members
-page and the clocks stay in step. Each ticks live and reads "Revealed" once it
-passes.
+from `event_date` using the offsets in `members.js` (course −42 days, meeting
+−14, route −7). The members page reads the **same** `event_date` from the sheet
+(via the no-auth `?meta` endpoint in `Code.gs`, which returns only the public
+display values — no applicant data), so setting drive day once in the sheet
+updates both the dashboard and the members page. `members.js` keeps a hardcoded
+date as an instant fallback if that fetch is slow or fails. Each clock ticks
+live and reads "Revealed" once it passes.
 
 Under the hood: `Code.gs` `readSettings()` returns this tab in the dashboard
 feed, and `applySettings()` in `dashboard.js` lets any value present override
