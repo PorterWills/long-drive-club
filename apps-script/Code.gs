@@ -199,17 +199,19 @@ var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
 var SETTINGS_TAB = 'Dashboard';
 
 // Shared by the dashboard data feed and the approve/decline/paid action
-// endpoint below — same password, same 15-guesses-per-10-minutes lockout
-// either way, since both expose or change applicant data.
+// endpoint below — same password, same 15-wrong-guesses-per-10-minutes
+// lockout either way, since both expose or change applicant data.
 function dashboardPasswordValid(guess) {
   var raw = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
   if (!raw) return false;
   var g = String(guess || '').trim().toUpperCase();
   if (!g) return false;
-  if (!rateLimitOk('dash_guess', 15, 600)) return false;
+  if (!rateLimitPeek('dash_guess', 15)) return false;
   var allowed = raw.split(/[,\s]+/).map(function (p) { return p.trim().toUpperCase(); })
                    .filter(function (p) { return p; });
-  return allowed.indexOf(g) >= 0;
+  if (allowed.indexOf(g) >= 0) return true;
+  rateLimitBump('dash_guess', 600);
+  return false;
 }
 
 function dashboardPayload(guess) {
@@ -594,20 +596,23 @@ function sendRecoveryEmail(email, token) {
 function passwordValid(guess) {
   var g = String(guess || '').trim().toUpperCase();
   if (!g) return false;
-  // 30 guesses per 10 minutes, shared across all guessers — Apps Script can't
-  // key this per caller, but it's enough to make brute-forcing the
-  // ~10,000-combination generated passwords impractical.
-  if (!rateLimitOk('gate_guess', 30, 600)) return false;
+  // 30 wrong guesses per 10 minutes, shared across all guessers — Apps Script
+  // can't key this per caller, but it's enough to make brute-forcing the
+  // ~10,000-combination generated passwords impractical. Only wrong guesses
+  // count against the budget, so a wave of real applicants unlocking the
+  // gate correctly can never lock each other out.
+  if (!rateLimitPeek('gate_guess', 30)) return false;
   var sheet = getSheet();
   var col = headerMap(sheet)['password'];
   if (!col) return false;
   var last = sheet.getLastRow();
-  if (last < 2) return false;
+  if (last < 2) { rateLimitBump('gate_guess', 600); return false; }
   var values = sheet.getRange(2, col, last - 1, 1).getValues();
   for (var i = 0; i < values.length; i++) {
     var stored = String(values[i][0]).trim().toUpperCase();
     if (stored && stored === g) return true;
   }
+  rateLimitBump('gate_guess', 600);
   return false;
 }
 
@@ -858,7 +863,17 @@ function jsonOut(obj) {
    Apps Script gives no caller IP, so these throttle on a shared key via
    CacheService: true if the key is still under maxHits within windowSeconds,
    and bumps the count; false (and leaves the count alone) once it's been
-   hit too many times, so callers stay locked out until the window rolls. */
+   hit too many times, so callers stay locked out until the window rolls.
+   Used as-is for the per-email submission throttle, where every hit (success
+   or not) should count.
+
+   Password checks use the peek/bump pair instead: peek the count without
+   adding to it (so a CORRECT guess can be gated on "are we already over
+   budget?" without itself spending budget), and bump only on a wrong guess.
+   That way a string of failed guesses locks the gate down for everyone —
+   including a subsequent correct one — but a legitimate visitor's own
+   successful logins (e.g. a page that re-checks an already-saved password on
+   every load) can never lock themselves, or anyone else, out. */
 function rateLimitOk(key, maxHits, windowSeconds) {
   var cache = CacheService.getScriptCache();
   var raw = cache.get(key);
@@ -866,4 +881,27 @@ function rateLimitOk(key, maxHits, windowSeconds) {
   if (count >= maxHits) return false;
   cache.put(key, String(count + 1), windowSeconds);
   return true;
+}
+
+function rateLimitPeek(key, maxHits) {
+  var raw = CacheService.getScriptCache().get(key);
+  var count = raw ? parseInt(raw, 10) : 0;
+  return count < maxHits;
+}
+
+function rateLimitBump(key, windowSeconds) {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(key);
+  var count = raw ? parseInt(raw, 10) : 0;
+  cache.put(key, String(count + 1), windowSeconds);
+}
+
+// Run this once by hand (select clearLoginLockouts ▸ Run) if the gate or
+// dashboard password gets refused after a burst of testing — clears the
+// wrong-guess counters immediately instead of waiting out the 10-minute
+// window they expire on their own.
+function clearLoginLockouts() {
+  var cache = CacheService.getScriptCache();
+  cache.remove('gate_guess');
+  cache.remove('dash_guess');
 }
