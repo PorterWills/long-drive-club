@@ -387,12 +387,15 @@
       cdUnit(pad(m), "Min", false) + cdUnit(pad(s), "Sec", false) + '</span>';
   }
 
-  function chipHTML(p, big) {
-    var p2 = big ? "6px 12px 5px" : "6px 12px 5px";
+  function chipHTML(p, onDark) {
+    // On the drawer's dark green header the outline chips (transparent
+    // background) would show dark text on dark green — unreadable. Give them
+    // light text there; the solid Paid/Approved chips carry their own colours.
+    var fg = (onDark && p.bg === "transparent") ? "var(--ldc-chalk)" : p.fg;
     var tick = p.showTick ? '<span style="width:9px;height:7px;background:var(--ldc-redline);display:inline-block;flex-shrink:0"></span>' : "";
-    return '<span style="display:inline-flex;align-items:center;gap:7px;padding:' + p2 +
+    return '<span style="display:inline-flex;align-items:center;gap:7px;padding:6px 12px 5px' +
       ';border-radius:3px;font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;background:' +
-      p.bg + ';color:' + p.fg + ';border:1px solid ' + p.bd + '">' + tick + esc(p.status) + '</span>';
+      p.bg + ';color:' + fg + ';border:1px solid ' + p.bd + '">' + tick + esc(p.status) + '</span>';
   }
 
   function rowHTML(p) {
