@@ -155,11 +155,19 @@ time the dashboard loads after deploy, so there's nothing to set up.
 | setting | what it does |
 | --- | --- |
 | `event_name` | the heading (e.g. `THE FIRST DRIVE`) |
+| `event_date` | drive day — drives the four "Counting down" clocks |
 | `places_target` | capacity the "places filled" bar fills toward |
 | `ig_show` | `yes`/`no` — show the Instagram strip |
 | `ig_followers` | follower count shown |
 | `ig_change` | optional "↑ N since last check" pill — blank hides it |
 | `ig_reach` | optional "N reach this week" — blank hides it |
+
+The **Counting down** section shows the same four reveal clocks as the members
+page (drive day, the course, the meeting point, the route). They all derive
+from `event_date` using the same offsets as `members.js` (course −42 days,
+meeting −14, route −7), so set `event_date` to match drive day on the members
+page and the clocks stay in step. Each ticks live and reads "Revealed" once it
+passes.
 
 Under the hood: `Code.gs` `readSettings()` returns this tab in the dashboard
 feed, and `applySettings()` in `dashboard.js` lets any value present override

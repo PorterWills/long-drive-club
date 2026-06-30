@@ -193,8 +193,9 @@ function seedSettingsTab(ss) {
     return ss.getSheetByName(SETTINGS_TAB); // lost a race; use the existing one
   }
   sheet.getRange(1, 1, 1, 2).setValues([['setting', 'value']]).setFontWeight('bold');
-  sheet.getRange(2, 1, 6, 2).setValues([
+  sheet.getRange(2, 1, 7, 2).setValues([
     ['event_name', 'THE FIRST DRIVE'],
+    ['event_date', '2026-09-05 07:00'],
     ['places_target', 20],
     ['ig_show', 'yes'],
     ['ig_followers', 21],
