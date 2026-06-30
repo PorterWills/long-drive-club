@@ -19,7 +19,7 @@
 
   var CONFIG = {
     // The deployed Apps Script web app (same backend the entry form posts to).
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec",
+    APPS_SCRIPT_URL: window.LDC_CONFIG.APPS_SCRIPT_URL,
 
     eventName: "THE FIRST DRIVE", // heading; change per event
     placesTarget: 20,             // capacity the "places filled" bar fills toward

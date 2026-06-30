@@ -14,7 +14,7 @@
      and checked against the Google Sheet via the Apps Script (see the gate
      section below). To change the master password run:
        echo -n "newpassword" | shasum -a 256                               */
-  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec";
+  var APPS_SCRIPT_URL = window.LDC_CONFIG.APPS_SCRIPT_URL;
   var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
   /* ---- Reveal on scroll: restrained rise, honours reduced motion ------- */
@@ -494,7 +494,8 @@
       email: step1Form.elements.email.value,
       make: make,
       model: model,
-      car: [make, model].filter(Boolean).join(" ")
+      car: [make, model].filter(Boolean).join(" "),
+      hp: step1Form.elements.company ? step1Form.elements.company.value : ""
     };
   }
 
@@ -649,7 +650,8 @@
       play: step2Form.elements.play.value,
       party: step2Form.elements.party.value,
       days: step2Form.elements.days.value,
-      consent: step2Form.elements.consent.checked
+      consent: step2Form.elements.consent.checked,
+      hp: step2Form.elements.company ? step2Form.elements.company.value : ""
     };
   }
 
@@ -703,7 +705,8 @@
       email: f.email.trim(),
       make: f.make,
       model: f.model,
-      car: f.car.trim()
+      car: f.car.trim(),
+      hp: f.hp
     });
   }
 
@@ -720,7 +723,8 @@
       play: f.play,
       party: f.party,
       days: f.days,
-      consent: f.consent
+      consent: f.consent,
+      hp: f.hp
     });
   }
 
