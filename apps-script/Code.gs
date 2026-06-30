@@ -65,18 +65,15 @@ var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'pa
                'make', 'model', 'handicap', 'base', 'city',
                'token', 'step1_at', 'completed_at', 'recovery_sent'];
 
-function doPost(e) {
-  var data;
-  try {
-    data = JSON.parse(e.postData.contents);
-  } catch (parseErr) {
-    return jsonOut({ ok: false, error: 'bad request' });
-  }
-
+// The actual submission logic, shared by both entry points below. Returns a
+// plain {ok:true} / {ok:false, error} object rather than writing the
+// response itself, since doPost answers via plain JSON and doGet's ?submit=
+// path (see doGet) answers as JSONP.
+function handleSubmission(data) {
   // Honeypot: "company" is a hidden field real applicants never see or fill.
   // A bot that fills every field trips it. Report success but write nothing,
   // so the bot has no signal the field is a trap.
-  if (data.hp) return jsonOut({ ok: true });
+  if (data.hp) return { ok: true };
 
   // Per-email throttle. Apps Script doesn't expose the caller's IP, so this
   // is the best available key. Generous enough that a real applicant retrying
@@ -84,14 +81,14 @@ function doPost(e) {
   // the endpoint directly (it's a public URL, reachable without the site).
   var rlEmail = String(data.email || '').trim().toLowerCase();
   if (rlEmail && !rateLimitOk('rl_post_' + rlEmail, 8, 3600)) {
-    return jsonOut({ ok: false, error: 'rate_limited' });
+    return { ok: false, error: 'rate_limited' };
   }
 
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000); // serialise the read-then-write upsert
   } catch (lockErr) {
-    return jsonOut({ ok: false, error: 'busy' });
+    return { ok: false, error: 'busy' };
   }
   try {
     var stage = String(data.stage || '').toLowerCase();
@@ -102,22 +99,50 @@ function doPost(e) {
     } else {
       saveFullSubmission(data); // legacy single-submit
     }
-    return jsonOut({ ok: true });
+    return { ok: true };
   } catch (err) {
     console.error(err);
-    return jsonOut({ ok: false, error: String(err) });
+    return { ok: false, error: String(err) };
   } finally {
     lock.releaseLock();
   }
 }
 
-// Handles three things:
+// Legacy entry point. Apps Script web apps send no CORS headers, so a plain
+// POST's response is opaque to the browser (the site can fire one but never
+// read the answer) — kept only so an old cached copy of the site, which still
+// posts here and ignores the response, keeps working.
+function doPost(e) {
+  var data;
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (parseErr) {
+    return jsonOut({ ok: false, error: 'bad request' });
+  }
+  return jsonOut(handleSubmission(data));
+}
+
+// Handles five things, all JSONP (a <script src> the site loads, whose
+// response calls back into the page) since Apps Script can't send CORS
+// headers a normal fetch could read:
+//  - ?submit=JSON&callback=YYY  a step1/step2 application submission. The
+//    current site uses this (not doPost) so it can see a real ok/error back
+//    rather than assuming success.
 //  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
-//    a recovery token, so it can prefill step two. Replies as JSONP.
+//    a recovery token, so it can prefill step two.
 //  - ?password=XXX&callback=YYY  the gate asking if a password is valid.
 //  - no params: a plain liveness check, handy in a browser.
 function doGet(e) {
   var params = (e && e.parameter) || {};
+  if (params.submit) {
+    var data;
+    try {
+      data = JSON.parse(params.submit);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(handleSubmission(data), params.callback);
+  }
   if (params.recover) {
     var lead = leadByToken(params.recover);
     var payload = { ok: false };
