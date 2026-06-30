@@ -24,6 +24,12 @@
     eventName: "THE FIRST DRIVE", // heading; change per event
     placesTarget: 20,             // capacity the "places filled" bar fills toward
 
+    // Drive day and the reveal countdowns — these mirror members.js so the
+    // dashboard shows the same four clocks members see. `eventDate` is editable
+    // from the sheet (event_date); the reveal offsets match the members page.
+    eventDate: "2026-09-05T07:00:00",
+    revealOffsets: { course: 42, meeting: 14, route: 7 }, // days before drive day
+
     // Instagram is not in the sheet, so these are entered by hand. `change`
     // (vs last check) and `reach` are optional — leave them "" to hide them
     // and show just the follower count.
@@ -46,6 +52,10 @@
     if (nonEmpty("places_target")) {
       var n = parseInt(s.places_target, 10);
       if (!isNaN(n) && n > 0) CONFIG.placesTarget = n;
+    }
+    if (nonEmpty("event_date")) {
+      var ed = String(s.event_date).trim();
+      if (!isNaN(Date.parse(ed))) CONFIG.eventDate = ed;
     }
     if (nonEmpty("ig_show")) CONFIG.instagram.show = truthy(s.ig_show);
     if (nonEmpty("ig_followers")) CONFIG.instagram.followers = String(s.ig_followers).trim();
@@ -345,6 +355,38 @@
 
   /* ---- Render ---------------------------------------------------------- */
 
+  // The four reveal clocks, derived from drive day exactly as members.js does.
+  function timerTargets() {
+    var ev = Date.parse(CONFIG.eventDate);
+    if (isNaN(ev)) return [];
+    var day = 86400000, o = CONFIG.revealOffsets;
+    return [
+      { label: "Drive day",         target: ev,                  accent: true },
+      { label: "The course",        target: ev - o.course * day,  accent: false },
+      { label: "The meeting point", target: ev - o.meeting * day, accent: false },
+      { label: "The route",         target: ev - o.route * day,   accent: false }
+    ];
+  }
+
+  function cdUnit(num, label, accent) {
+    return '<span style="display:inline-flex;flex-direction:column;align-items:flex-start;min-width:30px">' +
+      '<span class="sd-num" style="font-size:23px;color:' + (accent ? 'var(--ldc-redline)' : 'var(--text-body)') + '">' + num + '</span>' +
+      '<span class="sd-eyebrow" style="font-size:9px;letter-spacing:.16em;color:var(--text-dim);margin-top:6px">' + label + '</span>' +
+    '</span>';
+  }
+
+  function clockHTML(target, accent) {
+    var diff = target - Date.now();
+    if (diff <= 0) return '<span class="sd-eyebrow" style="color:var(--ldc-moss);letter-spacing:.2em">Revealed</span>';
+    var d = Math.floor(diff / 86400000),
+        h = Math.floor((diff % 86400000) / 3600000),
+        m = Math.floor((diff % 3600000) / 60000),
+        s = Math.floor((diff % 60000) / 1000);
+    return '<span style="display:flex;align-items:flex-start;gap:13px">' +
+      cdUnit(String(d), "Days", accent) + cdUnit(pad(h), "Hrs", false) +
+      cdUnit(pad(m), "Min", false) + cdUnit(pad(s), "Sec", false) + '</span>';
+  }
+
   function chipHTML(p, big) {
     var p2 = big ? "6px 12px 5px" : "6px 12px 5px";
     var tick = p.showTick ? '<span style="width:9px;height:7px;background:var(--ldc-redline);display:inline-block;flex-shrink:0"></span>' : "";
@@ -405,6 +447,18 @@
       return '<button class="sd-chip" data-filter="' + f.key + '" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:7px 13px;border-radius:3px;background:' + f.bg + ';color:' + f.fg + ';border:1px solid ' + f.bd + '">' + esc(f.label) + ' <span class="sd-num" style="font-size:12px;opacity:.7">' + f.count + '</span></button>';
     }).join("");
 
+    var timers = timerTargets();
+    var timersHTML = timers.length ?
+      '<div class="sd-pad" style="padding:24px 30px 0"><p class="ldc-redtick" style="color:var(--text-body)">Counting down</p></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:1px;background:var(--hairline);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin-top:14px">' +
+        timers.map(function (t) {
+          return '<div style="background:var(--ldc-chalk);padding:18px 22px">' +
+            '<div class="sd-eyebrow" style="color:var(--text-dim);margin-bottom:14px">' + esc(t.label) + '</div>' +
+            '<div class="cd" data-cd="' + t.target + '" data-accent="' + (t.accent ? '1' : '0') + '">' + clockHTML(t.target, t.accent) + '</div>' +
+          '</div>';
+        }).join("") +
+      '</div>' : "";
+
     var rowsHTML = vm.applicants.length
       ? vm.applicants.map(rowHTML).join("")
       : '<div style="padding:34px 0;text-align:center;color:var(--text-dim);font-size:14px">No applicants in this view yet.</div>';
@@ -433,6 +487,8 @@
             funnelHTML +
           '</div>' +
         '</div>' +
+
+        timersHTML +
 
         igHTML +
 
@@ -506,7 +562,19 @@
     drawerEl.classList.toggle("is-open", open);
     drawerEl.setAttribute("aria-hidden", open ? "false" : "true");
     backdropEl.classList.toggle("is-open", open);
+    updateClocks();
   }
+
+  // Tick the reveal countdowns once a second by rewriting just their numbers,
+  // so the rest of the dashboard (and the open drawer) is left untouched.
+  function updateClocks() {
+    var els = document.querySelectorAll("[data-cd]");
+    for (var i = 0; i < els.length; i++) {
+      els[i].innerHTML = clockHTML(Number(els[i].getAttribute("data-cd")),
+                                   els[i].getAttribute("data-accent") === "1");
+    }
+  }
+  setInterval(updateClocks, 1000);
 
   // Event delegation across the app + drawer.
   function onClick(e) {
