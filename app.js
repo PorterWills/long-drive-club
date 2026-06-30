@@ -14,7 +14,7 @@
      and checked against the Google Sheet via the Apps Script (see the gate
      section below). To change the master password run:
        echo -n "newpassword" | shasum -a 256                               */
-  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec";
+  var APPS_SCRIPT_URL = window.LDC_CONFIG.APPS_SCRIPT_URL;
   var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
   /* ---- Reveal on scroll: restrained rise, honours reduced motion ------- */
@@ -44,7 +44,7 @@
     var stage = document.getElementById("hero-photo");
     if (!stage) return;
     var IMAGES = [
-      "assets/hero-01.jpg", "assets/hero-04.jpg", "assets/hero-06.jpg", "assets/hero-07.jpg", "assets/hero-10.jpg"
+      "assets/LDC-Hero-002.jpg", "assets/LDC-Hero.001.jpg", "assets/LDC-Hero.002.jpeg", "assets/LDC-Hero-003.jpg", "assets/hero-06.jpg", "assets/hero-01.jpg", "assets/hero-04.jpg"
     ];
     var POS = "50% 68%";          // shared focal point; tune per-image if needed
     var HOLD = 6000, FADE = 1200; // ms
@@ -494,7 +494,8 @@
       email: step1Form.elements.email.value,
       make: make,
       model: model,
-      car: [make, model].filter(Boolean).join(" ")
+      car: [make, model].filter(Boolean).join(" "),
+      hp: step1Form.elements.company ? step1Form.elements.company.value : ""
     };
   }
 
@@ -649,7 +650,8 @@
       play: step2Form.elements.play.value,
       party: step2Form.elements.party.value,
       days: step2Form.elements.days.value,
-      consent: step2Form.elements.consent.checked
+      consent: step2Form.elements.consent.checked,
+      hp: step2Form.elements.company ? step2Form.elements.company.value : ""
     };
   }
 
@@ -683,16 +685,55 @@
   /* ---- Persistence ------------------------------------------------------
      Two posts to the Google Apps Script web app. Step one creates (or updates)
      the lead at status step1_complete before step two renders; step two merges
-     into the same record, keyed on email, and marks it complete. Apps Script
-     returns no CORS headers, so we post with mode: "no-cors" and a plain-text
-     content type — anything else triggers a preflight it can't answer. The
-     response is opaque, so a resolved fetch is treated as success. */
-  function postLead(payload) {
+     into the same record, keyed on email, and marks it complete.
+
+     Primary path is JSONP (the doGet "?submit=" endpoint): a real ok/error
+     comes back, so a genuine rejection (e.g. rate_limited) surfaces to the
+     applicant instead of a false "It's with us now". If that doesn't answer —
+     network hiccup, or an older deployment that doesn't have the ?submit=
+     endpoint yet — we fall back to the original no-cors POST, which is opaque
+     but still gets the data there, so a deploy-timing gap never blocks a
+     genuine application. */
+  function postLeadJSONP(payload) {
+    return new Promise(function (resolve, reject) {
+      var cb = "ldcSubmit" + Date.now() + Math.floor(Math.random() * 1000);
+      var script = document.createElement("script");
+      var timer = setTimeout(function () { cleanup(); reject(new Error("timeout")); }, 12000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (data) {
+        cleanup();
+        if (data && typeof data === "object") resolve(data); else reject(new Error("bad response"));
+      };
+      script.onerror = function () { cleanup(); reject(new Error("network")); };
+      script.src = APPS_SCRIPT_URL + "?submit=" + encodeURIComponent(JSON.stringify(payload)) + "&callback=" + cb;
+      document.head.appendChild(script);
+    });
+  }
+
+  function postLeadNoCors(payload) {
     return fetch(APPS_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
+    });
+  }
+
+  function postLead(payload) {
+    return postLeadJSONP(payload).then(function (res) {
+      if (res.ok) return res;
+      // The backend was reached and explicitly rejected the submission (e.g.
+      // rate_limited) — a real failure, not a deploy-lag fallback case.
+      var err = new Error(res.error || "rejected");
+      err.serverRejected = true;
+      throw err;
+    }).catch(function (err) {
+      if (err && err.serverRejected) throw err;
+      return postLeadNoCors(payload);
     });
   }
 
@@ -703,7 +744,8 @@
       email: f.email.trim(),
       make: f.make,
       model: f.model,
-      car: f.car.trim()
+      car: f.car.trim(),
+      hp: f.hp
     });
   }
 
@@ -720,7 +762,8 @@
       play: f.play,
       party: f.party,
       days: f.days,
-      consent: f.consent
+      consent: f.consent,
+      hp: f.hp
     });
   }
 

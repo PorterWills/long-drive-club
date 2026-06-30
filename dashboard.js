@@ -19,7 +19,7 @@
 
   var CONFIG = {
     // The deployed Apps Script web app (same backend the entry form posts to).
-    APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec",
+    APPS_SCRIPT_URL: window.LDC_CONFIG.APPS_SCRIPT_URL,
 
     eventName: "THE FIRST DRIVE", // heading; change per event
     placesTarget: 20,             // capacity the "places filled" bar fills toward
@@ -518,6 +518,25 @@
       '</div>';
   }
 
+  // Approve / Decline / Mark paid — only the action(s) that make sense for
+  // where the applicant currently sits. Once paid or declined, the record is
+  // done; nothing to do but read it.
+  function actionBtnHTML(action, label, primary) {
+    var bg = primary ? "var(--ldc-green)" : "transparent";
+    var fg = primary ? "var(--ldc-chalk)" : "var(--text-body)";
+    var bd = primary ? "transparent" : "var(--hairline-strong)";
+    return '<button type="button" data-action="' + action + '" style="cursor:pointer;font-family:var(--font-display);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:9px 16px;border-radius:3px;background:' + bg + ';color:' + fg + ';border:1px solid ' + bd + '">' + esc(label) + '</button>';
+  }
+
+  function actionsHTML(selected) {
+    if (selected.stage === "paid" || selected.stage === "declined") return "";
+    var btns = selected.stage === "approved"
+      ? actionBtnHTML("paid", "Mark paid", true) + actionBtnHTML("decline", "Decline", false)
+      : actionBtnHTML("approve", "Approve", true) + actionBtnHTML("decline", "Decline", false);
+    return '<div id="drawerActions" style="display:flex;align-items:center;gap:10px;padding:14px 24px;background:var(--ldc-chalk);border-bottom:1px solid var(--hairline)">' +
+      btns + '<span id="drawerActionMsg" style="font-size:12px;color:var(--text-dim)"></span></div>';
+  }
+
   function renderDrawer(selected) {
     if (!selected) return "";
     var recHTML = selected.record.map(function (rec) {
@@ -540,6 +559,7 @@
         chipHTML(selected, true) +
         '<button data-action="close" aria-label="Close" style="background:none;border:1px solid var(--hairline-strong);color:var(--ldc-chalk);width:32px;height:32px;border-radius:3px;cursor:pointer;font-size:16px;line-height:1;flex-shrink:0">✕</button>' +
       '</div>' +
+      actionsHTML(selected) +
       '<div style="flex:1;overflow-y:auto;padding:24px 24px 30px">' +
         '<p class="ldc-redtick" style="color:var(--text-body);margin-bottom:16px">Record</p>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline);border:1px solid var(--hairline)">' + recHTML + '</div>' +
@@ -553,12 +573,17 @@
   var state = { rows: [], filter: "all", sort: "stage", selectedId: null,
                 updatedLabel: "just now" };
 
+  // The applicant behind the open drawer, if any — set each paint() so the
+  // approve/decline/paid handlers below don't have to re-derive it.
+  var currentDrawerApplicant = null;
+
   var appEl = document.getElementById("app");
   var drawerEl = document.getElementById("drawer");
   var backdropEl = document.getElementById("backdrop");
 
   function paint() {
     var vm = buildModel(state);
+    currentDrawerApplicant = vm.selected;
     appEl.innerHTML = render(vm, state);
     drawerEl.innerHTML = renderDrawer(vm.selected);
     var open = !!vm.selected;
@@ -587,6 +612,7 @@
       var a = t.getAttribute("data-action");
       if (a === "refresh") return refresh();
       if (a === "close") return setSelected(null);
+      if (a === "approve" || a === "decline" || a === "paid") return performAction(a);
     } else if (t.hasAttribute("data-filter")) {
       state.filter = t.getAttribute("data-filter"); paint();
     } else if (t.hasAttribute("data-sort")) {
@@ -597,6 +623,46 @@
   }
 
   function setSelected(id) { state.selectedId = id; paint(); }
+
+  /* ---- Approve / Decline / Mark paid ------------------------------------
+     Calls the same backend logic the sheet-edit trigger uses (see
+     dashboardAction in Code.gs) — same email sent, same timestamp stamped,
+     same idempotency guard against a double-click. On success we just
+     refresh() the whole feed from the sheet rather than guess at the new
+     state locally, so the dashboard always reflects what's actually in the
+     sheet, not what we assume happened. */
+  function setActionBusy(busy) {
+    var host = document.getElementById("drawerActions");
+    if (!host) return;
+    var btns = host.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) btns[i].disabled = busy;
+    var msg = document.getElementById("drawerActionMsg");
+    if (msg) msg.textContent = busy ? "Working…" : "";
+  }
+
+  function showActionMsg(text) {
+    var msg = document.getElementById("drawerActionMsg");
+    if (msg) msg.textContent = text;
+  }
+
+  function performAction(action) {
+    if (!currentDrawerApplicant) return;
+    var pw = sessionStorage.getItem(SS_KEY);
+    if (!pw) return;
+    setActionBusy(true);
+    jsonp({ action: JSON.stringify({ password: pw, email: currentDrawerApplicant.email, action: action }) })
+      .then(function (res) {
+        if (res && res.ok) { refresh(); return; }
+        setActionBusy(false);
+        showActionMsg(res && res.error === "rate_limited"
+          ? "Slow down — try again shortly."
+          : "That didn't go through. Try again.");
+      })
+      .catch(function () {
+        setActionBusy(false);
+        showActionMsg("Couldn't reach the server. Try again.");
+      });
+  }
 
   appEl.addEventListener("click", onClick);
   drawerEl.addEventListener("click", onClick);

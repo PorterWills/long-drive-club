@@ -47,6 +47,13 @@ var RECOVERY_DELAY_2_HOURS = 72;
 // Where the unsubscribe link in the email points. A mailto keeps it dependency-free.
 var UNSUBSCRIBE_URL = 'mailto:hello@longdriveclub.com?subject=Unsubscribe';
 
+// A recovery link found after this long is treated as expired: the recover
+// endpoint stops returning the lead's data (name/email/phone/car) for it.
+// Comfortably past RECOVERY_DELAY_2_HOURS so the legitimate nudge emails
+// always still work; just stops a stale or leaked link from prefilling PII
+// indefinitely.
+var RECOVERY_TOKEN_MAX_AGE_DAYS = 30;
+
 // Column order written to fresh sheets. Existing sheets keep their order; any
 // columns below that they're missing get appended (see ensureColumns). All
 // reads and writes go through the header map, never fixed indexes, so order
@@ -58,15 +65,32 @@ var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'pa
                'make', 'model', 'handicap', 'base', 'city',
                'token', 'step1_at', 'completed_at', 'recovery_sent'];
 
-function doPost(e) {
+// The actual submission logic, shared by both entry points below. Returns a
+// plain {ok:true} / {ok:false, error} object rather than writing the
+// response itself, since doPost answers via plain JSON and doGet's ?submit=
+// path (see doGet) answers as JSONP.
+function handleSubmission(data) {
+  // Honeypot: "company" is a hidden field real applicants never see or fill.
+  // A bot that fills every field trips it. Report success but write nothing,
+  // so the bot has no signal the field is a trap.
+  if (data.hp) return { ok: true };
+
+  // Per-email throttle. Apps Script doesn't expose the caller's IP, so this
+  // is the best available key. Generous enough that a real applicant retrying
+  // a failed submit never hits it; tight enough to blunt a script hammering
+  // the endpoint directly (it's a public URL, reachable without the site).
+  var rlEmail = String(data.email || '').trim().toLowerCase();
+  if (rlEmail && !rateLimitOk('rl_post_' + rlEmail, 8, 3600)) {
+    return { ok: false, error: 'rate_limited' };
+  }
+
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000); // serialise the read-then-write upsert
   } catch (lockErr) {
-    return jsonOut({ ok: false, error: 'busy' });
+    return { ok: false, error: 'busy' };
   }
   try {
-    var data = JSON.parse(e.postData.contents);
     var stage = String(data.stage || '').toLowerCase();
     if (stage === 'step1') {
       upsertStep1(data);
@@ -75,28 +99,61 @@ function doPost(e) {
     } else {
       saveFullSubmission(data); // legacy single-submit
     }
-    return jsonOut({ ok: true });
+    return { ok: true };
   } catch (err) {
     console.error(err);
-    return jsonOut({ ok: false, error: String(err) });
+    return { ok: false, error: String(err) };
   } finally {
     lock.releaseLock();
   }
 }
 
-// Handles three things:
+// Legacy entry point. Apps Script web apps send no CORS headers, so a plain
+// POST's response is opaque to the browser (the site can fire one but never
+// read the answer) — kept only so an old cached copy of the site, which still
+// posts here and ignores the response, keeps working.
+function doPost(e) {
+  var data;
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (parseErr) {
+    return jsonOut({ ok: false, error: 'bad request' });
+  }
+  return jsonOut(handleSubmission(data));
+}
+
+// Handles seven things, all JSONP (a <script src> the site loads, whose
+// response calls back into the page) since Apps Script can't send CORS
+// headers a normal fetch could read:
+//  - ?submit=JSON&callback=YYY  a step1/step2 application submission. The
+//    current site uses this (not doPost) so it can see a real ok/error back
+//    rather than assuming success.
 //  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
-//    a recovery token, so it can prefill step two. Replies as JSONP.
+//    a recovery token, so it can prefill step two.
 //  - ?password=XXX&callback=YYY  the gate asking if a password is valid.
+//  - ?dashboard=PASSWORD&callback=YYY  the dashboard's data feed.
+//  - ?action=JSON&callback=YYY  the dashboard's Approve / Decline / Mark paid
+//    buttons — see dashboardAction.
+//  - ?meta=1&callback=YYY  public, non-sensitive display settings.
 //  - no params: a plain liveness check, handy in a browser.
 function doGet(e) {
   var params = (e && e.parameter) || {};
+  if (params.submit) {
+    var data;
+    try {
+      data = JSON.parse(params.submit);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(handleSubmission(data), params.callback);
+  }
   if (params.recover) {
     var lead = leadByToken(params.recover);
-    var payload = lead
-      ? { ok: true, name: lead.name, email: lead.email, phone: lead.phone,
-          make: lead.make, model: lead.model, car: lead.car }
-      : { ok: false };
+    var payload = { ok: false };
+    if (lead && !recoveryTokenExpired(lead)) {
+      payload = { ok: true, name: lead.name, email: lead.email, phone: lead.phone,
+                  make: lead.make, model: lead.model, car: lead.car };
+    }
     return jsonpOrJson(payload, params.callback);
   }
   if (params.password) {
@@ -104,6 +161,15 @@ function doGet(e) {
   }
   if (params.dashboard) {
     return jsonpOrJson(dashboardPayload(params.dashboard), params.callback);
+  }
+  if (params.action) {
+    var actionData;
+    try {
+      actionData = JSON.parse(params.action);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(dashboardAction(actionData), params.callback);
   }
   if (params.meta) {
     return jsonpOrJson(publicMeta(), params.callback);
@@ -132,14 +198,24 @@ var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
 // code. Created and pre-filled automatically the first time it's read.
 var SETTINGS_TAB = 'Dashboard';
 
-function dashboardPayload(guess) {
+// Shared by the dashboard data feed and the approve/decline/paid action
+// endpoint below — same password, same 15-wrong-guesses-per-10-minutes
+// lockout either way, since both expose or change applicant data.
+function dashboardPasswordValid(guess) {
   var raw = PropertiesService.getScriptProperties().getProperty('DASHBOARD_PASSWORD');
-  if (!raw) return { ok: false };
+  if (!raw) return false;
   var g = String(guess || '').trim().toUpperCase();
-  if (!g) return { ok: false };
+  if (!g) return false;
+  if (!rateLimitPeek('dash_guess', 15)) return false;
   var allowed = raw.split(/[,\s]+/).map(function (p) { return p.trim().toUpperCase(); })
                    .filter(function (p) { return p; });
-  if (allowed.indexOf(g) < 0) return { ok: false };
+  if (allowed.indexOf(g) >= 0) return true;
+  rateLimitBump('dash_guess', 600);
+  return false;
+}
+
+function dashboardPayload(guess) {
+  if (!dashboardPasswordValid(guess)) return { ok: false };
 
   var sheet = getSheet();
   var headers = headerMap(sheet);
@@ -428,6 +504,16 @@ function findRowByColumn(sheet, headers, name, value, ci) {
   return null;
 }
 
+// True once a lead's step1_at is older than RECOVERY_TOKEN_MAX_AGE_DAYS, or if
+// step1_at is missing/unreadable (fail closed rather than treat it as fresh).
+function recoveryTokenExpired(lead) {
+  var startedAt = lead.step1_at;
+  var started = (startedAt instanceof Date) ? startedAt.getTime() : NaN;
+  if (isNaN(started)) return true;
+  var ageDays = (Date.now() - started) / 86400000;
+  return ageDays > RECOVERY_TOKEN_MAX_AGE_DAYS;
+}
+
 // Reads a whole lead row into an object keyed by header name.
 function leadByToken(token) {
   var sheet = getSheet();
@@ -510,16 +596,23 @@ function sendRecoveryEmail(email, token) {
 function passwordValid(guess) {
   var g = String(guess || '').trim().toUpperCase();
   if (!g) return false;
+  // 30 wrong guesses per 10 minutes, shared across all guessers — Apps Script
+  // can't key this per caller, but it's enough to make brute-forcing the
+  // ~10,000-combination generated passwords impractical. Only wrong guesses
+  // count against the budget, so a wave of real applicants unlocking the
+  // gate correctly can never lock each other out.
+  if (!rateLimitPeek('gate_guess', 30)) return false;
   var sheet = getSheet();
   var col = headerMap(sheet)['password'];
   if (!col) return false;
   var last = sheet.getLastRow();
-  if (last < 2) return false;
+  if (last < 2) { rateLimitBump('gate_guess', 600); return false; }
   var values = sheet.getRange(2, col, last - 1, 1).getValues();
   for (var i = 0; i < values.length; i++) {
     var stored = String(values[i][0]).trim().toUpperCase();
     if (stored && stored === g) return true;
   }
+  rateLimitBump('gate_guess', 600);
   return false;
 }
 
@@ -608,6 +701,47 @@ function handleDeclined(sheet, row, headers) {
   sendViaResend({ to: email, subject: 'Not this time', html: html });
 
   cell.setValue(new Date());
+}
+
+/* ---- Dashboard actions --------------------------------------------------
+   Approve / Decline / Mark paid, triggered from a button on the dashboard
+   instead of by hand-editing the status column. Reuses the exact same
+   handleApproved/handlePaid/handleDeclined functions the sheet-edit trigger
+   calls, so the result — email sent, timestamp stamped — is identical either
+   way, and each stays idempotent (a repeat call, e.g. a double-click, is a
+   no-op because the timestamp cell is already set). */
+function dashboardAction(payload) {
+  if (!dashboardPasswordValid(payload.password)) return { ok: false, error: 'denied' };
+
+  var email = String(payload.email || '').trim();
+  var action = String(payload.action || '').trim().toLowerCase();
+  if (!email || ['approve', 'decline', 'paid'].indexOf(action) < 0) {
+    return { ok: false, error: 'bad request' };
+  }
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+  } catch (lockErr) {
+    return { ok: false, error: 'busy' };
+  }
+  try {
+    var sheet = getSheet();
+    var headers = headerMap(sheet);
+    var row = findRowByEmail(sheet, headers, email);
+    if (!row) return { ok: false, error: 'not_found' };
+
+    if (action === 'approve') handleApproved(sheet, row, headers);
+    else if (action === 'decline') handleDeclined(sheet, row, headers);
+    else if (action === 'paid') handlePaid(sheet, row, headers);
+
+    return { ok: true };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
@@ -723,4 +857,51 @@ function jsonOut(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ---- Rate limiting ------------------------------------------------------
+   Apps Script gives no caller IP, so these throttle on a shared key via
+   CacheService: true if the key is still under maxHits within windowSeconds,
+   and bumps the count; false (and leaves the count alone) once it's been
+   hit too many times, so callers stay locked out until the window rolls.
+   Used as-is for the per-email submission throttle, where every hit (success
+   or not) should count.
+
+   Password checks use the peek/bump pair instead: peek the count without
+   adding to it (so a CORRECT guess can be gated on "are we already over
+   budget?" without itself spending budget), and bump only on a wrong guess.
+   That way a string of failed guesses locks the gate down for everyone —
+   including a subsequent correct one — but a legitimate visitor's own
+   successful logins (e.g. a page that re-checks an already-saved password on
+   every load) can never lock themselves, or anyone else, out. */
+function rateLimitOk(key, maxHits, windowSeconds) {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(key);
+  var count = raw ? parseInt(raw, 10) : 0;
+  if (count >= maxHits) return false;
+  cache.put(key, String(count + 1), windowSeconds);
+  return true;
+}
+
+function rateLimitPeek(key, maxHits) {
+  var raw = CacheService.getScriptCache().get(key);
+  var count = raw ? parseInt(raw, 10) : 0;
+  return count < maxHits;
+}
+
+function rateLimitBump(key, windowSeconds) {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(key);
+  var count = raw ? parseInt(raw, 10) : 0;
+  cache.put(key, String(count + 1), windowSeconds);
+}
+
+// Run this once by hand (select clearLoginLockouts ▸ Run) if the gate or
+// dashboard password gets refused after a burst of testing — clears the
+// wrong-guess counters immediately instead of waiting out the 10-minute
+// window they expire on their own.
+function clearLoginLockouts() {
+  var cache = CacheService.getScriptCache();
+  cache.remove('gate_guess');
+  cache.remove('dash_guess');
 }

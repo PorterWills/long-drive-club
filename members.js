@@ -23,7 +23,7 @@
 
   // The dashboard's Apps Script. The members page reads drive day (event_date)
   // from the same sheet so the date lives in one place for both pages.
-  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzOFXxYWecTLBcC6T_z8KdnzHUsAT5NBAekuQnFqGrqPJpuO9C1YXih_xe43yfCMkYMDg/exec";
+  var APPS_SCRIPT_URL = window.LDC_CONFIG.APPS_SCRIPT_URL;
 
   // Drive day — the fixed point everything hangs off. Shown only as a
   // countdown on the page (no calendar name yet), per the brief. This is the
