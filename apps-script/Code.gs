@@ -47,6 +47,13 @@ var RECOVERY_DELAY_2_HOURS = 72;
 // Where the unsubscribe link in the email points. A mailto keeps it dependency-free.
 var UNSUBSCRIBE_URL = 'mailto:hello@longdriveclub.com?subject=Unsubscribe';
 
+// A recovery link found after this long is treated as expired: the recover
+// endpoint stops returning the lead's data (name/email/phone/car) for it.
+// Comfortably past RECOVERY_DELAY_2_HOURS so the legitimate nudge emails
+// always still work; just stops a stale or leaked link from prefilling PII
+// indefinitely.
+var RECOVERY_TOKEN_MAX_AGE_DAYS = 30;
+
 // Column order written to fresh sheets. Existing sheets keep their order; any
 // columns below that they're missing get appended (see ensureColumns). All
 // reads and writes go through the header map, never fixed indexes, so order
@@ -59,6 +66,27 @@ var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'pa
                'token', 'step1_at', 'completed_at', 'recovery_sent'];
 
 function doPost(e) {
+  var data;
+  try {
+    data = JSON.parse(e.postData.contents);
+  } catch (parseErr) {
+    return jsonOut({ ok: false, error: 'bad request' });
+  }
+
+  // Honeypot: "company" is a hidden field real applicants never see or fill.
+  // A bot that fills every field trips it. Report success but write nothing,
+  // so the bot has no signal the field is a trap.
+  if (data.hp) return jsonOut({ ok: true });
+
+  // Per-email throttle. Apps Script doesn't expose the caller's IP, so this
+  // is the best available key. Generous enough that a real applicant retrying
+  // a failed submit never hits it; tight enough to blunt a script hammering
+  // the endpoint directly (it's a public URL, reachable without the site).
+  var rlEmail = String(data.email || '').trim().toLowerCase();
+  if (rlEmail && !rateLimitOk('rl_post_' + rlEmail, 8, 3600)) {
+    return jsonOut({ ok: false, error: 'rate_limited' });
+  }
+
   var lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000); // serialise the read-then-write upsert
@@ -66,7 +94,6 @@ function doPost(e) {
     return jsonOut({ ok: false, error: 'busy' });
   }
   try {
-    var data = JSON.parse(e.postData.contents);
     var stage = String(data.stage || '').toLowerCase();
     if (stage === 'step1') {
       upsertStep1(data);
@@ -93,10 +120,11 @@ function doGet(e) {
   var params = (e && e.parameter) || {};
   if (params.recover) {
     var lead = leadByToken(params.recover);
-    var payload = lead
-      ? { ok: true, name: lead.name, email: lead.email, phone: lead.phone,
-          make: lead.make, model: lead.model, car: lead.car }
-      : { ok: false };
+    var payload = { ok: false };
+    if (lead && !recoveryTokenExpired(lead)) {
+      payload = { ok: true, name: lead.name, email: lead.email, phone: lead.phone,
+                  make: lead.make, model: lead.model, car: lead.car };
+    }
     return jsonpOrJson(payload, params.callback);
   }
   if (params.password) {
@@ -137,6 +165,9 @@ function dashboardPayload(guess) {
   if (!raw) return { ok: false };
   var g = String(guess || '').trim().toUpperCase();
   if (!g) return { ok: false };
+  // 15 guesses per 10 minutes, shared across all guessers. The dashboard
+  // exposes applicant PII, so this gate is tighter than the public one.
+  if (!rateLimitOk('dash_guess', 15, 600)) return { ok: false };
   var allowed = raw.split(/[,\s]+/).map(function (p) { return p.trim().toUpperCase(); })
                    .filter(function (p) { return p; });
   if (allowed.indexOf(g) < 0) return { ok: false };
@@ -428,6 +459,16 @@ function findRowByColumn(sheet, headers, name, value, ci) {
   return null;
 }
 
+// True once a lead's step1_at is older than RECOVERY_TOKEN_MAX_AGE_DAYS, or if
+// step1_at is missing/unreadable (fail closed rather than treat it as fresh).
+function recoveryTokenExpired(lead) {
+  var startedAt = lead.step1_at;
+  var started = (startedAt instanceof Date) ? startedAt.getTime() : NaN;
+  if (isNaN(started)) return true;
+  var ageDays = (Date.now() - started) / 86400000;
+  return ageDays > RECOVERY_TOKEN_MAX_AGE_DAYS;
+}
+
 // Reads a whole lead row into an object keyed by header name.
 function leadByToken(token) {
   var sheet = getSheet();
@@ -510,6 +551,10 @@ function sendRecoveryEmail(email, token) {
 function passwordValid(guess) {
   var g = String(guess || '').trim().toUpperCase();
   if (!g) return false;
+  // 30 guesses per 10 minutes, shared across all guessers — Apps Script can't
+  // key this per caller, but it's enough to make brute-forcing the
+  // ~10,000-combination generated passwords impractical.
+  if (!rateLimitOk('gate_guess', 30, 600)) return false;
   var sheet = getSheet();
   var col = headerMap(sheet)['password'];
   if (!col) return false;
@@ -723,4 +768,18 @@ function jsonOut(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ---- Rate limiting ------------------------------------------------------
+   Apps Script gives no caller IP, so these throttle on a shared key via
+   CacheService: true if the key is still under maxHits within windowSeconds,
+   and bumps the count; false (and leaves the count alone) once it's been
+   hit too many times, so callers stay locked out until the window rolls. */
+function rateLimitOk(key, maxHits, windowSeconds) {
+  var cache = CacheService.getScriptCache();
+  var raw = cache.get(key);
+  var count = raw ? parseInt(raw, 10) : 0;
+  if (count >= maxHits) return false;
+  cache.put(key, String(count + 1), windowSeconds);
+  return true;
 }
