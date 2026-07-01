@@ -124,13 +124,11 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
         <div class="stripe" style="height:8px" aria-hidden="true"><span></span><span></span><span></span></div>
         <div class="map-stage" id="route-map-stage">
           <picture>
-            <!-- Narrow screens get a crop centred on the route, so cover's
-                 side-cropping keeps the red line centred on any phone width.
-                 Wide screens keep the full map. Swap in assets/basemap-clean.jpg
-                 (+ a mobile crop) once the real basemap is ready — the
-                 animated line draws on top regardless of which image is here. -->
-            <source media="(max-width: 920px)" srcset="assets/welcome-map-mobile.jpg">
-            <img src="assets/welcome-map.jpg" alt="The route, a loop drawn in redline over a regional road map" loading="lazy">
+            <!-- Clean basemap (no baked-in route) — the animated SVG line
+                 draws the route on top. object-fit:cover crops the same way
+                 on every viewport, and the SVG overlay uses matching
+                 xMidYMid slice so the two always line up. -->
+            <img src="assets/basemap-clean.jpg" alt="Top-down map of the route through the Southeast of England" loading="lazy">
           </picture>
           <svg class="route-map-svg" viewBox="0 0 2074 1226" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
             <!-- planned / ghost line, visible ahead of the driven head -->
