@@ -123,7 +123,7 @@
     if (!path) return;
 
     var len = path.getTotalLength();
-    var PACE_MS = 7000;
+    var PACE_MS = 8000;
     var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     var raf = null;
     var timers = [];

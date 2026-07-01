@@ -186,8 +186,13 @@ update both if you ever redeploy to a new URL.
 drive, landscape) came from the original design. Swap the files to
 change the photography; keep the warm, low-saturation, golden-hour mood.
 
-The "You're in" page uses two images: `assets/welcome-map.jpg` (the
-route, drawn in redline over a regional road map — the hero asset) and
-`assets/welcome-lineup.jpg` (the lineup on the grass beside the drive
-copy). Swap either by replacing the file (keep the name, or update the
-`<img src>` in `welcome.html`) — they sit in plain `<img>` slots.
+The "You're in" page's map section (`#map`) is `assets/basemap-2.jpg`
+(a clean top-down map, no route baked in) with the route drawn on top
+by an animated SVG overlay in `welcome.html` — the line, casing, ghost
+line, START/FINISH chips and the gliding LDC roundel are all inline
+`<path>`/`<g>` elements sized to the basemap's exact pixel dimensions
+(`viewBox="0 0 2518 1558"`), animated in `welcome.js`. Swapping the
+basemap for a different map requires re-tracing the route path against
+the new image's pixel coordinates. `assets/welcome-lineup.jpg` (the
+lineup on the grass beside the drive copy) is a plain `<img>` slot —
+swap it by replacing the file.
