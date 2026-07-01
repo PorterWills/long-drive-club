@@ -106,6 +106,105 @@
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
+  /* ---- Route map: the red line draws itself in ------------------------
+     Mirrors the map's static "suggested line" but animates it: casing +
+     red line draw on together, a gliding roundel rides the head, and the
+     START/FINISH tags fade in as it passes them. Runs once the section
+     scrolls into view; reduced motion shows the finished state instantly. */
+  (function () {
+    var stage = document.getElementById("route-map-stage");
+    if (!stage) return;
+    var path = document.getElementById("route-path");
+    var casing = document.getElementById("route-case");
+    var ghost = document.getElementById("route-ghost");
+    var marker = document.getElementById("route-marker");
+    var startTag = document.getElementById("route-start");
+    var finishTag = document.getElementById("route-finish");
+    if (!path) return;
+
+    var len = path.getTotalLength();
+    var PACE_MS = 7000;
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var raf = null;
+    var timers = [];
+    var played = false;
+
+    function clearTimers() {
+      if (raf) cancelAnimationFrame(raf);
+      timers.forEach(clearTimeout);
+      timers = [];
+    }
+
+    function setHead(l) {
+      var pt = path.getPointAtLength(Math.max(0, Math.min(len, l)));
+      marker.setAttribute("transform", "translate(" + pt.x + "," + pt.y + ")");
+    }
+
+    function play() {
+      clearTimers();
+      path.style.strokeDasharray = len;
+      casing.style.strokeDasharray = len;
+
+      startTag.classList.remove("is-shown");
+      finishTag.classList.remove("is-shown");
+      marker.classList.remove("is-shown");
+
+      if (reduceMotion) {
+        path.style.strokeDashoffset = 0;
+        casing.style.strokeDashoffset = 0;
+        setHead(len);
+        marker.classList.add("is-shown");
+        startTag.classList.add("is-shown");
+        finishTag.classList.add("is-shown");
+        return;
+      }
+
+      path.style.strokeDashoffset = len;
+      casing.style.strokeDashoffset = len;
+      setHead(0);
+
+      var ease = function (x) { return 1 - Math.pow(1 - x, 2.3); };
+      timers.push(setTimeout(function () { startTag.classList.add("is-shown"); }, 400));
+
+      var start = null;
+      var delay = 1050;
+      function tick(now) {
+        if (start === null) start = now + delay;
+        var t = (now - start) / PACE_MS;
+        if (t < 0) { raf = requestAnimationFrame(tick); return; }
+        marker.classList.add("is-shown");
+        if (t >= 1) t = 1;
+        var e = ease(t);
+        var off = len * (1 - e);
+        path.style.strokeDashoffset = off;
+        casing.style.strokeDashoffset = off;
+        setHead(len * e);
+        if (t < 1) {
+          raf = requestAnimationFrame(tick);
+        } else {
+          finishTag.classList.add("is-shown");
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    }
+
+    if (ghost) ghost.style.display = "";
+
+    if ("IntersectionObserver" in window) {
+      var mapIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting || played) return;
+          played = true;
+          mapIo.unobserve(entry.target);
+          play();
+        });
+      }, { threshold: 0.4 });
+      mapIo.observe(stage);
+    } else {
+      play();
+    }
+  })();
+
   if (reserveBtn && modal) {
     reserveBtn.addEventListener("click", openModal);
 

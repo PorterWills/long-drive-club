@@ -122,14 +122,57 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
       </div>
       <div class="ldc-rise map-frame" data-delay="60">
         <div class="stripe" style="height:8px" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="map-stage">
+        <div class="map-stage" id="route-map-stage">
           <picture>
             <!-- Narrow screens get a crop centred on the route, so cover's
                  side-cropping keeps the red line centred on any phone width.
-                 Wide screens keep the full map. -->
+                 Wide screens keep the full map. Swap in assets/basemap-clean.jpg
+                 (+ a mobile crop) once the real basemap is ready — the
+                 animated line draws on top regardless of which image is here. -->
             <source media="(max-width: 920px)" srcset="assets/welcome-map-mobile.jpg">
             <img src="assets/welcome-map.jpg" alt="The route, a loop drawn in redline over a regional road map" loading="lazy">
           </picture>
+          <svg class="route-map-svg" viewBox="0 0 2074 1226" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <!-- planned / ghost line, visible ahead of the driven head -->
+            <g id="route-ghost">
+              <path d="M 1037 446 Q 1049 516 1041.5 537 Q 1034 558 1042.5 552 Q 1051 546 1034 569 Q 1017 592 1003.5 612 Q 990 632 978 641 Q 966 650 969.5 675 Q 973 700 986 703 Q 999 706 984.5 733 Q 970 760 988 780 Q 1006 800 1008 839 Q 1010 878 1065 891 Q 1120 904 1139 917 Q 1158 930 1173 917 Q 1188 904 1202 922 Q 1216 940 1229 922.5 Q 1242 905 1271 885.5 Q 1300 866 1355 856 Q 1410 846 1465 846 Q 1520 846 1569 848 Q 1618 850 1640 825 Q 1662 800 1656 772 Q 1650 744 1632 722 Q 1614 700 1634.5 676 Q 1655 652 1655 626 L 1655 600" fill="none" stroke="#CFC9BB" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.5 13" opacity="0.55"></path>
+              <circle cx="1655" cy="600" r="30" fill="none" stroke="#CFC9BB" stroke-width="2" opacity="0.5"></circle>
+            </g>
+
+            <!-- tarmac casing under the red, drawn together with it -->
+            <path id="route-case" d="M 1037 446 Q 1049 516 1041.5 537 Q 1034 558 1042.5 552 Q 1051 546 1034 569 Q 1017 592 1003.5 612 Q 990 632 978 641 Q 966 650 969.5 675 Q 973 700 986 703 Q 999 706 984.5 733 Q 970 760 988 780 Q 1006 800 1008 839 Q 1010 878 1065 891 Q 1120 904 1139 917 Q 1158 930 1173 917 Q 1188 904 1202 922 Q 1216 940 1229 922.5 Q 1242 905 1271 885.5 Q 1300 866 1355 856 Q 1410 846 1465 846 Q 1520 846 1569 848 Q 1618 850 1640 825 Q 1662 800 1656 772 Q 1650 744 1632 722 Q 1614 700 1634.5 676 Q 1655 652 1655 626 L 1655 600" fill="none" stroke="#12100E" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"></path>
+
+            <!-- the driven red line -->
+            <path id="route-path" d="M 1037 446 Q 1049 516 1041.5 537 Q 1034 558 1042.5 552 Q 1051 546 1034 569 Q 1017 592 1003.5 612 Q 990 632 978 641 Q 966 650 969.5 675 Q 973 700 986 703 Q 999 706 984.5 733 Q 970 760 988 780 Q 1006 800 1008 839 Q 1010 878 1065 891 Q 1120 904 1139 917 Q 1158 930 1173 917 Q 1188 904 1202 922 Q 1216 940 1229 922.5 Q 1242 905 1271 885.5 Q 1300 866 1355 856 Q 1410 846 1465 846 Q 1520 846 1569 848 Q 1618 850 1640 825 Q 1662 800 1656 772 Q 1650 744 1632 722 Q 1614 700 1634.5 676 Q 1655 652 1655 626 L 1655 600" fill="none" stroke="#C1121F" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"></path>
+
+            <!-- START marker + label -->
+            <g id="route-start" transform="translate(1037,446)" class="route-tag">
+              <circle r="15" fill="#EDE9DF" stroke="#1B1916" stroke-width="4"></circle>
+              <circle r="5.5" fill="#C1121F"></circle>
+              <g transform="translate(30,-33)">
+                <rect x="0" y="0" width="246" height="40" fill="#1B1916"></rect>
+                <circle cx="21" cy="20" r="4.5" fill="#C1121F"></circle>
+                <text x="38" y="27" font-family="Archivo, sans-serif" font-size="16.5" font-weight="600" letter-spacing="2.8" fill="#EDE9DF">START · THE MEET</text>
+              </g>
+            </g>
+
+            <!-- FINISH label (roundel lands on the target and this resolves) -->
+            <g id="route-finish" transform="translate(1655,600)" class="route-tag">
+              <g transform="translate(-372,-58)">
+                <rect x="0" y="0" width="322" height="40" fill="#1B1916"></rect>
+                <circle cx="21" cy="20" r="4.5" fill="#C1121F"></circle>
+                <text x="38" y="27" font-family="Archivo, sans-serif" font-size="16.5" font-weight="600" letter-spacing="2.8" fill="#EDE9DF">FINISH · THE FIRST TEE</text>
+              </g>
+            </g>
+
+            <!-- gliding LDC roundel -->
+            <g id="route-marker" transform="translate(1037,446)" class="route-marker">
+              <circle r="30" fill="#EDE9DF"></circle>
+              <circle r="30" fill="none" stroke="#1B1916" stroke-width="4.5"></circle>
+              <circle r="35" fill="none" stroke="#EDE9DF" stroke-width="2.5"></circle>
+              <text y="7" text-anchor="middle" font-family="Archivo, sans-serif" font-size="20" font-weight="800" letter-spacing="0.5" fill="#1B1916">LDC</text>
+            </g>
+          </svg>
           <div class="map-chip">
             <span class="map-chip-dot" aria-hidden="true"></span>
             <span class="ldc-eyebrow" style="color:var(--ldc-chalk)">A suggested line</span>
