@@ -285,12 +285,16 @@
     continueBtn.addEventListener("click", function () {
       if (!agreeCheck.checked) return;
       closeModal();
-      // T&Cs agreed: this is the hand-off to payment. When Stripe is wired,
-      // go straight there; until then, show the placeholder payment step.
+      // T&Cs agreed: hand off to payment. Stripe hosts the whole checkout at
+      // its own URL, so we redirect straight there. Until STRIPE_PAYMENT_URL
+      // is set, show the inline placeholder so the journey stays testable.
       if (STRIPE_PAYMENT_URL) { window.location.href = STRIPE_PAYMENT_URL; return; }
-      document.getElementById("reserve-copy").hidden = true;
-      document.getElementById("reserve-action").hidden = true;
-      document.getElementById("payment-next").hidden = false;
+      var cta = document.getElementById("reserve-cta");
+      var secure = document.getElementById("reserve-secure");
+      var next = document.getElementById("payment-next");
+      if (cta) cta.hidden = true;
+      if (secure) secure.hidden = true;
+      if (next) next.hidden = false;
     });
 
     modal.querySelectorAll("[data-close]").forEach(function (el) {
