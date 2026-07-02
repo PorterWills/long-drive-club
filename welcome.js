@@ -46,9 +46,8 @@
     // pattern as members.js's drive-day sync, since Apps Script can't send
     // CORS headers a normal fetch could read.
     if (metaEl && APPS_SCRIPT_URL) {
-      var defaults = metaEl.textContent.split(" · ");
-      var defaultMonth = defaults[0] || "";
-      var defaultPlaces = defaults[1] || "";
+      var defaultMonth = metaEl.getAttribute("data-default-month") || "";
+      var defaultPlaces = metaEl.getAttribute("data-default-places") || "";
       var cb = "__ldcmeta_" + Date.now();
       var script = document.createElement("script");
       var timer = setTimeout(cleanup, 8000);
