@@ -48,7 +48,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=31">
+<link rel="stylesheet" href="styles.css?v=32">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -125,12 +125,13 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
         <div class="map-stage" id="route-map-stage">
           <picture>
             <!-- Basemap (no baked-in route) — the animated SVG line draws
-                 the route on top. object-fit:cover crops the same way on
-                 every viewport, and the SVG overlay uses matching
-                 xMidYMid slice so the two always line up. -->
+                 the route on top. The box is locked to the image's exact
+                 aspect ratio (aspect-ratio: 2518/1558) at every viewport
+                 width, so nothing is ever cropped and the SVG overlay
+                 (viewBox 0 0 2518 1558) always lines up pixel-for-pixel. -->
             <img src="assets/basemap-2.jpg" alt="Top-down map of the route through the Southeast of England" loading="lazy">
           </picture>
-          <svg class="route-map-svg" viewBox="0 0 2518 1558" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <svg class="route-map-svg" viewBox="0 0 2518 1558" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
             <!-- planned / ghost line, visible ahead of the driven head -->
             <g id="route-ghost">
               <path d="M 1270 573 Q 1299 604 1317 607.5 Q 1335 611 1349 622.5 Q 1363 634 1376 641.5 Q 1389 649 1407.5 648 Q 1426 647 1441 649.5 Q 1456 652 1468 657.5 Q 1480 663 1492 670 Q 1504 677 1519.5 687 Q 1535 697 1553 697 Q 1571 697 1589 700 Q 1607 703 1626 707.5 Q 1645 712 1663 712 Q 1681 712 1698 711.5 Q 1715 711 1734 703.5 Q 1753 696 1763 691 Q 1773 686 1790 680.5 Q 1807 675 1827.5 672.5 Q 1848 670 1864 666.5 Q 1880 663 1899.5 656.5 Q 1919 650 1939 641.5 Q 1959 633 1974 639 Q 1989 645 1999.5 650 Q 2010 655 2027 657 Q 2044 659 2062 663 Q 2080 667 2094 668 Q 2108 669 2096 685 Q 2084 701 2076.5 712 Q 2069 723 2062.5 736.5 Q 2056 750 2068 761.5 Q 2080 773 2096 783.5 Q 2112 794 2126 810.5 Q 2140 827 2135 843.5 Q 2130 860 2123 869 Q 2116 878 2099 889.5 Q 2082 901 2073 909.5 Q 2064 918 2063 935.5 Q 2062 953 2058 969.5 Q 2054 986 2049.5 997 Q 2045 1008 2034 1026 Q 2023 1044 2016 1063 Q 2009 1082 1995 1095.5 Q 1981 1109 1965 1122 Q 1949 1135 1950.5 1152.5 Q 1952 1170 1936.5 1173.5 Q 1921 1177 1910.5 1185 Q 1900 1193 1890 1198 Q 1880 1203 1861 1200 Q 1842 1197 1844 1211.5 Q 1846 1226 1848 1233.5 L 1850 1241" fill="none" stroke="#CFC9BB" stroke-width="3" stroke-linecap="round" stroke-dasharray="0.5 15" opacity="0.5"></path>
