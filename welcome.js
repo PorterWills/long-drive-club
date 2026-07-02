@@ -275,6 +275,58 @@
     }
   })();
 
+  /* ---- Checkout sheet: the in-house payment flow ------------------------
+     Opens once the T&Cs are agreed (unless Stripe is wired, in which case we
+     redirect there instead). Mocked: "Pay" swaps the form for a confirmation.
+     Wire a real charge into pay() when the processor is ready. */
+  var checkout = document.getElementById("checkout-sheet");
+  var checkoutForm = document.getElementById("checkout-form");
+  var checkoutApplePay = document.getElementById("checkout-applepay");
+  var checkoutDoneBtn = document.getElementById("checkout-done");
+  var payView = document.getElementById("checkout-pay-view");
+  var doneView = document.getElementById("checkout-done-view");
+  var checkoutLastFocus = null;
+
+  function openCheckout() {
+    if (!checkout) return;
+    checkoutLastFocus = document.activeElement;
+    // always open on the form, never the leftover confirmation
+    if (payView) payView.hidden = false;
+    if (doneView) doneView.hidden = true;
+    if (checkoutForm) checkoutForm.reset();
+    checkout.hidden = false;
+    document.body.style.overflow = "hidden";
+    checkout.querySelector(".checkout-panel").focus();
+  }
+  function closeCheckout() {
+    if (!checkout) return;
+    checkout.hidden = true;
+    document.body.style.overflow = "";
+    // reset for next time
+    if (payView) payView.hidden = false;
+    if (doneView) doneView.hidden = true;
+    if (checkoutLastFocus && checkoutLastFocus.focus) checkoutLastFocus.focus();
+  }
+  function pay(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    // Real integration: charge here, then reveal confirmation on success and
+    // show a short, specific error on failure. Mocked for now.
+    if (payView) payView.hidden = true;
+    if (doneView) doneView.hidden = false;
+  }
+
+  if (checkout) {
+    if (checkoutForm) checkoutForm.addEventListener("submit", pay);
+    if (checkoutApplePay) checkoutApplePay.addEventListener("click", pay);
+    if (checkoutDoneBtn) checkoutDoneBtn.addEventListener("click", closeCheckout);
+    checkout.querySelectorAll("[data-checkout-close]").forEach(function (el) {
+      el.addEventListener("click", closeCheckout);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !checkout.hidden) closeCheckout();
+    });
+  }
+
   if (reserveBtn && modal) {
     reserveBtn.addEventListener("click", openModal);
 
@@ -286,11 +338,9 @@
       if (!agreeCheck.checked) return;
       closeModal();
       // T&Cs agreed: this is the hand-off to payment. When Stripe is wired,
-      // go straight there; until then, show the placeholder payment step.
+      // go straight there; until then, open the in-house checkout sheet.
       if (STRIPE_PAYMENT_URL) { window.location.href = STRIPE_PAYMENT_URL; return; }
-      document.getElementById("reserve-copy").hidden = true;
-      document.getElementById("reserve-action").hidden = true;
-      document.getElementById("payment-next").hidden = false;
+      openCheckout();
     });
 
     modal.querySelectorAll("[data-close]").forEach(function (el) {

@@ -48,7 +48,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=33">
+<link rel="stylesheet" href="styles.css?v=42">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -249,48 +249,63 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
     </div>
   </section>
 
-  <!-- 6 + 7. The price, and the reservation. One CTA on the whole page. -->
+  <!-- 6 + 7. The price, and the reservation. One CTA on the whole page.
+       Two flush zones (direction 1a): a green value panel over a chalk
+       reserve bar. The CTA opens the terms gate, then the checkout sheet. -->
   <section id="reserve" class="welcome-price ldc-dark">
     <div class="stripe stripe--thin" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="col">
-      <div class="price-grid">
-        <div class="ldc-rise">
-          <p class="ldc-redtick" style="color:var(--ldc-chalk)">The place</p>
-          <div class="price-number ldc-numeral" data-count="£235">£235</div>
-          <p class="price-line ldc-voice">The drive, the round, the day. One number, one place.</p>
-        </div>
-        <div class="ldc-rise" data-delay="80">
-          <p class="ldc-eyebrow" style="color:var(--ldc-chalk-dim);margin:8px 0 0">What it covers</p>
-          <div class="covers">
-            <div class="cover-row"><span class="cover-name ldc-display">The road</span><span class="cover-note ldc-body">60 miles, chosen for the drive</span></div>
-            <div class="cover-row"><span class="cover-name ldc-display">Breakfast</span><span class="cover-note ldc-body">First thing, before the off</span></div>
-            <div class="cover-row"><span class="cover-name ldc-display">18 holes</span><span class="cover-note ldc-body">A top 100 course at the end</span></div>
-            <div class="cover-row"><span class="cover-name ldc-display">Lunch</span><span class="cover-note ldc-body">Once you're back in</span></div>
-            <div class="cover-row"><span class="cover-name ldc-display">The photograph</span><span class="cover-note ldc-body">Your car, shot properly</span></div>
+      <div class="ldc-rise pay-block">
+        <!-- Zone A — value panel -->
+        <div class="pay-value ldc-dark">
+          <div class="pay-value-grid">
+            <div class="pay-value-left">
+              <p class="ldc-redtick" style="color:var(--ldc-chalk)">The place</p>
+              <div class="pay-price ldc-numeral" data-count="£235">£235</div>
+              <p class="pay-voice ldc-voice">The drive, the round, the day. One number, one place.</p>
+            </div>
+            <div class="pay-value-right">
+              <p class="ldc-eyebrow" style="color:var(--ldc-chalk-dim);margin:0 0 4px">What it covers</p>
+              <div class="covers">
+                <div class="cover-row"><span class="cover-name ldc-display">The road</span><span class="cover-note ldc-body">60 miles, chosen for the drive</span></div>
+                <div class="cover-row"><span class="cover-name ldc-display">Breakfast</span><span class="cover-note ldc-body">First thing, before the off</span></div>
+                <div class="cover-row"><span class="cover-name ldc-display">18 holes</span><span class="cover-note ldc-body">A top 100 course at the end</span></div>
+                <div class="cover-row"><span class="cover-name ldc-display">Lunch</span><span class="cover-note ldc-body">Once you're back in</span></div>
+                <div class="cover-row"><span class="cover-name ldc-display">The photograph</span><span class="cover-note ldc-body">Your car, shot properly</span></div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div class="ldc-rise reserve-card ldc-light" data-delay="120">
-        <div class="stripe stripe--thin" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="reserve-body">
-          <div id="reserve-copy">
-            <span class="badge badge--open">48 hour hold</span>
-            <h3 class="ldc-display reserve-title">Reserve your place</h3>
-            <p class="reserve-sub ldc-body">One of 20. The 48 hour hold starts the moment you do.</p>
+        <!-- Zone B — reserve bar -->
+        <div class="pay-reserve ldc-light">
+          <div class="pay-reserve-top">
+            <div class="pay-reserve-lead">
+              <span class="badge badge--open">48 hour hold</span>
+              <h3 class="ldc-display pay-reserve-title">Reserve your place</h3>
+            </div>
+            <div class="pay-reserve-action">
+              <button type="button" class="btn btn--lg btn--green" id="reserve-btn"><span class="tick" aria-hidden="true"></span><span class="label">Secure your entry</span></button>
+              <div class="pay-secure">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="11" width="16" height="9" rx="1"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+                <span class="ldc-body">Secure checkout</span>
+              </div>
+              <!-- PLACEHOLDER payment marks — hand-tuned monochrome approximations.
+                   ACTION REQUIRED before launch: replace with official brand SVGs
+                   (Visa / Mastercard / Amex / Apple Pay / Google Pay) per each
+                   network's brand guidelines. See design handoff, Assets. -->
+              <div class="pay-marks" role="img" aria-label="Cards and wallets accepted: Visa, Mastercard, American Express, Apple Pay, Google Pay">
+                <span class="pay-mark pay-mark--word">VISA</span>
+                <svg class="pay-mark" width="27" height="17" viewBox="0 0 30 19" aria-hidden="true"><circle cx="10.5" cy="9.5" r="9.5" fill="currentColor"></circle><circle cx="19.5" cy="9.5" r="9.5" fill="currentColor" stroke="var(--ldc-chalk)" stroke-width="1.4"></circle></svg>
+                <span class="pay-mark pay-mark--box">AMEX</span>
+                <span class="pay-mark pay-mark--wallet"><svg width="12" height="15" viewBox="0 0 814 1000" aria-hidden="true"><path fill="currentColor" d="M788 340c-6 5-116 68-116 206 0 160 140 217 145 218-1 3-22 78-75 154-46 67-95 134-169 134s-93-43-178-43c-83 0-113 44-181 44s-115-62-169-138C24 823 0 683 0 550c0-213 138-326 274-326 72 0 132 47 177 47 43 0 110-50 192-50 31 0 142 3 214 108zM557 152c34-40 58-96 58-152 0-8-1-16-2-22-55 2-121 37-160 83-31 35-60 91-60 147 0 9 2 17 2 20 3 1 9 2 15 2 50 0 112-33 147-78z"></path></svg>Pay</span>
+                <span class="pay-mark pay-mark--wallet"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.64 12.2045c0-.6381-.0573-1.2518-.1636-1.8409H12v3.4814h6.5455c-.2822 1.52-1.1391 2.8082-2.4272 3.6709v3.0518h3.9273C21.9518 18.4772 23.64 15.6082 23.64 12.2045z"></path><path fill="currentColor" d="M12 24c3.24 0 5.9564-1.0745 7.9418-2.9082l-3.9273-3.0518c-1.0854.72-2.4736 1.1454-4.0145 1.1454-3.0682 0-5.6664-2.0736-6.5936-4.8582H1.4364v3.1364C3.4109 21.3364 7.3909 24 12 24z"></path><path fill="currentColor" d="M5.4064 14.3273c-.24-.72-.3764-1.4891-.3764-2.2745s.1364-1.5545.3764-2.2745V6.6218H1.4364C.5218 8.4436 0 10.4364 0 12.0527s.5218 3.6091 1.4364 5.4309l3.97-3.1563z"></path><path fill="currentColor" d="M12 4.7455c1.7291 0 3.2836.5945 4.5055 1.7618l3.4818-3.4818C17.9564 1.1636 15.24 0 12 0 7.3909 0 3.4109 2.6636 1.4364 6.6218l3.97 3.1563C6.3336 6.9927 8.9318 4.7455 12 4.7455z"></path></svg>Pay</span>
+              </div>
+            </div>
           </div>
-          <div class="reserve-action" id="reserve-action">
-            <button type="button" class="btn btn--lg btn--green" id="reserve-btn"><span class="tick" aria-hidden="true"></span><span class="label">Reserve your place →</span></button>
+          <div class="pay-reserve-foot">
+            <span class="pay-foot-mark" aria-hidden="true"></span>
+            <span class="ldc-body">Held for 48 hours. Then it goes to the next name on the list.</span>
           </div>
-          <div id="payment-next" hidden>
-            <span class="badge badge--open">Next: payment</span>
-            <h3 class="ldc-display reserve-title">Card details next</h3>
-            <p class="reserve-held ldc-voice">Secure payment opens here. Nothing's taken until your place is confirmed.</p>
-          </div>
-        </div>
-        <div class="reserve-foot">
-          <span class="reserve-foot-mark" aria-hidden="true"></span>
-          <span class="ldc-body">Held for 48 hours. Then it goes to the next name on the list.</span>
         </div>
       </div>
     </div>
@@ -328,6 +343,90 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
     </div>
   </footer>
   <div class="stripe" aria-hidden="true"><span></span><span></span><span></span></div>
+</div>
+
+<!-- Checkout sheet — opens after the terms are agreed. Mocked in-house
+     payment flow (direction 1a, View 2). When Stripe is wired via
+     STRIPE_PAYMENT_URL in welcome.js, the CTA routes there instead and this
+     sheet is skipped. -->
+<div class="checkout" id="checkout-sheet" hidden role="dialog" aria-modal="true" aria-labelledby="checkout-heading">
+  <div class="checkout-backdrop" data-checkout-close></div>
+  <div class="checkout-panel" tabindex="-1">
+    <button type="button" class="checkout-x" data-checkout-close aria-label="Close checkout">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+    </button>
+    <div class="checkout-grid">
+      <!-- order summary -->
+      <div class="checkout-summary ldc-dark">
+        <div class="stripe" style="height:6px" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="checkout-summary-body">
+          <span class="roundel roundel--on-dark checkout-roundel" style="width:60px;height:60px;font-size:22px">26</span>
+          <p class="ldc-eyebrow" style="color:var(--ldc-chalk-dim);margin:26px 0 0">The place · 2026 season</p>
+          <div class="checkout-price ldc-numeral">£235</div>
+          <p class="ldc-voice checkout-summary-voice">The drive, the round, the day. One number, one place.</p>
+          <div class="checkout-mini">
+            <span class="checkout-mini-row ldc-body">The road</span>
+            <span class="checkout-mini-row ldc-body">Breakfast, first thing</span>
+            <span class="checkout-mini-row ldc-body">18 holes, a top 100 course</span>
+            <span class="checkout-mini-row ldc-body">Lunch, once you're back in</span>
+            <span class="checkout-mini-row ldc-body">The photograph, your car shot properly</span>
+          </div>
+        </div>
+      </div>
+      <!-- payment form / confirmation -->
+      <div class="checkout-form ldc-light">
+        <div id="checkout-pay-view">
+          <p class="ldc-eyebrow">Checkout</p>
+          <h3 class="ldc-display checkout-heading" id="checkout-heading">Pay £235</h3>
+          <button type="button" class="checkout-applepay" id="checkout-applepay">
+            <svg width="15" height="17" viewBox="0 0 17 21" aria-hidden="true"><path fill="currentColor" d="M14.2 15.6c-.3.7-.6 1.2-1 1.8-.5.8-1 1.4-1.4 1.7-.5.5-1.1.7-1.8.8-.5 0-1-.1-1.7-.4-.7-.3-1.3-.4-1.8-.4-.6 0-1.2.1-1.8.4-.6.3-1.2.4-1.6.5-.6 0-1.2-.3-1.8-.8-.4-.4-.9-1-1.5-1.8-.6-.9-1.1-1.9-1.4-3.1-.3-1.3-.4-2.6 0-3.8.3-1.3 1.1-2.4 2.2-3.1.6-.4 1.2-.6 1.9-.6.5 0 1.1.2 1.9.5.7.3 1.2.5 1.4.5.2 0 .8-.2 1.6-.5.8-.3 1.5-.4 2-.4 1.5.1 2.6.7 3.4 1.9-1.3.8-2 1.9-2 3.4 0 1.2.4 2.1 1.3 2.9.4.4.8.6 1.3.8-.1.3-.2.6-.3.9zM11.4 1c0 .8-.3 1.6-1 2.4-.7.8-1.6 1.3-2.5 1.2 0-.1 0-.2 0-.3 0-.8.4-1.6.9-2.2.3-.3.7-.6 1.1-.8.5-.2.9-.3 1.3-.3 0 .1.2 0 .2 0z"></path></svg>
+            <span>Pay</span>
+          </button>
+          <div class="checkout-divider"><span class="checkout-rule"></span><span class="ldc-eyebrow">or pay by card</span><span class="checkout-rule"></span></div>
+          <form class="checkout-fields" id="checkout-form" novalidate>
+            <label class="checkout-field">
+              <span class="checkout-field-label ldc-eyebrow">Email</span>
+              <input type="email" name="email" autocomplete="email" placeholder="you@somewhere.com">
+            </label>
+            <label class="checkout-field">
+              <span class="checkout-field-label ldc-eyebrow">Card number</span>
+              <input type="text" name="card" inputmode="numeric" autocomplete="cc-number" placeholder="1234 1234 1234 1234">
+            </label>
+            <div class="checkout-field-pair">
+              <label class="checkout-field">
+                <span class="checkout-field-label ldc-eyebrow">Expiry</span>
+                <input type="text" name="expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM / YY">
+              </label>
+              <label class="checkout-field">
+                <span class="checkout-field-label ldc-eyebrow">CVC</span>
+                <input type="text" name="cvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123">
+              </label>
+            </div>
+            <label class="checkout-field">
+              <span class="checkout-field-label ldc-eyebrow">Name on card</span>
+              <input type="text" name="name" autocomplete="cc-name" placeholder="First and last">
+            </label>
+            <button type="submit" class="btn btn--lg btn--green checkout-pay" id="checkout-pay"><span class="tick" aria-hidden="true"></span><span class="label">Pay £235</span></button>
+          </form>
+          <div class="pay-marks checkout-marks" role="img" aria-label="Cards and wallets accepted: Visa, Mastercard, American Express, Apple Pay, Google Pay">
+            <span class="pay-mark pay-mark--word">VISA</span>
+            <svg class="pay-mark" width="27" height="17" viewBox="0 0 30 19" aria-hidden="true"><circle cx="10.5" cy="9.5" r="9.5" fill="currentColor"></circle><circle cx="19.5" cy="9.5" r="9.5" fill="currentColor" stroke="var(--ldc-chalk)" stroke-width="1.4"></circle></svg>
+            <span class="pay-mark pay-mark--box">AMEX</span>
+            <span class="pay-mark pay-mark--wallet"><svg width="12" height="15" viewBox="0 0 814 1000" aria-hidden="true"><path fill="currentColor" d="M788 340c-6 5-116 68-116 206 0 160 140 217 145 218-1 3-22 78-75 154-46 67-95 134-169 134s-93-43-178-43c-83 0-113 44-181 44s-115-62-169-138C24 823 0 683 0 550c0-213 138-326 274-326 72 0 132 47 177 47 43 0 110-50 192-50 31 0 142 3 214 108zM557 152c34-40 58-96 58-152 0-8-1-16-2-22-55 2-121 37-160 83-31 35-60 91-60 147 0 9 2 17 2 20 3 1 9 2 15 2 50 0 112-33 147-78z"></path></svg>Pay</span>
+            <span class="pay-mark pay-mark--wallet"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.64 12.2045c0-.6381-.0573-1.2518-.1636-1.8409H12v3.4814h6.5455c-.2822 1.52-1.1391 2.8082-2.4272 3.6709v3.0518h3.9273C21.9518 18.4772 23.64 15.6082 23.64 12.2045z"></path><path fill="currentColor" d="M12 24c3.24 0 5.9564-1.0745 7.9418-2.9082l-3.9273-3.0518c-1.0854.72-2.4736 1.1454-4.0145 1.1454-3.0682 0-5.6664-2.0736-6.5936-4.8582H1.4364v3.1364C3.4109 21.3364 7.3909 24 12 24z"></path><path fill="currentColor" d="M5.4064 14.3273c-.24-.72-.3764-1.4891-.3764-2.2745s.1364-1.5545.3764-2.2745V6.6218H1.4364C.5218 8.4436 0 10.4364 0 12.0527s.5218 3.6091 1.4364 5.4309l3.97-3.1563z"></path><path fill="currentColor" d="M12 4.7455c1.7291 0 3.2836.5945 4.5055 1.7618l3.4818-3.4818C17.9564 1.1636 15.24 0 12 0 7.3909 0 3.4109 2.6636 1.4364 6.6218l3.97 3.1563C6.3336 6.9927 8.9318 4.7455 12 4.7455z"></path></svg>Pay</span>
+          </div>
+          <p class="checkout-fine ldc-body">Encrypted checkout.</p>
+        </div>
+        <div id="checkout-done-view" class="checkout-done" hidden>
+          <span class="roundel roundel--on-light" style="width:72px;height:72px;font-size:26px">26</span>
+          <h3 class="ldc-display checkout-done-title">You're in</h3>
+          <p class="ldc-voice checkout-done-voice">Car 26. See you on the road.</p>
+          <p class="ldc-body checkout-done-body">The details are in your inbox. First drive is confirmed four weeks out. No newsletter, don't worry.</p>
+          <button type="button" class="btn btn--md btn--secondary checkout-done-btn" id="checkout-done"><span class="label">Done</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Terms & Conditions — shown at the payment step, must be agreed before reserving -->
@@ -458,6 +557,6 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
 </div>
 
 <script src="config.js?v=1"></script>
-<script src="welcome.js?v=7"></script>
+<script src="welcome.js?v=8"></script>
 </body>
 </html>
