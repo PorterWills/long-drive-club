@@ -26,10 +26,7 @@
 
 /* --- Payment marks (placeholder monochrome, tarmac) ----------------- */
 .pay-marks{display:flex;align-items:center;gap:18px;flex-wrap:wrap;color:var(--ldc-tarmac)}
-.pay-mark{display:inline-flex;align-items:center;color:inherit}
-.pay-mark--word{font-family:var(--font-body);font-weight:800;font-size:16px;letter-spacing:.5px;line-height:1}
-.pay-mark--box{height:17px;padding:0 6px;border-radius:2px;background:var(--ldc-tarmac);color:var(--ldc-chalk);font-family:var(--font-body);font-weight:800;font-size:9px;letter-spacing:.6px;line-height:17px}
-.pay-mark--wallet{gap:5px;font-family:var(--font-body);font-weight:600;font-size:14px;line-height:1}
+.pay-mark{display:block;flex-shrink:0;color:inherit}
 
 /* --- Checkout sheet -------------------------------------------------- */
 .checkout{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;animation:pay-fade .18s var(--ease-out)}
