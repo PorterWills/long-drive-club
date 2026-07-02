@@ -5,6 +5,72 @@
 (function () {
   "use strict";
 
+  var APPS_SCRIPT_URL = (window.LDC_CONFIG || {}).APPS_SCRIPT_URL;
+
+  /* ---- Masthead: greet the member by name, name their car -------------
+     The gate is the only place a visitor's identity is established (see
+     app.js), so it drops name/make/model into sessionStorage on unlock; this
+     reads it back and fills the three masthead slots. The sheet holds one
+     free-text name field, not separate first/last names, so someone who only
+     gave a first name is shown exactly that — never a blank. Every value is
+     optional (a missing car, a missing name, or the master password with no
+     sheet row at all), so the HTML already carries a sensible fallback for
+     each slot; this only overwrites a slot when real data is there. */
+  (function personaliseMasthead() {
+    var nameEl = document.getElementById("masthead-name");
+    var lineEl = document.getElementById("masthead-line");
+    var metaEl = document.getElementById("masthead-meta");
+    if (!nameEl && !lineEl && !metaEl) return;
+
+    var member = {};
+    try { member = JSON.parse(sessionStorage.getItem("ldc-member") || "{}") || {}; }
+    catch (e) { member = {}; }
+
+    var name = String(member.name || "").trim();
+    if (nameEl && name) nameEl.textContent = name;
+
+    var model = String(member.model || "").trim();
+    if (lineEl && model) {
+      lineEl.textContent = "The long way round in the " + model + ". A top 100 course at the end";
+      var stop = document.createElement("span");
+      stop.className = "masthead-stop";
+      stop.textContent = ".";
+      lineEl.appendChild(stop);
+    }
+
+    // The month/places line: the HTML default already reads right, so this
+    // is a correction, not a requirement — same JSONP-with-timeout pattern
+    // as members.js's drive-day sync, since Apps Script can't send CORS
+    // headers a normal fetch could read.
+    if (metaEl && APPS_SCRIPT_URL) {
+      var cb = "__ldcmeta_" + Date.now();
+      var script = document.createElement("script");
+      var timer = setTimeout(cleanup, 8000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (data) {
+        cleanup();
+        if (!data) return;
+        var month = "";
+        if (data.event_date) {
+          var t = Date.parse(data.event_date);
+          if (!isNaN(t)) {
+            month = new Date(t).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+          }
+        }
+        var places = data.places_target ? data.places_target + " places" : "";
+        var parts = [month, places].filter(Boolean);
+        if (parts.length) metaEl.textContent = parts.join(" · ");
+      };
+      script.onerror = cleanup;
+      script.src = APPS_SCRIPT_URL + "?meta=1&callback=" + cb;
+      document.head.appendChild(script);
+    }
+  })();
+
   /* ---- Reveal on scroll: restrained rise, honours reduced motion ------- */
   var rises = document.querySelectorAll(".ldc-rise");
   var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;

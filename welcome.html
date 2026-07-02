@@ -48,7 +48,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&display=swap">
-<link rel="stylesheet" href="styles.css?v=32">
+<link rel="stylesheet" href="styles.css?v=33">
 <script>document.documentElement.classList.remove("no-js");</script>
 </head>
 <body>
@@ -74,16 +74,17 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
 
 <main>
 
-  <!-- 1. The reveal — confirm the gate opened. Warm, brief, small. -->
-  <section id="top" class="welcome-reveal ldc-dark">
-    <div class="col">
-      <div class="ldc-rise" style="max-width:760px">
-        <p class="reveal-stamp">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ldc-moss)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>
-          <span class="ldc-eyebrow" style="color:var(--ldc-moss)">Password accepted</span>
-        </p>
-        <p class="reveal-line ldc-voice">You're in. Here's the day.</p>
-        <p class="reveal-note ldc-body">Accepted for the first drive · August 2026</p>
+  <!-- 1. The masthead — greets the member by name, states the one invitation
+       line, over the LDC livery. Name and car are personalised from the
+       applications sheet (see welcome.js); both fail gracefully when the
+       sheet only holds a first name or the car is missing. -->
+  <section id="top" class="welcome-masthead ldc-dark">
+    <div class="stripe stripe--vertical" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="masthead-body">
+      <div class="ldc-rise masthead-inner">
+        <p class="ldc-redtick" style="color:var(--ldc-chalk-dim)" id="masthead-meta">August 2026 · 20 places</p>
+        <h1 class="ldc-display masthead-name" id="masthead-name">You</h1>
+        <p class="ldc-voice masthead-line" id="masthead-line">The long way round in the car you'd take anyway. A top 100 course at the end<span class="masthead-stop">.</span></p>
       </div>
     </div>
   </section>
@@ -456,6 +457,7 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
   </div>
 </div>
 
-<script src="welcome.js?v=4"></script>
+<script src="config.js?v=1"></script>
+<script src="welcome.js?v=5"></script>
 </body>
 </html>

@@ -907,7 +907,9 @@
   // Ask the Apps Script whether a password matches an approved applicant.
   // Apps Script can't answer a normal fetch (no CORS headers), so we use
   // JSONP: load the request as a <script> whose response calls our callback
-  // with { ok: true|false }. Resolves false on any error or timeout.
+  // with { ok: true|false, name, make, model }. Resolves false on any error
+  // or timeout, and on ok:true resolves the whole payload — the welcome
+  // masthead's personalisation reads name/make/model from it (see below).
   function checkPasswordRemote(guess) {
     return new Promise(function (resolve) {
       var cb = "ldcGate" + Date.now() + Math.floor(Math.random() * 1000);
@@ -918,7 +920,7 @@
         try { delete window[cb]; } catch (err) { window[cb] = undefined; }
         if (script.parentNode) script.parentNode.removeChild(script);
       }
-      window[cb] = function (data) { cleanup(); resolve(!!(data && data.ok)); };
+      window[cb] = function (data) { cleanup(); resolve(data && data.ok ? data : false); };
       script.onerror = function () { cleanup(); resolve(false); };
       script.src = APPS_SCRIPT_URL + "?password=" + encodeURIComponent(guess) + "&callback=" + cb;
       document.head.appendChild(script);
@@ -938,14 +940,25 @@
     if (unlockBtn) unlockBtn.disabled = true;
     if (unlockLabel) unlockLabel.textContent = "Checking…";
 
-    function done(ok) {
+    function done(result) {
       // On success the day lives on its own page ("You're in"); send them
       // there. We first drop a session marker so welcome.html knows the
       // visitor came through the gate — a shared welcome URL carries no
       // session storage, so it bounces straight back here. (Deterrent only,
       // not real security; see README.) On failure, surface the error.
-      if (ok) {
+      if (result) {
         try { sessionStorage.setItem("ldc-gate", "open"); } catch (e) {}
+        // The gate is the only place a visitor's identity is established, so
+        // whatever name/car came back with it is handed to the welcome page
+        // this way. The master password (result === true) carries none —
+        // welcome.js's masthead falls back gracefully when it's missing.
+        if (result !== true) {
+          try {
+            sessionStorage.setItem("ldc-member", JSON.stringify({
+              name: result.name || "", make: result.make || "", model: result.model || ""
+            }));
+          } catch (e) {}
+        }
         window.location.href = "/welcome";
         return;
       }

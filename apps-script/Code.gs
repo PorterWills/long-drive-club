@@ -130,7 +130,9 @@ function doPost(e) {
 //    rather than assuming success.
 //  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
 //    a recovery token, so it can prefill step two.
-//  - ?password=XXX&callback=YYY  the gate asking if a password is valid.
+//  - ?password=XXX&callback=YYY  the gate asking if a password is valid; a
+//    match also returns the applicant's name/make/model for the welcome
+//    page's masthead.
 //  - ?dashboard=PASSWORD&callback=YYY  the dashboard's data feed.
 //  - ?action=JSON&callback=YYY  the dashboard's Approve / Decline / Mark paid
 //    buttons — see dashboardAction.
@@ -157,7 +159,7 @@ function doGet(e) {
     return jsonpOrJson(payload, params.callback);
   }
   if (params.password) {
-    return jsonpOrJson({ ok: passwordValid(params.password) }, params.callback);
+    return jsonpOrJson(gateCheck(params.password), params.callback);
   }
   if (params.dashboard) {
     return jsonpOrJson(dashboardPayload(params.dashboard), params.callback);
@@ -266,14 +268,16 @@ function readSettings() {
 
 // Public, non-sensitive display settings — safe to serve without a password
 // and with no applicant data. The members page reads drive day (event_date)
-// from here so the date lives in one place (the sheet) for both pages.
+// from here so the date lives in one place (the sheet) for both pages; the
+// welcome masthead reads event_date and places_target for its metadata line.
 function publicMeta() {
   var s = {};
   try { s = readSettings(); } catch (e) { s = {}; }
   return {
     ok: true,
     event_name: s.event_name || '',
-    event_date: s.event_date || ''
+    event_date: s.event_date || '',
+    places_target: s.places_target || ''
   };
 }
 
@@ -590,30 +594,42 @@ function sendRecoveryEmail(email, token) {
 
 /* ---- Gate -------------------------------------------------------------- */
 
-// True when the guess matches a generated password in the sheet. A password
-// only exists once a row is approved, so a match means an approved applicant.
+// True/false the guess matches a generated password in the sheet, plus —
+// when it matches — the applicant's name and car. A password only exists
+// once a row is approved, so a match means an approved applicant. The gate
+// is the only place a visitor's identity is established, so this doubles as
+// the welcome page masthead's personalisation source (see welcome.js).
 // Case-insensitive, so "bmw6291" works as well as "BMW6291".
-function passwordValid(guess) {
+function gateCheck(guess) {
   var g = String(guess || '').trim().toUpperCase();
-  if (!g) return false;
+  if (!g) return { ok: false };
   // 30 wrong guesses per 10 minutes, shared across all guessers — Apps Script
   // can't key this per caller, but it's enough to make brute-forcing the
   // ~10,000-combination generated passwords impractical. Only wrong guesses
   // count against the budget, so a wave of real applicants unlocking the
   // gate correctly can never lock each other out.
-  if (!rateLimitPeek('gate_guess', 30)) return false;
+  if (!rateLimitPeek('gate_guess', 30)) return { ok: false };
   var sheet = getSheet();
-  var col = headerMap(sheet)['password'];
-  if (!col) return false;
+  var headers = headerMap(sheet);
+  var col = headers['password'];
+  if (!col) return { ok: false };
   var last = sheet.getLastRow();
-  if (last < 2) { rateLimitBump('gate_guess', 600); return false; }
-  var values = sheet.getRange(2, col, last - 1, 1).getValues();
+  if (last < 2) { rateLimitBump('gate_guess', 600); return { ok: false }; }
+  var width = sheet.getLastColumn();
+  var values = sheet.getRange(2, 1, last - 1, width).getValues();
   for (var i = 0; i < values.length; i++) {
-    var stored = String(values[i][0]).trim().toUpperCase();
-    if (stored && stored === g) return true;
+    var stored = String(values[i][col - 1]).trim().toUpperCase();
+    if (stored && stored === g) {
+      return {
+        ok: true,
+        name: headers['name'] ? String(values[i][headers['name'] - 1] || '').trim() : '',
+        make: headers['make'] ? String(values[i][headers['make'] - 1] || '').trim() : '',
+        model: headers['model'] ? String(values[i][headers['model'] - 1] || '').trim() : ''
+      };
+    }
   }
   rateLimitBump('gate_guess', 600);
-  return false;
+  return { ok: false };
 }
 
 /* ---- Approval flow ----------------------------------------------------- */
