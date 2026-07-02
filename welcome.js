@@ -39,10 +39,16 @@
     }
 
     // The month/places line: the HTML default already reads right, so this
-    // is a correction, not a requirement — same JSONP-with-timeout pattern
-    // as members.js's drive-day sync, since Apps Script can't send CORS
-    // headers a normal fetch could read.
+    // corrects one piece at a time and never blanks a piece the sheet didn't
+    // answer — e.g. an Apps Script deployment still running the previous
+    // version of doGet answers event_date but not places_target, and that
+    // must keep the shipped "20 places", not drop it. Same JSONP-with-timeout
+    // pattern as members.js's drive-day sync, since Apps Script can't send
+    // CORS headers a normal fetch could read.
     if (metaEl && APPS_SCRIPT_URL) {
+      var defaults = metaEl.textContent.split(" · ");
+      var defaultMonth = defaults[0] || "";
+      var defaultPlaces = defaults[1] || "";
       var cb = "__ldcmeta_" + Date.now();
       var script = document.createElement("script");
       var timer = setTimeout(cleanup, 8000);
@@ -54,16 +60,15 @@
       window[cb] = function (data) {
         cleanup();
         if (!data) return;
-        var month = "";
+        var month = defaultMonth;
         if (data.event_date) {
           var t = Date.parse(data.event_date);
           if (!isNaN(t)) {
             month = new Date(t).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
           }
         }
-        var places = data.places_target ? data.places_target + " places" : "";
-        var parts = [month, places].filter(Boolean);
-        if (parts.length) metaEl.textContent = parts.join(" · ");
+        var places = data.places_target ? data.places_target + " places" : defaultPlaces;
+        metaEl.textContent = [month, places].filter(Boolean).join(" · ");
       };
       script.onerror = cleanup;
       script.src = APPS_SCRIPT_URL + "?meta=1&callback=" + cb;
