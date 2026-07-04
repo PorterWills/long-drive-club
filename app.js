@@ -44,7 +44,7 @@
     var stage = document.getElementById("hero-photo");
     if (!stage) return;
     var IMAGES = [
-      "assets/LDC-Hero-002.jpg", "assets/LDC-Hero.001.jpg", "assets/LDC-Hero.002.jpeg", "assets/LDC-Hero-003.jpg", "assets/hero-06.jpg", "assets/hero-01.jpg", "assets/hero-04.jpg"
+      "assets/LDC-Hero-002.jpg", "assets/LDC-Hero.002.jpeg", "assets/LDC-Hero-003.jpg", "assets/LDC-Hero.001.jpg", "assets/hero-06.jpg", "assets/hero-01.jpg", "assets/hero-04.jpg"
     ];
     var POS = "50% 68%";          // shared focal point; tune per-image if needed
     var HOLD = 6000, FADE = 1200; // ms
