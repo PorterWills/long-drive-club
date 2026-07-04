@@ -133,11 +133,14 @@
 
   // The furthest step a row has reached. Timestamps win over the status word
   // so a row whose status still reads "complete" but which has a paid_at is
-  // correctly counted as paid.
+  // correctly counted as paid. Waitlist is the exception: the status word is
+  // authoritative there (a promoted row keeps its old waitlisted_at, so the
+  // timestamp must never pull it back).
   function deriveStage(r) {
     var s = String(r.status || "").toLowerCase();
     if (s === "declined" || r.declined_at) return "declined";
     if (s === "paid" || r.paid_at) return "paid";
+    if (s === "waitlist" || s === "waitlisted") return "waitlisted";
     if (s === "approved" || r.approved_at) return "approved";
     if (s === "complete") return "completed";
     return "signedup"; // step1_complete or anything partial
@@ -171,6 +174,7 @@
     }
     var add = function (val, k, label) { var d = parseDate(val); if (d) ev.push({ d: d, k: k, label: label }); };
     add(r.completed_at, "stage", "Completed form");
+    add(r.waitlisted_at, "waitlist", "Waitlisted · on the list");
     add(r.approved_at, "stage", "Approved");
     add(r.nudge1_at, "nudge", "Nudge 1 · pay reminder");
     add(r.nudge2_at, "nudge", "Nudge 2 · pay reminder");
@@ -221,6 +225,7 @@
     paid:      { label: "Paid",      bg: "var(--ldc-green)", fg: "var(--ldc-chalk)",      bd: "transparent",            tick: true },
     approved:  { label: "Approved",  bg: "var(--ldc-moss)",  fg: "var(--ldc-tarmac)",     bd: "transparent",            tick: false },
     completed: { label: "Form done", bg: "transparent",      fg: "var(--ldc-tarmac)",     bd: "var(--ldc-moss)",        tick: false },
+    waitlisted: { label: "Waitlist", bg: "transparent",      fg: "var(--ldc-moss)",       bd: "var(--ldc-moss)",        tick: false },
     signedup:  { label: "Signed up", bg: "transparent",      fg: "var(--ldc-tarmac-dim)", bd: "var(--hairline-strong)", tick: false },
     declined:  { label: "Declined",  bg: "transparent",      fg: "var(--ldc-tarmac-dim)", bd: "var(--hairline-strong)", tick: true }
   };
@@ -230,9 +235,10 @@
     paid:     { bg: "var(--ldc-redline)", border: "var(--ldc-redline)" },
     nudge:    { bg: "var(--ldc-chalk)",   border: "var(--ldc-tarmac-dim)" },
     recovery: { bg: "var(--ldc-moss)",    border: "var(--ldc-moss)" },
+    waitlist: { bg: "var(--ldc-moss)",    border: "var(--ldc-moss)" },
     declined: { bg: "var(--ldc-chalk)",   border: "var(--ldc-redline)" }
   };
-  var stageOrder = { paid: 0, approved: 1, completed: 2, signedup: 3, declined: 4 };
+  var stageOrder = { paid: 0, approved: 1, completed: 2, waitlisted: 3, signedup: 4, declined: 5 };
 
   function buildModel(state) {
     var target = CONFIG.placesTarget;
@@ -253,6 +259,7 @@
     var paid = count("paid");
     var approved = count("approved");
     var awaitingApproval = count("completed");
+    var waitlisted = count("waitlisted");
     var formIncomplete = count("signedup");
     var declined = count("declined");
     var alone = base.filter(function (p) { return p.partyLabel === "Alone" && p.stage !== "declined"; }).length;
@@ -261,7 +268,7 @@
     var placesFilled = paid;
     var pctFilled = target > 0 ? Math.round((placesFilled / target) * 100) : 0;
 
-    var fForm = paid + approved + awaitingApproval;
+    var fForm = paid + approved + awaitingApproval + waitlisted;
     var fApproved = paid + approved;
     var denom = signedUpTotal || 1;
     var funnel = [
@@ -278,6 +285,7 @@
       { value: pad(paid),             label: "Paid",             color: green },
       { value: pad(approved),         label: "Approved, unpaid", color: moss },
       { value: pad(awaitingApproval), label: "Awaiting approval", color: "var(--text-body)" },
+      { value: pad(waitlisted),       label: "Waitlist",         color: moss },
       { value: pad(formIncomplete),   label: "Form incomplete",  color: "var(--text-body)" },
       { value: pad(declined),         label: "Declined",         color: dim },
       { value: pad(alone) + " / " + pad(guest), label: "Alone / guest", color: "var(--text-body)" }
@@ -289,6 +297,7 @@
       { key: "approved",  label: "Approved",  n: approved },
       { key: "completed", label: "Form done", n: awaitingApproval },
       { key: "signedup",  label: "Signed up", n: formIncomplete },
+      { key: "waitlisted", label: "Waitlist", n: waitlisted },
       { key: "declined",  label: "Declined",  n: declined }
     ];
     var filters = filterDefs.map(function (f) {
@@ -530,9 +539,14 @@
 
   function actionsHTML(selected) {
     if (selected.stage === "paid" || selected.stage === "declined") return "";
-    var btns = selected.stage === "approved"
-      ? actionBtnHTML("paid", "Mark paid", true) + actionBtnHTML("decline", "Decline", false)
-      : actionBtnHTML("approve", "Approve", true) + actionBtnHTML("decline", "Decline", false);
+    var btns;
+    if (selected.stage === "approved") {
+      btns = actionBtnHTML("paid", "Mark paid", true) + actionBtnHTML("decline", "Decline", false);
+    } else if (selected.stage === "waitlisted") {
+      btns = actionBtnHTML("approve", "Approve", true) + actionBtnHTML("decline", "Decline", false);
+    } else {
+      btns = actionBtnHTML("approve", "Approve", true) + actionBtnHTML("waitlist", "Waitlist", false) + actionBtnHTML("decline", "Decline", false);
+    }
     return '<div id="drawerActions" style="display:flex;align-items:center;gap:10px;padding:14px 24px;background:var(--ldc-chalk);border-bottom:1px solid var(--hairline)">' +
       btns + '<span id="drawerActionMsg" style="font-size:12px;color:var(--text-dim)"></span></div>';
   }
@@ -612,7 +626,7 @@
       var a = t.getAttribute("data-action");
       if (a === "refresh") return refresh();
       if (a === "close") return setSelected(null);
-      if (a === "approve" || a === "decline" || a === "paid") return performAction(a);
+      if (a === "approve" || a === "decline" || a === "paid" || a === "waitlist") return performAction(a);
     } else if (t.hasAttribute("data-filter")) {
       state.filter = t.getAttribute("data-filter"); paint();
     } else if (t.hasAttribute("data-sort")) {

@@ -21,6 +21,7 @@
  *   approved  -> unique car-based password + "You're in" email
  *   paid      -> "Place confirmed" email
  *   declined  -> "Not this time" email
+ *   waitlist  -> "Not yet" email; nudges pause until the row is approved
  * And an hourly timer nudges approved-but-unpaid applicants at 4h / 24h / 48h.
  *
  * Set the three values in Script Properties (File ▸ Project Settings ▸
@@ -60,7 +61,7 @@ var RECOVERY_TOKEN_MAX_AGE_DAYS = 30;
 // never matters at runtime. The block after nudge3_at is new for the two-step
 // flow and will be appended to the live sheet on the right.
 var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'party', 'days', 'consent',
-               'status', 'password', 'approved_at', 'paid_at', 'declined_at',
+               'status', 'password', 'approved_at', 'paid_at', 'declined_at', 'waitlisted_at',
                'nudge1_at', 'nudge2_at', 'nudge3_at',
                'make', 'model', 'handicap', 'base', 'city',
                'token', 'step1_at', 'completed_at', 'recovery_sent'];
@@ -192,7 +193,7 @@ function doGet(e) {
 
 var DASHBOARD_FIELDS = ['timestamp', 'name', 'email', 'phone', 'work', 'car',
   'play', 'party', 'days', 'consent', 'status', 'approved_at', 'paid_at',
-  'declined_at', 'nudge1_at', 'nudge2_at', 'nudge3_at', 'make', 'model',
+  'declined_at', 'waitlisted_at', 'nudge1_at', 'nudge2_at', 'nudge3_at', 'make', 'model',
   'handicap', 'base', 'city', 'step1_at', 'completed_at', 'recovery_sent'];
 
 // A simple settings tab (key in column A, value in column B) the owners can
@@ -670,10 +671,14 @@ function onApprovalEdit(e) {
     handlePaid(sheet, row, headers);
   } else if (value === 'declined') {
     handleDeclined(sheet, row, headers);
+  } else if (value === 'waitlist' || value === 'waitlisted') {
+    handleWaitlisted(sheet, row, headers);
   }
 }
 
 function handleApproved(sheet, row, headers) {
+  writeFields(sheet, row, headers, { status: 'approved' });
+
   var approvedCell = sheet.getRange(row, headers['approved_at']);
   if (approvedCell.getValue()) return; // already sent
 
@@ -694,6 +699,8 @@ function handleApproved(sheet, row, headers) {
 }
 
 function handlePaid(sheet, row, headers) {
+  writeFields(sheet, row, headers, { status: 'paid' });
+
   var cell = sheet.getRange(row, headers['paid_at']);
   if (cell.getValue()) return; // already sent
 
@@ -707,6 +714,8 @@ function handlePaid(sheet, row, headers) {
 }
 
 function handleDeclined(sheet, row, headers) {
+  writeFields(sheet, row, headers, { status: 'declined' });
+
   var cell = sheet.getRange(row, headers['declined_at']);
   if (cell.getValue()) return; // already sent
 
@@ -719,10 +728,29 @@ function handleDeclined(sheet, row, headers) {
   cell.setValue(new Date());
 }
 
+// Waitlist: the "not yet" state. Writes the status word explicitly so the
+// dashboard action path (which edits no cell by hand) still leaves the row
+// reading "waitlist"; promotion is the normal approve flow, which restores
+// the status word above.
+function handleWaitlisted(sheet, row, headers) {
+  writeFields(sheet, row, headers, { status: 'waitlist' });
+
+  var cell = sheet.getRange(row, headers['waitlisted_at']);
+  if (cell.getValue()) return; // already sent
+
+  var email = String(sheet.getRange(row, headers['email']).getValue()).trim();
+  if (!email) return;
+
+  var html = renderEmail('email_waitlisted', { unsubscribe_url: UNSUBSCRIBE_URL });
+  sendViaResend({ to: email, subject: 'Not yet', html: html });
+
+  cell.setValue(new Date());
+}
+
 /* ---- Dashboard actions --------------------------------------------------
-   Approve / Decline / Mark paid, triggered from a button on the dashboard
-   instead of by hand-editing the status column. Reuses the exact same
-   handleApproved/handlePaid/handleDeclined functions the sheet-edit trigger
+   Approve / Decline / Mark paid / Waitlist, triggered from a button on the
+   dashboard instead of by hand-editing the status column. Reuses the exact
+   same handler functions the sheet-edit trigger
    calls, so the result — email sent, timestamp stamped — is identical either
    way, and each stays idempotent (a repeat call, e.g. a double-click, is a
    no-op because the timestamp cell is already set). */
@@ -731,7 +759,7 @@ function dashboardAction(payload) {
 
   var email = String(payload.email || '').trim();
   var action = String(payload.action || '').trim().toLowerCase();
-  if (!email || ['approve', 'decline', 'paid'].indexOf(action) < 0) {
+  if (!email || ['approve', 'decline', 'paid', 'waitlist'].indexOf(action) < 0) {
     return { ok: false, error: 'bad request' };
   }
 
@@ -750,6 +778,7 @@ function dashboardAction(payload) {
     if (action === 'approve') handleApproved(sheet, row, headers);
     else if (action === 'decline') handleDeclined(sheet, row, headers);
     else if (action === 'paid') handlePaid(sheet, row, headers);
+    else if (action === 'waitlist') handleWaitlisted(sheet, row, headers);
 
     return { ok: true };
   } catch (err) {
@@ -782,7 +811,9 @@ function installNudgeTrigger() {
 
 // Runs hourly. For each approved-but-unpaid applicant, sends the nudge for the
 // tier their wait has reached (4h / 24h / 48h since approved_at). Stops once
-// the row is paid or declined. Each nudge sends once, and only the current
+// the row is paid or declined, and pauses while a row sits at "waitlist"
+// (approving it again resumes the tiers that haven't sent). Each nudge sends
+// once, and only the current
 // tier goes out per run, so nobody gets a burst.
 function sendNudges() {
   var sheet = getSheet();
@@ -805,6 +836,7 @@ function sendNudges() {
     if (!approvedAt) continue;         // never approved
     if (cell('paid_at')) continue;     // paid -> stop nudging
     if (cell('declined_at')) continue; // declined -> stop nudging
+    if (String(cell('status')).trim().toLowerCase() === 'waitlist') continue; // waitlisted -> pause nudging
 
     var email = String(cell('email')).trim();
     if (!email) continue;
