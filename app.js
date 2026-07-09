@@ -490,7 +490,6 @@
     var make = step1Form.elements.make ? step1Form.elements.make.value : "";
     var model = step1Form.elements.model ? step1Form.elements.model.value : "";
     return {
-      name: step1Form.elements.name.value,
       email: step1Form.elements.email.value,
       make: make,
       model: model,
@@ -516,7 +515,7 @@
 
   function validateField(name) {
     if (name === "name") {
-      var nv = step1Form.elements.name.value;
+      var nv = step2Form.elements.name.value;
       if (!nv.trim()) { setFieldError("name", "We'll need a name for the sheet."); return false; }
       setFieldError("name"); return true;
     }
@@ -542,10 +541,12 @@
 
   // Inline validation on blur, not only on submit. Only nags a field the
   // visitor has already left, and only once it's in an error state.
-  ["name", "email"].forEach(function (n) {
-    var el = step1Form.elements[n];
-    if (el) el.addEventListener("blur", function () { validateField(n); });
-  });
+  if (step1Form.elements.email) {
+    step1Form.elements.email.addEventListener("blur", function () { validateField("email"); });
+  }
+  if (step2Form.elements.name) {
+    step2Form.elements.name.addEventListener("blur", function () { validateField("name"); });
+  }
   if (step2Form.elements.phone) {
     step2Form.elements.phone.addEventListener("blur", validatePhone);
   }
@@ -559,7 +560,7 @@
 
   step1Form.addEventListener("submit", function (e) {
     e.preventDefault();
-    var ok = ["name", "email", "car"]
+    var ok = ["email", "car"]
       .map(function (n) { return validateField(n); })
       .every(Boolean);
     if (!ok) return;
@@ -574,12 +575,12 @@
       // conversion. "Lead" is Meta's standard event for an interest form sent.
       // No personal data is passed (name and email stay out of Meta).
       trackPixel("Lead");
-      storeLead({ email: f.email.trim(), name: f.name, make: f.make, model: f.model, car: f.car });
+      storeLead({ email: f.email.trim(), make: f.make, model: f.model, car: f.car });
       step1Submit.disabled = false;
       step1Submit.removeAttribute("aria-busy");
       showState("bridge", {
         focus: true, scroll: true,
-        announce: "Your name's down. We've got enough to write back."
+        announce: "The car's down. We've got enough to write back."
       });
     }).catch(function () {
       step1Submit.disabled = false;
@@ -610,7 +611,7 @@
     if (bridgeActions) bridgeActions.hidden = true;
     showState("bridge", {
       focus: true,
-      announce: "Your name's down. We've got enough to write back. We'll write either way."
+      announce: "The car's down. We've got enough to write back. We'll write either way."
     });
   });
 
@@ -622,7 +623,7 @@
     if (bridgeActions) bridgeActions.hidden = false;
     showState("bridge", {
       focus: true, scroll: true,
-      announce: "Your name's down. We've got enough to write back."
+      announce: "The car's down. We've got enough to write back."
     });
   });
 
@@ -643,6 +644,7 @@
   function collectStep2() {
     var loc = resolveBase(step2Form);
     return {
+      name: step2Form.elements.name.value,
       phone: step2Form.elements.phone.value,
       work: step2Form.elements.work.value,
       base: loc.base,
@@ -657,7 +659,8 @@
 
   step2Form.addEventListener("submit", function (e) {
     e.preventDefault();
-    if (!validatePhone()) return;
+    var ok = [validateField("name"), validatePhone()].every(Boolean);
+    if (!ok) return;
     var f = collectStep2();
     var lead = readLead();
 
@@ -740,7 +743,6 @@
   function saveStep1(f) {
     return postLead({
       stage: "step1",
-      name: f.name.trim(),
       email: f.email.trim(),
       make: f.make,
       model: f.model,
@@ -755,6 +757,7 @@
       stage: "step2",
       email: (lead.email || "").trim(),
       token: lead.token || "",
+      name: f.name.trim(),
       phone: f.phone.trim(),
       work: f.work.trim(),
       base: f.base,
@@ -795,9 +798,9 @@
     if (!token) return;
     recoverLead(token).then(function (lead) {
       if (!lead) return; // token unknown or offline: leave them on step one
-      if (step1Form.elements.name) step1Form.elements.name.value = lead.name || "";
       if (step1Form.elements.email) step1Form.elements.email.value = lead.email || "";
-      // Phone lives in step two now; prefill it there if the lead already has one.
+      // Name and phone live in step two now; prefill them there if the lead has them.
+      if (step2Form.elements.name) step2Form.elements.name.value = lead.name || "";
       if (step2Form.elements.phone) step2Form.elements.phone.value = lead.phone || "";
       // Make/model land in the linked selects once they're built.
       carCtl.prefill = { make: lead.make || "", model: lead.model || "" };

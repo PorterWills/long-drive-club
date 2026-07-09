@@ -3,11 +3,11 @@
  * Receives entry-form submissions from longdriveclub.com and keeps each one in
  * a Google Sheet. The form is a two-step flow, so submissions arrive in stages:
  *
- *   stage "step1"  -> name, email and the car. Upserts the lead (keyed on
- *                     email) at status "step1_complete" and mints a recovery
+ *   stage "step1"  -> email, the car and the handicap. Upserts the lead (keyed
+ *                     on email) at status "step1_complete" and mints a recovery
  *                     token. A real, contactable lead even if step two never
  *                     arrives.
- *   stage "step2"  -> phone, the golf and the day. Merges into the same row,
+ *   stage "step2"  -> name, phone, the golf and the day. Merges into the same row,
  *                     marks it "complete", and sends the "received" email.
  *   (no stage)     -> a whole-form submission, kept for backwards compatibility.
  *
@@ -326,10 +326,9 @@ function upsertStep1(data) {
   if (!email) throw new Error('step1 without an email');
 
   var row = findRowByEmail(sheet, headers, email);
-  // Phone is collected in step two now, so step one never carries it.
+  // Name and phone are collected in step two now, so step one never carries them.
   // The handicap moved up into step one, so it lands with the lead.
   var fields = {
-    name: data.name || '',
     email: email,
     make: data.make || '',
     model: data.model || '',
@@ -368,6 +367,7 @@ function mergeStep2(data) {
             (email && findRowByEmail(sheet, headers, email)) || null;
 
   var fields = {
+    name: data.name || '',
     phone: data.phone || '',
     work: data.work || '',
     base: data.base || '',
@@ -589,7 +589,7 @@ function sendRecoveryEmail(email, token) {
   });
   sendViaResend({
     to: email,
-    subject: "Your name's down. The sheet isn't finished.",
+    subject: "The car's down. The sheet isn't finished.",
     html: html
   });
 }
