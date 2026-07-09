@@ -130,7 +130,7 @@
     statIo.observe(statGrid);
   }
 
-  /* ---- Handicap slider (field 06) --------------------------------------
+  /* ---- Handicap slider (field 04) --------------------------------------
      Below 0 = "<0" (better than scratch); 0.0 to 36.0 in 0.1 steps.
      Stored as a readable string: "<0", "0.0", "18.3", "36.0". */
   function formatHandicap(v) {
@@ -495,6 +495,7 @@
       make: make,
       model: model,
       car: [make, model].filter(Boolean).join(" "),
+      handicap: formatHandicap(parseFloat(step1Form.elements.handicap_value.value)),
       hp: step1Form.elements.company ? step1Form.elements.company.value : ""
     };
   }
@@ -644,7 +645,6 @@
     return {
       phone: step2Form.elements.phone.value,
       work: step2Form.elements.work.value,
-      handicap: formatHandicap(parseFloat(step2Form.elements.handicap_value.value)),
       base: loc.base,
       baseCity: loc.city,
       play: step2Form.elements.play.value,
@@ -745,6 +745,7 @@
       make: f.make,
       model: f.model,
       car: f.car.trim(),
+      handicap: f.handicap,
       hp: f.hp
     });
   }
@@ -756,7 +757,6 @@
       token: lead.token || "",
       phone: f.phone.trim(),
       work: f.work.trim(),
-      handicap: f.handicap,
       base: f.base,
       baseCity: f.baseCity,
       play: f.play,

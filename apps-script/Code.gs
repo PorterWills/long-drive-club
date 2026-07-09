@@ -327,12 +327,14 @@ function upsertStep1(data) {
 
   var row = findRowByEmail(sheet, headers, email);
   // Phone is collected in step two now, so step one never carries it.
+  // The handicap moved up into step one, so it lands with the lead.
   var fields = {
     name: data.name || '',
     email: email,
     make: data.make || '',
     model: data.model || '',
-    car: data.car || ''
+    car: data.car || '',
+    handicap: data.handicap || ''
   };
 
   if (row) {
@@ -368,7 +370,6 @@ function mergeStep2(data) {
   var fields = {
     phone: data.phone || '',
     work: data.work || '',
-    handicap: data.handicap || '',
     base: data.base || '',
     city: data.baseCity || '',
     play: data.play || '',
