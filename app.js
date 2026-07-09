@@ -17,6 +17,60 @@
   var APPS_SCRIPT_URL = window.LDC_CONFIG.APPS_SCRIPT_URL;
   var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
+  /* ---- Entry-sheet headline: hold it on one line -----------------------
+     "THE ENTRY SHEET" must never wrap ("SHEET" onto its own line) and must
+     never overflow the column, on any device. A CSS-only, vw-based version
+     broke in in-app browsers (Instagram, Facebook) whose viewport units are
+     unreliable, so we measure the real rendered width instead and size the
+     text to fit. The size is capped at the standard .apply h2 ramp, so wide
+     screens look exactly as before; only narrow widths shrink to fit. */
+  (function () {
+    var head = document.getElementById("step1-head");
+    if (!head) return;
+    var MAX = 52, MIN = 16, meas = null;
+
+    function fit() {
+      var avail = head.clientWidth;
+      if (!avail) return;
+      if (!meas) {
+        meas = document.createElement("span");
+        meas.setAttribute("aria-hidden", "true");
+        meas.style.cssText = "position:absolute;left:-9999px;top:0;" +
+          "visibility:hidden;white-space:nowrap;pointer-events:none";
+        head.parentNode.appendChild(meas);
+      }
+      var cs = window.getComputedStyle(head);
+      ["fontFamily", "fontWeight", "fontStyle", "letterSpacing",
+       "textTransform", "fontVariationSettings"].forEach(function (p) {
+        meas.style[p] = cs[p];
+      });
+      meas.style.fontSize = "100px";
+      meas.textContent = head.textContent;
+      var ratio = meas.getBoundingClientRect().width / 100; // width per 1px
+      if (!ratio) return;
+      // The width the heading would take at the standard responsive size,
+      // then shrunk to fit the column if it wouldn't otherwise. The measured
+      // fit is what makes this safe where viewport units can't be trusted.
+      var ramp = Math.max(34, Math.min(MAX, 0.044 * document.documentElement.clientWidth));
+      // Floor + 5% margin absorbs sub-pixel differences between the measured
+      // and rendered width, so the line never spills past the column.
+      var fitSize = Math.floor((avail / ratio) * 0.95);
+      var size = Math.max(MIN, Math.min(ramp, fitSize));
+      head.style.whiteSpace = "nowrap";
+      head.style.fontSize = size + "px";
+    }
+
+    fit();
+    if (window.document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(fit).catch(function () {});
+    }
+    var t;
+    window.addEventListener("resize", function () {
+      clearTimeout(t); t = setTimeout(fit, 100);
+    });
+    window.addEventListener("orientationchange", fit);
+  })();
+
   /* ---- Reveal on scroll: restrained rise, honours reduced motion ------- */
   var rises = document.querySelectorAll(".ldc-rise");
   var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
