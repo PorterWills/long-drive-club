@@ -38,3 +38,33 @@
   .pay-reserve-next{text-align:center;max-width:none}
   .pay-marks{justify-content:center}
 }
+
+/* ===== "What this is" — definition v2 ===== */
+.manifesto .what-head{font-size:clamp(44px,5vw,62px);max-width:13ch;margin:22px 0 0;color:var(--ldc-chalk);line-height:1.02}
+.manifesto .what-sub{font-size:18px;max-width:540px;margin:22px 0 0;color:var(--ldc-chalk-dim)}
+.manifesto .promise{margin-top:52px;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--ldc-hairline-on-dark)}
+.manifesto .promise-row{padding:26px 32px 30px}
+.manifesto .promise-row:nth-child(2),.manifesto .promise-row:nth-child(3){border-left:1px solid var(--ldc-hairline-on-dark)}
+.manifesto .promise-head{display:flex;align-items:baseline;gap:11px}
+.manifesto .promise-num{font-size:18px;color:var(--ldc-redline);flex:none}
+.manifesto .promise-lab{font-family:var(--font-body);font-weight:700;font-size:12px;letter-spacing:.22em;text-transform:uppercase;font-variation-settings:"wdth" 112;color:var(--ldc-chalk)}
+.manifesto .promise-val{font-size:24px;line-height:1.32;max-width:15ch;margin:12px 0 0;color:var(--ldc-chalk-dim)}
+.manifesto .what-foot{display:flex;align-items:center;gap:22px;margin-top:8px;padding-top:30px;border-top:1px solid var(--ldc-hairline-on-dark)}
+.manifesto .what-roundel{display:grid;place-items:center;width:76px;height:76px;border-radius:50%;background:var(--ldc-chalk);color:var(--ldc-tarmac);border:4px solid var(--ldc-tarmac);box-shadow:0 0 0 3px var(--ldc-chalk);flex:none}
+.manifesto .what-roundel .ldc-numeral{font-size:26px;color:var(--ldc-tarmac);line-height:1}
+.manifesto .what-closer{font-size:28px;color:var(--ldc-chalk);margin:0;max-width:none}
+@media (max-width:720px){
+  .manifesto .col{padding-top:44px;padding-bottom:48px}
+  .manifesto .what-head{font-size:39px;margin-top:22px}
+  .manifesto .what-sub{font-size:15px;margin-top:18px;max-width:320px}
+  .manifesto .promise{margin-top:30px;display:block}
+  .manifesto .promise-row{padding:17px 0;border-bottom:1px solid var(--ldc-hairline-on-dark)}
+  .manifesto .promise-row:nth-child(2),.manifesto .promise-row:nth-child(3){border-left:none}
+  .manifesto .promise-num{font-size:15px}
+  .manifesto .promise-lab{font-size:11px}
+  .manifesto .promise-val{font-size:20px;line-height:1.3;margin-top:5px;max-width:none}
+  .manifesto .what-foot{gap:16px;margin-top:30px;padding-top:0;border-top:none}
+  .manifesto .what-roundel{width:60px;height:60px}
+  .manifesto .what-roundel .ldc-numeral{font-size:20px}
+  .manifesto .what-closer{font-size:20px}
+}
