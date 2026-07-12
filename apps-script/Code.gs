@@ -137,6 +137,8 @@ function doPost(e) {
 //  - ?dashboard=PASSWORD&callback=YYY  the dashboard's data feed.
 //  - ?action=JSON&callback=YYY  the dashboard's Approve / Decline / Mark paid
 //    buttons — see dashboardAction.
+//  - ?ig=PASSWORD&callback=YYY  the dashboard's Instagram + content calendar
+//    feed — see igPayload. Same password as ?dashboard.
 //  - ?meta=1&callback=YYY  public, non-sensitive display settings.
 //  - no params: a plain liveness check, handy in a browser.
 function doGet(e) {
@@ -173,6 +175,9 @@ function doGet(e) {
       return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
     }
     return jsonpOrJson(dashboardAction(actionData), params.callback);
+  }
+  if (params.ig) {
+    return jsonpOrJson(igPayload(params.ig), params.callback);
   }
   if (params.meta) {
     return jsonpOrJson(publicMeta(), params.callback);
@@ -789,6 +794,241 @@ function dashboardAction(payload) {
     lock.releaseLock();
   }
 }
+
+/* ---- Instagram tracker + content calendar -------------------------------
+   The dashboard's Instagram and Calendar tabs read three sheet tabs through
+   here, behind the same DASHBOARD_PASSWORD gate as the applicant feed:
+
+     IG Post Log   one row per published post, raw numbers from IG insights.
+                   Derived metrics (engagement, rates) are computed by the
+                   dashboard, so the owners only ever log what IG shows them.
+     IG Weekly     one row each Sunday: follower count + 7-day account stats.
+     IG Calendar   the content plan, one row per planned post — format, theme,
+                   feeling, the asset to produce, the confirm gate and the
+                   final copy. The dashboard's calendar view renders this.
+
+   Each tab is created and seeded on first read (same pattern as the
+   Dashboard settings tab): the log gets the account's real history to date,
+   the calendar gets the 4-week plan. After that the sheet is the source of
+   truth — edit rows there, the dashboard follows. */
+
+var IG_POSTS_TAB = 'IG Post Log';
+var IG_WEEKLY_TAB = 'IG Weekly';
+var IG_CALENDAR_TAB = 'IG Calendar';
+
+function igPayload(guess) {
+  if (!dashboardPasswordValid(guess)) return { ok: false };
+  var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+  return {
+    ok: true,
+    updatedAt: new Date().toISOString(),
+    posts: igTabObjects(ss, IG_POSTS_TAB, IG_POSTS_HEADER, IG_POSTS_SEED),
+    weekly: igTabObjects(ss, IG_WEEKLY_TAB, IG_WEEKLY_HEADER, IG_WEEKLY_SEED),
+    calendar: igTabObjects(ss, IG_CALENDAR_TAB, IG_CALENDAR_HEADER, IG_CALENDAR_SEED)
+  };
+}
+
+// Reads a whole tab into [{key: value}] keyed on slugged headers
+// ("Profile visits" -> profile_visits). Creates + seeds the tab when missing.
+function igTabObjects(ss, tabName, header, seed) {
+  var sheet = ss.getSheetByName(tabName);
+  if (!sheet) sheet = igSeedTab(ss, tabName, header, seed);
+  if (!sheet) return [];
+  var last = sheet.getLastRow();
+  var width = sheet.getLastColumn();
+  if (last < 2 || width < 1) return [];
+  var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
+  var values = sheet.getRange(2, 1, last - 1, width).getValues();
+  var rows = [];
+  for (var i = 0; i < values.length; i++) {
+    var rec = {};
+    var any = false;
+    for (var c = 0; c < width; c++) {
+      if (!head[c]) continue;
+      var v = values[i][c];
+      if (v instanceof Date) v = v.toISOString();
+      rec[head[c]] = v;
+      if (v !== '' && v != null) any = true;
+    }
+    if (any) rows.push(rec);
+  }
+  return rows;
+}
+
+function igSlug(name) {
+  return String(name || '').trim().toLowerCase()
+    .replace(/\(s\)/g, '_s').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function igSeedTab(ss, tabName, header, seed) {
+  var sheet;
+  try {
+    sheet = ss.insertSheet(tabName);
+  } catch (e) {
+    return ss.getSheetByName(tabName); // lost a race; use the existing one
+  }
+  sheet.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold');
+  if (seed.length) sheet.getRange(2, 1, seed.length, header.length).setValues(seed);
+  sheet.setFrozenRows(1);
+  return sheet;
+}
+
+/* The account's real history to 12/07/2026, from the social tracker.
+   Raw numbers only — the dashboard derives engagement and the rates. */
+var IG_POSTS_HEADER = ['Post', 'Date', 'Format', 'Content type', 'Car / subject', 'CTA',
+  'Feeling', 'Views', 'Reach', 'Profile visits', 'Link taps', 'Follows',
+  'Likes', 'Comments', 'Saves', 'Watch time (s)'];
+var IG_POSTS_SEED = [
+  [1,  '2026-06-15', 'Image',    'Car on course',           'Ferrari 360',             'Soft',                    'Longing',      24,  9,   3,  '', 0, 2, 2, '', ''],
+  [2,  '2026-06-15', 'Image',    'Car on course',           'Porsche 911',             'None',                    'Recognition',  24,  9,   0,  '', 0, 1, 0, '', ''],
+  [3,  '2026-06-15', 'Image',    'Car on course',           'BMW M2',                  'Application mention',     'Curiosity',    37,  15,  12, 1,  0, 2, 0, '', ''],
+  [4,  '2026-06-15', 'Image',    'Car on course',           'Lamborghini Urus',        'None',                    'Vindication',  39,  18,  1,  0,  0, 4, 0, '', ''],
+  [5,  '2026-06-15', 'Image',    'Car on course',           'Alpine A110',             'Product mention',         'Recognition',  46,  18,  0,  0,  0, 2, 0, '', ''],
+  [6,  '2026-06-15', 'Image',    'Car on course',           'Audi R8',                 'Link in bio',             'None',         35,  14,  1,  0,  0, 2, 0, '', ''],
+  [7,  '2026-06-15', 'Image',    'Car on course',           'Porsche 911 (991)',       'Link in bio',             'None',         29,  12,  1,  0,  0, 2, 0, '', ''],
+  [8,  '2026-06-15', 'Image',    'Car on course',           'McLaren Senna',           'None',                    'Recognition',  28,  13,  '', 0,  0, 2, 0, '', ''],
+  [9,  '2026-06-15', 'Image',    'Car on course',           'Mercedes AMG GT',         'Link in bio',             'Vindication',  32,  16,  '', 0,  0, 2, 0, '', ''],
+  [10, '2026-06-15', 'Image',    'Car on course',           'Porsche 911 GTS',         'None',                    'Longing',      44,  19,  2,  0,  0, 3, 0, '', ''],
+  [11, '2026-06-15', 'Image',    'Car on course',           'Audi RS6',                'None',                    'Longing',      44,  19,  2,  0,  0, 3, 0, '', ''],
+  [12, '2026-06-15', 'Image',    'Aerial drive-by',         'Red coupe',               'Link in bio',             'Awe',          74,  28,  3,  0,  0, 6, 0, '', ''],
+  [13, '2026-06-27', 'Image',    'Car on course',           'Bentley Continental',     'Applications open',       'Vindication',  63,  21,  14, 0,  0, 2, 1, '', ''],
+  [14, '2026-06-28', 'Image',    'Car on course',           'Lotus Emira',             'None',                    'Recognition',  47,  17,  2,  0,  0, 2, 0, '', ''],
+  [15, '2026-06-29', 'Image',    'Aerial drive-by',         'Blue coupe',              'Applications open',       'Awe',          41,  13,  2,  0,  0, 1, 2, '', ''],
+  [16, '2026-07-01', 'Image',    'Car on course',           'Aston Martin V8 Vantage', 'None',                    'Longing',      35,  18,  1,  0,  0, 1, 0, '', ''],
+  [17, '2026-07-02', 'Image',    'Car on course',           'Audi RS6',                'None',                    'Recognition',  46,  18,  4,  0,  0, 1, 1, '', ''],
+  [18, '2026-07-03', 'Image',    'Aerial drive-by',         'McLaren 720S',            'None',                    'Curiosity',    35,  17,  1,  0,  0, 1, 0, 1,  ''],
+  [19, '2026-07-04', 'Image',    'Car on course',           'Jaguar F-Type',           'Soft',                    'Recognition',  41,  16,  4,  0,  0, 4, 4, 1,  ''],
+  [20, '2026-07-05', 'Image',    'Car on course',           'Audi TT RS',              'None',                    'Longing',      40,  17,  0,  0,  0, 2, 0, 0,  ''],
+  [21, '2026-07-06', 'Image',    'Car on course + graphic', 'Lamborghini Aventador',   'None',                    'Curiosity',    52,  19,  13, 1,  0, 1, 2, 0,  ''],
+  [22, '2026-07-07', 'Reel',     'Brand slideshow',         'Mixed',                   'Link in bio',             'None',         120, 106, 0,  0,  0, 1, 2, 0,  7],
+  [23, '2026-07-08', 'Carousel', 'Car + info graphic',      'BMW M3 E46',              'None',                    'Curiosity',    34,  11,  4,  3,  0, 1, 0, 0,  ''],
+  [24, '2026-07-09', 'Carousel', 'Editorial: 9 roads',      'None',                    'Engagement ask',          'Disagreement', 23,  5,   1,  0,  0, 1, 0, 1,  ''],
+  [25, '2026-07-10', 'Reel',     'Brand video',             'Mixed',                   'Request a place',         'None',         120, 105, 0,  0,  0, 2, 0, 1,  6.5],
+  [26, '2026-07-11', 'Reel',     'Editorial: 7 arrivals',   'None',                    'Link in bio + share ask', 'Disagreement', 113, 105, 3,  0,  0, 1, 0, 1,  2.3],
+  [27, '2026-07-12', 'Reel',     'Editorial: Goodwood 9',   'None',                    'Share ask',               'Disagreement', 31,  26,  0,  0,  0, 1, 0, 1,  2.7]
+];
+
+/* One row each Sunday, from IG insights. */
+var IG_WEEKLY_HEADER = ['Date', 'Followers', 'Reach (7 days)', 'Profile visits (7 days)', 'Link taps (7 days)', 'Notes'];
+var IG_WEEKLY_SEED = [
+  ['2026-07-04', 23, 728, '', '', 'Baseline'],
+  ['2026-07-12', 54, '',  '', '', 'From profile. Reach and visits to fill from IG insights']
+];
+
+/* The 4-week plan, 13/07 to 09/08. Final copy is a draft: every caption still
+   goes through the ldc-copywriter gates and the Confirm column before it
+   posts. An empty Final copy means the calendar says to draft nearer the
+   time. Facts that are not yet public (price, venue, dates beyond what the
+   site shows) stay out of this file on purpose — hold them in the sheet. */
+var IG_CALENDAR_HEADER = ['Date', 'Format', 'Theme', 'Peg / milestone', 'Concept', 'Asset to produce',
+  'Feeling', 'The remark', 'Caption first line', 'Final copy', 'Confirm before posting', 'Status'];
+var IG_CALENDAR_SEED = [
+  ['2026-07-13', 'Reel', 'Announcement', 'Public announcement. PR exclusive same day',
+   '3 beat launch reel: the road, the course, the people. Pin to grid through 09/08.',
+   'Claude Design vertical video, 20s, strongest existing stills plus the 2 LDC graphics. Overlays: August 2026 / 60 miles, then 18 holes / 20 places. Strongest collision image in the first 2 seconds, never a logo card.',
+   'Vindication', 'this exists now',
+   'Applications are open for the first drive. August 2026. 60 miles, then 18 holes. 20 places.',
+   'Applications are open for the first drive. August 2026. 60 miles, then 18 holes. 20 places.\nA committee reads every application. Link in bio.\n\n#longdriveclub #carsandgolf #golf',
+   'Broadcast channel update goes out same day', 'Planned'],
+  ['2026-07-15', 'Image', 'Recognition', '',
+   'Single car, early light, the morning the member already does alone.',
+   'Generate via ChatGPT: single car, dawn light, open boot with clubs visible, empty road or club car park. Style per the prompt examples doc.',
+   'Recognition', 'this is you',
+   'The alarm is set for 05:45. Clubs in the boot, 60 miles in front of you.',
+   'The alarm is set for 05:45. Clubs in the boot, 60 miles in front of you.\nThe drive there is half of it. The round is the other half.\nApplications are open. Link in bio.\n\n#longdriveclub #carsandgolf #golf #drivingclub',
+   '', 'Planned'],
+  ['2026-07-16', 'Image', 'Arrivals franchise', 'The Open, Royal Birkdale, day 1',
+   'Birkdale did not make our 7 arrivals, judged on the road in. Posts on day 1 of the event, never after it.',
+   'Curated stock, real place: the actual coastal approach to Birkdale. Same sourcing as the 7 arrivals reel.',
+   'Disagreement', 'they left Birkdale out',
+   'The Open is at Birkdale this week. Birkdale did not make our 7 arrivals. The road in is why.',
+   'The Open is at Birkdale this week. Birkdale did not make our 7 arrivals. The road in is why.\nJudged on the drive in, not the golf. The full 7 are on the grid.\n\n#longdriveclub #carsandgolf #golf',
+   '', 'Planned'],
+  ['2026-07-18', 'Carousel', 'Utility', '',
+   'The order of the day. The proven link tap format (post 23).',
+   'Card 1 generated car image, card 2 timings graphic in Claude Design: breakfast, waves, tee block, lunch, the photograph. No clock times unless they match the live site.',
+   'Longing', 'look at this day',
+   'The order of the day.',
+   'The order of the day.\nBreakfast, the drive in waves, the tee block, lunch, the photograph. 60 miles, then 18 holes.\nLink in bio.\n\n#longdriveclub #carsandgolf #golf',
+   'Wording against the live site before posting', 'Planned'],
+  ['2026-07-20', 'Image', 'Mechanism', 'Close week',
+   'The committee and the 20 places. The account\'s best profile visit copy.',
+   'Generate via ChatGPT: single car, formal composition, still light.',
+   'Curiosity', 'you have to apply. there\'s a committee',
+   'A committee reads every application. 20 places.',
+   'A committee reads every application. 20 places.\nFirst drive August 2026. 60 miles, then 18 holes. Link in bio.\n\n#longdriveclub #carsandgolf #golf',
+   'If Michael confirms the close date is public, lead with it instead. That version converts harder. Do not use it without confirmation.', 'Planned'],
+  ['2026-07-21', 'Image', 'Utility', 'Applications close',
+   'What the day holds. Plain list, matches the live site\'s included list.',
+   'Generate via ChatGPT: breakfast table at first light or a wide course shot, no people\'s faces.',
+   'Longing', 'look what\'s in it',
+   'The road. Breakfast. 18 holes. Lunch. The photograph.',
+   'The road. Breakfast. 18 holes. Lunch. The photograph.\nFirst drive August 2026. 20 places. Link in bio.\n\n#longdriveclub #carsandgolf #golf #drivingclub',
+   'The price appears only if it is on the live site', 'Planned'],
+  ['2026-07-23', 'Reel', 'Arrivals franchise', 'Senior Open, Gleneagles, day 1',
+   'We already ranked the Gleneagles arrival. Cut it down, tie it to the live event.',
+   '15s recut of the existing arrivals reel in Claude Design, Gleneagles first. Stock of the real approach, already sourced.',
+   'Disagreement', 'they rank courses by the road in',
+   'Gleneagles week. We ranked the drive in before the golf. Which arrival beats it? Wrong answers welcome.',
+   'Gleneagles week. We ranked the drive in before the golf. Which arrival beats it? Wrong answers welcome.\nThe full 7 arrivals are on the grid.\n\n#longdriveclub #carsandgolf #golf',
+   '', 'Planned'],
+  ['2026-07-25', 'Image', 'Recognition', 'BRDC Classic, Silverstone',
+   'Classic car weekend. Our angle: the classic still driven properly.',
+   'Generate via ChatGPT: a classic (E30, 964, Escort era) parked on or beside the course, believably worn, not showroom.',
+   'Vindication', 'finally. driven, not stored',
+   'A 30 year old classic somebody still drives properly.',
+   'A 30 year old classic somebody still drives properly.\nSilverstone has a field of them this weekend. The application does not ask for a year.\n\n#longdriveclub #carsandgolf #golf',
+   '', 'Planned'],
+  ['2026-07-27', 'Image', 'Mechanism', 'Offers and 48 hour holds go out',
+   'Offers out, the 48 hour hold stated as fact.',
+   'Generate via ChatGPT: quiet single car, early evening light.',
+   'Curiosity', 'it really is 20 places',
+   'Offers are out. Held for 48 hours, then the next name on the list.',
+   'Offers are out. Held for 48 hours, then the next name on the list.\n20 places. A committee read every application.\n\n#longdriveclub #carsandgolf #golf',
+   'Offers actually sent before this posts', 'Planned'],
+  ['2026-07-29', 'Carousel', 'Substack repurpose', 'AIG Women\'s Open, Royal Lytham, day 1',
+   'Article 007: we pick the field the way you\'d pick a fourball. Selection is happening this exact week.',
+   '5 cards in Claude Design: hook card on a generated image, 3 fact cards on how selection works, sign off card.',
+   'Vindication', 'this is how clubs should pick people',
+   'We pick the field the way you\'d pick a fourball.',
+   'We pick the field the way you\'d pick a fourball.\nHow the committee fills 20 places. The full piece is on the Substack. Link in bio.\n\n#longdriveclub #carsandgolf #golf',
+   '', 'Planned'],
+  ['2026-08-01', 'Image', 'Recognition', '',
+   'Aerial image, the account\'s best performing image pattern (post 12). Push the composition further: the whoa image, road and course in 1 frame from above.',
+   'Generate via ChatGPT: aerial, road and course in 1 frame, the post 12 and 15 register.',
+   'Awe', 'look at this',
+   'Draft nearer the time.',
+   '',
+   'Copy drafts nearer the time through ldc-copywriter. No reuse of June lines.', 'Planned'],
+  ['2026-08-04', 'Image', 'Behind the scenes', '',
+   'The decal. Until the physical decal exists, the asset is the actual decal artwork presented as a design. Article 009 carries the angle.',
+   'The decal artwork on a clean ground, laid out in Claude Design. A real photograph replaces it if founders have the physical decal by this date.',
+   'Curiosity', 'you can\'t buy it. you have to be in',
+   'You can buy any badge you like. You cannot buy this one.',
+   'You can buy any badge you like. You cannot buy this one.\nThe members\' decal, 1 per car. The design is finished, the print is next.\n\n#longdriveclub #carsandgolf #golf #drivingclub',
+   'Decal design signed off by founders. Caption must not imply the sticker is printed if it is not.', 'Planned'],
+  ['2026-08-06', 'Image', 'Utility', 'Meet point reveals on site',
+   'The site reveals the meet point today. The post follows the site, same day.',
+   '1 image, road register, no location identifiers beyond what the site states.',
+   'Anticipation', 'it\'s actually happening',
+   'The meet point is live.',
+   'The meet point is live.\nOn the site now. The route follows.\n\n#longdriveclub #carsandgolf #golf',
+   'Site reveal fired. Exact point confirmed by founders.', 'Planned'],
+  ['2026-08-08', 'Image', 'Live event', 'PistonHeads Annual Service, Bicester Motion',
+   'Founders attending. The first day LDC can capture anything real. Stories carry the day live; the grid gets 1 image only if a frame holds up beside the generated grid.',
+   'Founder phone photography on the day.',
+   'Recognition', 'they were at Bicester',
+   'Draft on the day from what is actually there.',
+   '',
+   'Grid post only if a frame genuinely holds up. Otherwise stories only.', 'Planned'],
+  ['2026-08-09', 'Reel', 'Waitlist and Drive Two seed', '',
+   'The month in 20 seconds. Strongest images first, watch time is the metric. Seeds the waitlist as the story turns from applications to the drive itself.',
+   'Claude Design vertical video, 20s recap from the month\'s published assets.',
+   'Anticipation', 'missed it. there\'s a Drive Two',
+   'Draft from the month\'s numbers. Nothing unconfirmed.',
+   '',
+   'Any field, sales or application numbers signed off by founders.', 'Planned']
+];
 
 // A unique password with a nod to their car, e.g. "Porsche 911" -> PORSCHE4827.
 // Falls back to DRIVER#### when no car was given.

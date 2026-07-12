@@ -66,6 +66,22 @@ and `installRecoveryTrigger` (the timed recovery-email sweep). Re-running
 any installer is safe — each clears its old copy first. Re-deploy a new
 version after any edit.
 
+### The dashboard's Instagram + Calendar tabs
+
+`dashboard.html` has three tabs behind the one password: **Signups**
+(the entry sheet), **Instagram** (performance) and **Calendar** (the
+content plan). The last two read three tabs in the same spreadsheet —
+`IG Post Log`, `IG Weekly` and `IG Calendar` — through the Apps Script
+`?ig=` endpoint. The tabs are created and seeded automatically the
+first time the feed is read (the log gets the account's history to
+12/07/2026, the calendar gets the 4-week plan), so the only setup is
+re-deploying `Code.gs`. After that the sheet is the source of truth:
+log each post's numbers in `IG Post Log` within 24 hours, add an
+`IG Weekly` row each Sunday, and keep `IG Calendar` rows' Status
+current (`Planned` / `Ready` / `Posted` / `Logged` / `Skipped`). Facts
+that are not yet public (the price, the venue) are deliberately absent
+from the seeded plan — hold them in the sheet, which is private.
+
 ## Changing the gate password
 
 The current password is `longway` (carried over from the prototype —
