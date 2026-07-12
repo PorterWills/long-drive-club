@@ -77,22 +77,33 @@ def read_secret():
     return secret
 
 
+DATE_RE = re.compile(r"^(\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})$")
+
+
 def extract_rows(md_path):
+    """The calendar block is the LAST fenced ```json block that parses as a
+    non-empty array of objects — other json blocks in the file are skipped,
+    so a stray example or log block can never be mistaken for the schedule."""
     with open(md_path, encoding="utf-8") as f:
         text = f.read()
     blocks = re.findall(r"```json\s*\n(.*?)\n```", text, re.DOTALL)
     if not blocks:
         sys.exit("No fenced ```json block found in " + md_path)
-    try:
-        rows = json.loads(blocks[-1])
-    except json.JSONDecodeError as e:
-        sys.exit("The sync block is not valid JSON: %s" % e)
-    if not isinstance(rows, list) or not rows:
-        sys.exit("The sync block must be a non-empty JSON array of row objects.")
+    rows = None
+    for raw in reversed(blocks):
+        try:
+            candidate = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(candidate, list) and candidate and all(isinstance(r, dict) for r in candidate):
+            rows = candidate
+            break
+    if rows is None:
+        sys.exit("No json block in the file is a non-empty array of row objects. "
+                 "The calendar sync block must look like: [{\"date\": \"13/07/2026\", "
+                 "\"format\": \"Image\", \"theme\": \"...\", ...}, ...]")
     clean = []
     for i, row in enumerate(rows):
-        if not isinstance(row, dict):
-            sys.exit("Row %d is not an object." % (i + 1))
         rec = {slug(k): ("" if v is None else str(v)) for k, v in row.items()}
         unknown = set(rec) - KNOWN_KEYS
         if unknown:
@@ -100,13 +111,32 @@ def extract_rows(md_path):
                      % (i + 1, ", ".join(sorted(unknown)), ", ".join(sorted(KNOWN_KEYS))))
         if rec.get("date", "").strip().lower() == "(none)":
             rec["date"] = ""
+        date = rec.get("date", "").strip()
+        if date and not DATE_RE.match(date):
+            sys.exit("Row %d: date %r is not dd/mm/yyyy, yyyy-mm-dd or empty." % (i + 1, date))
+        if not rec.get("format", "").strip() or not rec.get("theme", "").strip():
+            sys.exit("Row %d is missing format or theme — refusing to sync. First fields seen: %s"
+                     % (i + 1, json.dumps(dict(list(row.items())[:3]))))
         clean.append(rec)
     return clean
 
 
+def preview(rows):
+    print("%d rows parsed from the sync block:" % len(rows))
+    for r in rows:
+        print("  %-12s %-9s %s" % (r.get("date") or "(held)", r.get("format", ""), r.get("theme", "")))
+
+
 def main():
+    dry = "--dry-run" in sys.argv
+    if dry:
+        sys.argv.remove("--dry-run")
     md_path = find_calendar()
     rows = extract_rows(md_path)
+    preview(rows)
+    if dry:
+        print("Dry run: nothing was sent.")
+        return
     payload = json.dumps({"igsync": 1, "secret": read_secret(), "rows": rows}).encode()
     req = urllib.request.Request(APPS_SCRIPT_URL, data=payload,
                                  headers={"Content-Type": "application/json"})

@@ -925,17 +925,34 @@ function igSyncAction(data) {
     }
 
     // Incoming rows: accept keys as sheet headers or slugs, write in header
-    // order, preserve the sheet's status for matched rows.
-    var out = rows.map(function (r) {
+    // order, preserve the sheet's status for matched rows. All or nothing:
+    // any row that doesn't look like a calendar row rejects the whole sync
+    // before a single cell is written.
+    var out = [];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r || typeof r !== 'object' || Array.isArray(r)) {
+        return { ok: false, error: 'row ' + (i + 1) + ' is not an object' };
+      }
       var rec = {};
-      Object.keys(r).forEach(function (k) { rec[igSlug(k)] = r[k]; });
+      Object.keys(r).forEach(function (k) {
+        var v = r[k];
+        rec[igSlug(k)] = (v == null || typeof v === 'object') ? '' : String(v);
+      });
+      var dateRaw = String(rec.date || '').trim();
+      if (dateRaw && dateRaw.toLowerCase() !== '(none)' && !igDateKey(dateRaw)) {
+        return { ok: false, error: 'row ' + (i + 1) + ': date "' + dateRaw + '" is not dd/mm/yyyy, yyyy-mm-dd or empty' };
+      }
+      if (!String(rec.format || '').trim() || !String(rec.theme || '').trim()) {
+        return { ok: false, error: 'row ' + (i + 1) + ' is missing format or theme' };
+      }
       var kept = statusByKey[igRowKey(rec)];
-      return IG_CALENDAR_HEADER.map(function (h) {
+      out.push(IG_CALENDAR_HEADER.map(function (h) {
         var slug = igSlug(h);
         var v = (slug === 'status' && kept) ? kept : rec[slug];
         return v == null ? '' : String(v).slice(0, 5000);
-      });
-    });
+      }));
+    }
 
     if (last >= 2) sheet.getRange(2, 1, last - 1, width).clearContent();
     sheet.getRange(2, 1, out.length, IG_CALENDAR_HEADER.length).setValues(out);
