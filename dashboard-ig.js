@@ -80,7 +80,7 @@
     var calendar = (payload.calendar || []).map(function (r) {
       var d = toDate(r.date);
       return {
-        date: d, key: d ? dayKey(d) : "",
+        date: d, key: "",
         format: String(r.format || "").trim(),
         theme: String(r.theme || "").trim(),
         peg: String(r.peg_milestone || "").trim(),
@@ -93,8 +93,18 @@
         confirm: String(r.confirm_before_posting || "").trim(),
         status: String(r.status || "Planned").trim()
       };
-    }).filter(function (c) { return c.date; });
-    calendar.sort(function (a, b) { return a.date - b.date; });
+    }).filter(function (c) {
+      // A dateless row is kept only when it's a held milestone post — the
+      // "milestones interrupt, never own a day" rule. Anything else without
+      // a date is noise.
+      return c.date || c.status.toLowerCase() === "held";
+    });
+    calendar.sort(function (a, b) {
+      var ta = a.date ? a.date.getTime() : Infinity;
+      var tb = b.date ? b.date.getTime() : Infinity;
+      return ta - tb;
+    });
+    calendar.forEach(function (c, i) { c.key = c.date ? dayKey(c.date) : "held-" + i; });
 
     return { posts: posts, weekly: weekly, calendar: calendar };
   }
@@ -266,8 +276,9 @@
     var s = entry.status.toLowerCase();
     if (s === "posted" || s === "logged") return { bg: GREEN, bd: GREEN, label: entry.status };
     if (s === "ready") return { bg: MOSS, bd: MOSS, label: "Ready" };
+    if (s === "held") return { bg: "transparent", bd: RED, label: "Held" };
     if (s === "skipped") return { bg: "transparent", bd: "var(--hairline-strong)", label: "Skipped" };
-    if (entry.date < today) return { bg: RED, bd: RED, label: "Planned · date passed" };
+    if (entry.date && entry.date < today) return { bg: RED, bd: RED, label: "Planned · date passed" };
     return { bg: "transparent", bd: "var(--ldc-tarmac-dim)", label: "Planned" };
   }
 
@@ -604,14 +615,18 @@
       (byDay[p.key].posts = byDay[p.key].posts || []).push(p);
     });
 
-    var todayEntry = null, nextEntry = null;
+    var todayEntry = null, nextEntry = null, heldEntries = [];
     model.calendar.forEach(function (c) {
       if (c.key === dayKey(today)) todayEntry = c;
-      if (!nextEntry && c.date > today) nextEntry = c;
+      if (!nextEntry && c.date && c.date > today) nextEntry = c;
+      if (c.status.toLowerCase() === "held") heldEntries.push(c);
     });
     var nextTitle = nextEntry
       ? "Next · " + DOWS[(nextEntry.date.getDay() + 6) % 7] + " " + ddmm(nextEntry.date)
       : "Next";
+    var heldCards = heldEntries.map(function (h) {
+      return planCard("Held · on 24 hours' notice", h, today, "");
+    }).join("");
 
     // Build the Monday-first grid.
     var first = new Date(year, month, 1);
@@ -675,6 +690,7 @@
         planCard("Today · " + DOWS[(today.getDay() + 6) % 7] + " " + ddmm(today), todayEntry, today,
           "Nothing posts today. The cadence is 3 to 4 grid posts a week on purpose.") +
         planCard(nextTitle, nextEntry, today, "No planned posts ahead. Time to write the next 4 weeks.") +
+        heldCards +
       "</div>" +
 
       '<div class="sd-pad" style="padding:24px 30px 8px">' + eyebrow("The month") +
@@ -700,7 +716,9 @@
     if (!plan && !logged.length) return "";
 
     var d = toDate(key);
-    var dateLabel = d ? DOWS[(d.getDay() + 6) % 7] + " " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear() : key;
+    var dateLabel = d
+      ? DOWS[(d.getDay() + 6) % 7] + " " + pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear()
+      : "Held · runs when founders confirm the trigger";
     var title = plan ? plan.theme : "Posted";
     var today = startOfDay(new Date());
 
