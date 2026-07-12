@@ -148,22 +148,114 @@
     return "Soft / other";
   }
 
+  // Content types fold into the themes the calendar plans by.
+  function themeGroup(p) {
+    var t = p.type.toLowerCase();
+    if (t.indexOf("editorial") >= 0) return "Editorial / ranked lists";
+    if (t.indexOf("brand") >= 0) return "Brand announcement";
+    if (t.indexOf("aerial") >= 0) return "Aerial";
+    if (t.indexOf("graphic") >= 0) return "Car + graphic";
+    if (t.indexOf("car on course") >= 0) return "Car on course";
+    return p.type || "Other";
+  }
+
+  // What a post is called in lists: the car when there is one, the content
+  // theme otherwise. "Mixed" and "None" are placeholders, never labels.
+  function titleFor(p) {
+    var s = p.subject;
+    if (!s || s === "None" || s === "Mixed") return p.type || "Post " + p.num;
+    return s;
+  }
+  function subLabelFor(p) {
+    var s = p.subject;
+    var themed = (!s || s === "None" || s === "Mixed");
+    return ddmm(p.date) + " · " + (themed ? (p.feeling || "—") : p.type + (p.feeling ? " · " + p.feeling : ""));
+  }
+
+  /* ---- The signals: what the numbers actually say ------------------------
+     Computed fresh from the log every render, with sample-size guards, so
+     the top of the tab reads as findings rather than a wall of numbers. */
+  function computeSignals(model) {
+    var posts = model.posts;
+    var out = [];
+    var reels = posts.filter(function (p) { return p.format === "Reel"; });
+    var images = posts.filter(function (p) { return p.format === "Image"; });
+    var rs = statsFor(reels), is = statsFor(images), all = statsFor(posts);
+
+    if (rs.n >= 2 && is.n >= 2 && rs.avgReach && is.avgReach && rs.avgReach / is.avgReach >= 1.5) {
+      out.push({
+        t: "Reels are the discovery engine",
+        d: "A reel reaches " + fmt(rs.avgReach / is.avgReach) + "x the accounts an image does: " +
+           fmt(rs.avgReach) + " against " + fmt(is.avgReach) + " per post. Reach comes from reels."
+      });
+    }
+    if (all.pv > 0 && is.n >= 3) {
+      var share = Math.round(is.pv / all.pv * 100);
+      if (share >= 60) {
+        out.push({
+          t: "Images do the persuading",
+          d: is.pv + " of " + all.pv + " profile visits came from images (" + share +
+             "%). Reels pull strangers in. Images send them to the profile."
+        });
+      }
+    }
+    var mech = posts.filter(function (p) { return ctaGroup(p) === "Mechanism"; });
+    var rest = posts.filter(function (p) { return ctaGroup(p) !== "Mechanism"; });
+    var ms = statsFor(mech), os = statsFor(rest);
+    if (ms.n >= 2 && ms.pvPerPost != null && os.pvPerPost != null && ms.pvPerPost >= os.pvPerPost * 1.5) {
+      out.push({
+        t: "Mechanism copy drives profile visits",
+        d: "Posts naming the committee, the application or the 20 places average " +
+           fmt(ms.pvPerPost) + " profile visits against " + fmt(os.pvPerPost) + " for everything else."
+      });
+    }
+    var feels = groupRows(posts.filter(function (p) { return p.feeling && p.feeling.indexOf("None") !== 0; }),
+      function (p) { return p.feeling; }).filter(function (r) { return r.stats.n >= 3; });
+    feels.sort(function (a, b) { return (b.stats.er || 0) - (a.stats.er || 0); });
+    if (feels.length) {
+      out.push({
+        t: feels[0].label + " earns the most engagement",
+        d: fmtPct(feels[0].stats.er) + " engagement on views across " + feels[0].stats.n +
+           " posts, the best of any feeling in the log."
+      });
+    }
+    var watched = reels.filter(function (p) { return p.watch != null; });
+    if (watched.length >= 2) {
+      var last = watched[watched.length - 1];
+      var best = Math.max.apply(null, watched.map(function (p) { return p.watch; }));
+      if (last.watch <= best * 0.5) {
+        out.push({
+          t: "Reel hooks are losing viewers",
+          d: last.watch + "s watch time on the latest reel against " + best +
+             "s on the best. The strongest visual goes in the first 2 seconds."
+        });
+      }
+    }
+    return out.slice(0, 5);
+  }
+
   /* ---- Small pieces ----------------------------------------------------- */
 
   function eyebrow(text, extra) {
     return '<p class="ldc-redtick" style="color:var(--text-body)' + (extra || "") + '">' + esc(text) + "</p>";
   }
 
-  function deltaChip(cur, prev) {
-    if (prev == null || cur == null) return '<span style="font-size:12px;color:' + DIM + '">no earlier window</span>';
+  // The loud delta beside a weekly number: a filled pill, green up, red down,
+  // chalk text on both — with the direction spelled out underneath, so colour
+  // is never the only carrier.
+  function deltaParts(cur, prev) {
+    if (prev == null || cur == null) return { pill: "", sub: "no earlier window" };
     var diff = cur - prev;
-    if (diff === 0) return '<span style="font-size:12px;color:' + DIM + '">level with last week</span>';
+    if (diff === 0) {
+      return { pill: '<span class="sd-num" style="font-size:15px;color:' + DIM + '">→</span>', sub: "level with last week" };
+    }
     var up = diff > 0;
-    var col = up ? MOSS : RED;
-    var pct = prev !== 0 ? Math.round(Math.abs(diff) / Math.abs(prev) * 100) + "%" : null;
-    return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:' + col + '">' +
-      (up ? "↑" : "↓") + " " + Math.round(Math.abs(diff) * 10) / 10 + (pct ? '<span style="font-weight:400;color:' + DIM + '">' + (up ? "up" : "down") + " " + pct + "</span>" : '<span style="font-weight:400;color:' + DIM + '">' + (up ? "up" : "down") + "</span>") +
-    "</span>";
+    var pct = prev !== 0 ? Math.round(Math.abs(diff) / Math.abs(prev) * 100) + "%" : "+" + Math.abs(diff);
+    return {
+      pill: '<span class="sd-num" style="display:inline-block;padding:5px 9px 4px;border-radius:3px;font-size:14px;background:' +
+        (up ? GREEN : RED) + ';color:var(--ldc-chalk)">' + (up ? "↑" : "↓") + " " + pct + "</span>",
+      sub: (up ? "up from " : "down from ") + prev + " last week"
+    };
   }
 
   function formatChip(format) {
@@ -226,7 +318,7 @@
       var x = padL + i * step + (step - barW) / 2;
       var v = n0(p.views);
       var y = Y(v), h = Math.max(1, H - padB - y);
-      var tip = "Post " + p.num + " · " + ddmm(p.date) + "|" + esc(p.subject !== "None" && p.subject ? p.subject : p.type) +
+      var tip = "Post " + p.num + " · " + ddmm(p.date) + "|" + esc(titleFor(p)) + (titleFor(p) !== p.type && p.type ? " · " + esc(p.type) : "") +
         "|" + p.format + " · " + v + " views · " + n0(p.reach) + " reach|" + p.engagement + " engagement · " + n0(p.pv) + " profile visits";
       var reelTick = p.format === "Reel"
         ? '<rect x="' + x.toFixed(1) + '" y="' + (H - padB + 4) + '" width="' + barW.toFixed(1) + '" height="3" fill="' + RED + '"/>' : "";
@@ -243,37 +335,43 @@
 
   /* ---- Insights tab ------------------------------------------------------ */
 
-  function statCard(value, label, sub) {
+  function statCard(cur, prev, label) {
+    var d = deltaParts(cur, prev);
     return '<div style="background:var(--ldc-chalk);padding:18px 22px">' +
-      '<div class="sd-num" style="font-size:30px;color:var(--text-body)">' + value + "</div>" +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+        '<span class="sd-num" style="font-size:30px;color:var(--text-body)">' + cur + "</span>" + d.pill +
+      "</div>" +
       '<div class="sd-eyebrow" style="color:' + DIM + ';margin-top:9px;line-height:1.4;text-wrap:balance">' + esc(label) + "</div>" +
-      (sub ? '<div style="margin-top:9px">' + sub + "</div>" : "") +
+      '<div style="margin-top:7px;font-size:11.5px;color:' + DIM + '">' + esc(d.sub) + "</div>" +
     "</div>";
   }
 
-  function tableHTML(title, rows, maxAvgViews) {
+  // One cut of the log (by format / theme / feeling). Each table shows only
+  // the 2 metrics that matter for that cut — cols is [{label, fn, fmt}] and
+  // the bar tracks the first column within the table.
+  function tableHTML(title, note, rows, cols) {
+    var barMax = 0;
+    rows.forEach(function (r) { barMax = Math.max(barMax, cols[0].fn(r.stats) || 0); });
     var body = rows.map(function (r) {
-      var pct = maxAvgViews ? Math.round((r.stats.avgViews || 0) / maxAvgViews * 100) : 0;
+      var pct = barMax ? Math.round((cols[0].fn(r.stats) || 0) / barMax * 100) : 0;
       return '<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--hairline)">' +
-        '<span style="flex:1 1 130px;min-width:0;font-size:13px;color:var(--text-body)">' + esc(r.label) +
-          ' <span style="color:' + DIM + ';font-size:11.5px">· ' + r.stats.n + (r.stats.n === 1 ? " post" : " posts") + "</span></span>" +
-        '<span class="igt-bar" style="flex:1 1 110px;height:14px;background:var(--ldc-chalk-down);display:flex;align-items:center"><span style="width:' + pct + '%;background:' + GREEN + ';height:100%;display:block"></span></span>' +
-        '<span class="sd-num" style="flex:0 0 44px;text-align:right;font-size:15px">' + fmt(r.stats.avgViews) + "</span>" +
-        '<span class="igt-col" style="flex:0 0 44px;text-align:right;font-size:12.5px;color:var(--text-body)">' + fmt(r.stats.avgReach) + "</span>" +
-        '<span class="igt-col" style="flex:0 0 44px;text-align:right;font-size:12.5px;color:var(--text-body)">' + fmtPct(r.stats.er) + "</span>" +
-        '<span class="igt-col" style="flex:0 0 44px;text-align:right;font-size:12.5px;color:var(--text-body)">' + fmt(r.stats.pvPerPost) + "</span>" +
+        '<span style="flex:1 1 120px;min-width:0;font-size:13px;color:var(--text-body)">' + esc(r.label) +
+          ' <span style="color:' + DIM + ';font-size:11.5px;white-space:nowrap">· ' + r.stats.n + (r.stats.n === 1 ? " post" : " posts") + "</span></span>" +
+        '<span class="igt-bar" style="flex:1 1 90px;height:14px;background:var(--ldc-chalk-down);display:flex;align-items:center"><span style="width:' + pct + '%;background:' + GREEN + ';height:100%;display:block"></span></span>' +
+        cols.map(function (c, i) {
+          return '<span class="' + (i ? "sd-num igt-col" : "sd-num") + '" style="flex:0 0 52px;text-align:right;font-size:' + (i ? "13px" : "15px") + '">' + c.fmt(c.fn(r.stats)) + "</span>";
+        }).join("") +
       "</div>";
     }).join("");
     return '<div style="background:var(--ldc-chalk);padding:22px 24px 12px">' +
-      '<div class="sd-eyebrow" style="color:' + DIM + ';margin-bottom:4px">' + esc(title) + "</div>" +
-      '<div style="display:flex;gap:12px;padding:7px 0 4px;border-bottom:1px solid var(--hairline-strong)">' +
-        '<span style="flex:1 1 130px"></span><span class="igt-bar" style="flex:1 1 110px"></span>' +
-        '<span class="sd-eyebrow" style="flex:0 0 44px;text-align:right;font-size:9px;color:' + DIM + '">Views</span>' +
-        '<span class="sd-eyebrow igt-col" style="flex:0 0 44px;text-align:right;font-size:9px;color:' + DIM + '">Reach</span>' +
-        '<span class="sd-eyebrow igt-col" style="flex:0 0 44px;text-align:right;font-size:9px;color:' + DIM + '">ER</span>' +
-        '<span class="sd-eyebrow igt-col" style="flex:0 0 44px;text-align:right;font-size:9px;color:' + DIM + '">Visits</span>' +
+      '<div class="sd-eyebrow" style="color:' + DIM + '">' + esc(title) + "</div>" +
+      '<div style="font-size:12px;color:' + DIM + ';margin-top:5px">' + esc(note) + "</div>" +
+      '<div style="display:flex;gap:12px;padding:10px 0 4px;border-bottom:1px solid var(--hairline-strong)">' +
+        '<span style="flex:1 1 120px"></span><span class="igt-bar" style="flex:1 1 90px"></span>' +
+        cols.map(function (c, i) {
+          return '<span class="sd-eyebrow' + (i ? " igt-col" : "") + '" style="flex:0 0 52px;text-align:right;font-size:9px;color:' + DIM + '">' + esc(c.label) + "</span>";
+        }).join("") +
       "</div>" + body +
-      '<div style="padding:8px 0 6px;font-size:11px;color:' + DIM + '">Averages per post. ER is engagement on views.</div>' +
     "</div>";
   }
 
@@ -284,8 +382,8 @@
       return '<div data-tip="' + tip + '" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--hairline)">' +
         '<span class="sd-num" style="flex:0 0 20px;font-size:14px;color:' + DIM + '">' + (i + 1) + "</span>" +
         '<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-          esc(p.subject !== "None" && p.subject ? p.subject : p.type) + "</span>" +
-          '<span style="font-size:11.5px;color:' + DIM + '">' + ddmm(p.date) + " · " + esc(p.feeling || "—") + "</span></span>" +
+          esc(titleFor(p)) + "</span>" +
+          '<span style="font-size:11.5px;color:' + DIM + '">' + esc(subLabelFor(p)) + "</span></span>" +
         formatChip(p.format) +
         '<span class="sd-num" style="flex:0 0 44px;text-align:right;font-size:17px">' + metricFn(p) + "</span>" +
         '<span class="igt-col" style="flex:0 0 52px;font-size:10.5px;color:' + DIM + '">' + metricLabelFn(p) + "</span>" +
@@ -334,12 +432,44 @@
     }).join("");
 
     var cards =
-      statCard(thisWk.n, "Posts · 7 days", deltaChip(thisWk.n, lastWk.n)) +
-      statCard(thisWk.views, "Views · 7 days", deltaChip(thisWk.views, lastWk.views)) +
-      statCard(thisWk.reach, "Reach · 7 days", deltaChip(thisWk.reach, lastWk.reach)) +
-      statCard(thisWk.engagement, "Engagement · 7 days", deltaChip(thisWk.engagement, lastWk.engagement)) +
-      statCard(thisWk.pv, "Profile visits · 7 days", deltaChip(thisWk.pv, lastWk.pv)) +
-      statCard(thisWk.taps, "Link taps · 7 days", deltaChip(thisWk.taps, lastWk.taps));
+      statCard(thisWk.views, lastWk.views, "Views · 7 days") +
+      statCard(thisWk.reach, lastWk.reach, "Reach · 7 days") +
+      statCard(thisWk.pv, lastWk.pv, "Profile visits · 7 days") +
+      statCard(thisWk.engagement, lastWk.engagement, "Engagement · 7 days") +
+      statCard(thisWk.taps, lastWk.taps, "Link taps · 7 days") +
+      statCard(thisWk.n, lastWk.n, "Posts · 7 days");
+
+    // The header verdict: this week against last, spelled out.
+    var verdictBits = [["views", thisWk.views, lastWk.views], ["reach", thisWk.reach, lastWk.reach], ["profile visits", thisWk.pv, lastWk.pv]]
+      .map(function (b) {
+        if (b[2] == null || b[2] === 0) return null;
+        var diff = b[1] - b[2];
+        if (diff === 0) return null;
+        var up = diff > 0;
+        var pct = Math.round(Math.abs(diff) / b[2] * 100);
+        return '<span style="white-space:nowrap;color:' + (up ? MOSS : RED) + ';font-weight:700">' +
+          (up ? "↑" : "↓") + " " + esc(b[0]) + " " + pct + "%</span>";
+      }).filter(Boolean);
+    var verdictHTML = verdictBits.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:14.5px">' +
+        '<span style="color:var(--ldc-chalk-dim)">This week:</span>' + verdictBits.join("") + "</div>"
+      : "";
+
+    var signals = computeSignals(model);
+    var signalsHTML = signals.length ?
+      '<div class="sd-pad" style="padding:28px 30px 0;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
+        eyebrow("The signals") +
+        '<span style="font-size:12px;color:' + DIM + '">Computed from the log. Small sample, direction beats decimals.</span>' +
+      "</div>" +
+      '<div class="ig-wrap" style="display:flex;flex-wrap:wrap;gap:1px;background:var(--hairline);margin:16px 30px 28px;border:1px solid var(--hairline)">' +
+        signals.map(function (s, i) {
+          return '<div style="flex:1 1 280px;background:var(--ldc-chalk);padding:20px 24px 22px">' +
+            '<div class="sd-num" style="font-size:15px;color:' + RED + '">' + pad(i + 1) + "</div>" +
+            '<div class="sd-disp" style="font-size:16px;margin-top:10px">' + esc(s.t) + "</div>" +
+            '<div style="font-size:13px;line-height:1.55;color:' + DIM + ';margin-top:9px">' + esc(s.d) + "</div>" +
+          "</div>";
+        }).join("") +
+      "</div>" : "";
 
     var compareRows = [
       ["Posts", jStats.n, mStats.n, false],
@@ -358,12 +488,17 @@
     }).join("");
 
     var fmtRows = groupRows(posts, function (p) { return p.format; });
+    var themeRows = groupRows(posts, themeGroup);
     var feelRows = groupRows(posts, function (p) { return p.feeling.indexOf("None") === 0 ? "Announcement" : p.feeling; });
-    var ctaRows = groupRows(posts, ctaGroup);
-    var maxAvg = 0;
-    fmtRows.concat(feelRows, ctaRows).forEach(function (r) { maxAvg = Math.max(maxAvg, r.stats.avgViews || 0); });
     var byViewsSort = function (a, b) { return (b.stats.avgViews || 0) - (a.stats.avgViews || 0); };
-    fmtRows.sort(byViewsSort); feelRows.sort(byViewsSort); ctaRows.sort(byViewsSort);
+    fmtRows.sort(byViewsSort); themeRows.sort(byViewsSort);
+    feelRows.sort(function (a, b) { return (b.stats.er || 0) - (a.stats.er || 0); });
+
+    var colViews = { label: "Views", fn: function (s) { return s.avgViews; }, fmt: fmt };
+    var colReach = { label: "Reach", fn: function (s) { return s.avgReach; }, fmt: fmt };
+    var colVisits = { label: "Visits", fn: function (s) { return s.pvPerPost; }, fmt: fmt };
+    var colER = { label: "ER", fn: function (s) { return s.er; }, fmt: fmtPct };
+    var colEng = { label: "Eng", fn: function (s) { return s.n ? s.engagement / s.n : null; }, fmt: fmt };
 
     var all = statsFor(posts);
 
@@ -377,7 +512,8 @@
               (latestW.followers >= prevW.followers ? "↑" : "↓") + " " + Math.abs(latestW.followers - prevW.followers) +
               ' <span style="font-weight:400">since ' + ddmm(prevW.date) + "</span></span>" : "") +
           "</div>" +
-          (latestW ? '<div style="font-size:12px;color:var(--ldc-chalk-dim);margin-top:8px">Logged ' + ddmm(latestW.date) + " · " + all.n + " posts · " + all.views + " views · " + all.reach + " reach all time</div>" : "") +
+          (latestW ? '<div style="font-size:12px;color:var(--ldc-chalk-dim);margin-top:8px">Logged ' + ddmm(latestW.date) + " · " + all.n + " posts · " + all.views + " views · " + all.reach + " reach · " + all.pv + " profile visits all time</div>" : "") +
+          verdictHTML +
         "</div>" +
         '<div style="display:flex;align-items:center;gap:16px">' +
           '<span style="font-size:12px;color:var(--ldc-chalk-dim)">From Google Sheet · ' + esc(ui.updatedLabel || "just now") + "</span>" +
@@ -385,7 +521,10 @@
         "</div>" +
       "</div>" +
 
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:1px;background:var(--hairline);border-bottom:1px solid var(--hairline)">' + cards + "</div>" +
+      signalsHTML +
+
+      '<div class="sd-pad" style="padding:0 30px 0">' + eyebrow("The week in numbers") + "</div>" +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(172px,1fr));gap:1px;background:var(--hairline);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin-top:14px">' + cards + "</div>" +
 
       '<div style="display:flex;flex-wrap:wrap;gap:1px;background:var(--hairline)">' +
         '<div style="flex:1 1 340px;background:var(--ldc-chalk);padding:24px 30px">' +
@@ -406,18 +545,15 @@
         topList("Most engaged", byEng, function (p) { return p.engagement; }, function (p) { return fmtPct(p.er) + " ER"; }) +
       "</div>" +
 
-      '<div class="sd-pad" style="padding:28px 30px 0;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
-        eyebrow("What is working") +
-        '<span style="font-size:12px;color:' + DIM + '">Small sample. Direction beats decimals.</span>' +
-      "</div>" +
+      '<div class="sd-pad" style="padding:28px 30px 0">' + eyebrow("What is working") + "</div>" +
       '<div class="ig-wrap" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--hairline);margin:16px 30px 0;border:1px solid var(--hairline)">' +
-        tableHTML("By format", fmtRows, maxAvg) +
-        tableHTML("By feeling", feelRows, maxAvg) +
-        tableHTML("By call to action", ctaRows, maxAvg) +
+        tableHTML("By format", "Reach is discovery. Per post.", fmtRows, [colViews, colReach]) +
+        tableHTML("By theme", "Profile visits show persuasion. Per post.", themeRows, [colViews, colVisits]) +
+        tableHTML("By feeling", "ER is engagement on views.", feelRows, [colER, colEng]) +
       "</div>" +
 
-      '<div class="ig-wrap" style="display:flex;flex-wrap:wrap;gap:1px;background:var(--hairline);margin:26px 30px 40px;border:1px solid var(--hairline)">' +
-        '<div style="flex:1 1 300px;background:var(--ldc-chalk);padding:20px 24px">' +
+      '<div class="ig-wrap" style="margin:26px 30px 40px">' +
+        '<div style="max-width:560px;background:var(--ldc-chalk);padding:20px 24px;border:1px solid var(--hairline)">' +
           '<div class="sd-eyebrow" style="color:' + DIM + ';margin-bottom:12px">This month against June · per post</div>' +
           '<div style="display:flex;gap:14px;padding:0 0 6px;border-bottom:1px solid var(--hairline-strong)">' +
             '<span style="flex:1"></span>' +
@@ -426,14 +562,6 @@
             '<span class="sd-eyebrow" style="flex:0 0 64px;text-align:right;font-size:9px;color:' + DIM + '">' + esc(monthName) + "</span>" +
           "</div>" + compareRows +
           '<div style="padding-top:8px;font-size:11px;color:' + DIM + '">June ' + jStats.n + " posts → " + esc(monthName) + " " + mStats.n + " posts. June's 12 in 1 day drag its averages.</div>" +
-        "</div>" +
-        '<div style="flex:1 1 300px;background:var(--ldc-chalk);padding:20px 24px">' +
-          '<div class="sd-eyebrow" style="color:' + DIM + ';margin-bottom:12px">All time</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px">' +
-            [["Views", all.views], ["Reach", all.reach], ["Engagement", all.engagement], ["Profile visits", all.pv], ["Link taps", all.taps], ["ER on views", fmtPct(all.er)]].map(function (r) {
-              return '<div><div class="sd-num" style="font-size:24px">' + r[1] + '</div><div class="sd-eyebrow" style="font-size:9.5px;color:' + DIM + ';margin-top:6px">' + r[0] + "</div></div>";
-            }).join("") +
-          "</div>" +
         "</div>" +
       "</div>";
   }
@@ -626,7 +754,7 @@
         if (p.watch != null) cells.push(["Watch time", p.watch + "s"]);
         body += '<div style="margin-bottom:18px">' +
           '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">' + formatChip(p.format) +
-            '<span style="font-size:13px;color:var(--text-body)">' + esc(p.subject !== "None" && p.subject ? p.subject : p.type) + "</span>" +
+            '<span style="font-size:13px;color:var(--text-body)">' + esc(titleFor(p)) + "</span>" +
             '<span style="font-size:11.5px;color:' + DIM + '">Post ' + p.num + "</span></div>" +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hairline);border:1px solid var(--hairline)">' +
             cells.map(function (c) {
