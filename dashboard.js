@@ -476,9 +476,6 @@
       : '<div style="padding:34px 0;text-align:center;color:var(--text-dim);font-size:14px">No applicants in this view yet.</div>';
 
     return '' +
-      '<div style="width:100%;min-height:100vh;background:var(--ldc-chalk);color:var(--ldc-tarmac)">' +
-        '<div class="stripe" aria-hidden="true" style="height:4px"><span></span><span></span><span></span></div>' +
-
         '<div class="ldc-dark sd-pad" style="display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-end;padding:22px 30px 20px;background:var(--ldc-green);color:var(--ldc-chalk)">' +
           '<div><div class="sd-eyebrow" style="color:var(--ldc-chalk-dim);margin-bottom:7px">Event signups</div><div class="sd-disp" style="font-size:27px">' + esc(vm.eventName) + '</div></div>' +
           '<div style="display:flex;align-items:center;gap:16px">' +
@@ -523,8 +520,7 @@
             '<span class="sd-col-arrow" style="flex:0 0 16px"></span>' +
           '</div>' +
           rowsHTML +
-        '</div>' +
-      '</div>';
+        '</div>';
   }
 
   // Approve / Decline / Mark paid — only the action(s) that make sense for
@@ -582,10 +578,64 @@
       '</div>';
   }
 
+  /* ---- Tabs -------------------------------------------------------------
+     Three views behind the one password: the signup sheet, the Instagram
+     numbers and the content calendar. The IG + calendar data comes from its
+     own Apps Script feed (?ig=) and is fetched once, the first time either
+     of those tabs opens; Refresh on those tabs re-pulls it. */
+
+  var TABS = [
+    { key: "sales", label: "Signups" },
+    { key: "ig", label: "Instagram" },
+    { key: "cal", label: "Calendar" }
+  ];
+
+  function tabsHTML(active) {
+    return '<div class="ldc-dark sd-tabs" style="background:var(--ldc-tarmac)">' +
+      TABS.map(function (t) {
+        var on = t.key === active;
+        return '<button class="sd-tab" data-tab="' + t.key + '" style="background:none;border:none;cursor:pointer;font-family:var(--font-display);font-size:12px;font-weight:' + (on ? 800 : 600) + ';letter-spacing:.16em;text-transform:uppercase;padding:15px 4px 13px;color:' + (on ? "var(--ldc-chalk)" : "var(--ldc-chalk-dim)") + ';border-bottom:3px solid ' + (on ? "var(--ldc-redline)" : "transparent") + '">' + t.label + "</button>";
+      }).join("") +
+    "</div>";
+  }
+
+  function fetchIG() {
+    var pw = sessionStorage.getItem(SS_KEY);
+    if (!pw || state.igStatus === "loading") return;
+    state.igStatus = "loading";
+    paint();
+    jsonp({ ig: pw }).then(function (data) {
+      if (data && data.ok && window.LDC_IG) {
+        state.igData = window.LDC_IG.normalize(data);
+        state.igStatus = "ready";
+        state.igUpdatedLabel = "just now";
+      } else {
+        state.igStatus = "error";
+      }
+      paint();
+    }).catch(function () {
+      state.igStatus = "error";
+      paint();
+    });
+  }
+
+  function igPendingHTML(kind) {
+    var msg = state.igStatus === "error"
+      ? "Couldn't load the " + kind + ". If the Apps Script hasn't been redeployed with the IG feed yet, that's the fix. Otherwise try again."
+      : "Loading from the sheet…";
+    return '<div class="sd-pad" style="padding:60px 30px;text-align:center;background:var(--ldc-chalk);min-height:50vh">' +
+      '<p style="font-size:14px;color:var(--text-dim);max-width:440px;margin:0 auto 20px">' + esc(msg) + "</p>" +
+      (state.igStatus === "error" ? '<button class="btn btn--green btn--md" data-action="refresh-ig"><span class="label">Try again</span></button>' : "") +
+    "</div>";
+  }
+
   /* ---- State + wiring -------------------------------------------------- */
 
   var state = { rows: [], filter: "all", sort: "stage", selectedId: null,
-                updatedLabel: "just now" };
+                updatedLabel: "just now",
+                tab: "sales",
+                igData: null, igStatus: "idle", igUpdatedLabel: "just now",
+                igRange: "week", calMonth: null, calDay: null };
 
   // The applicant behind the open drawer, if any — set each paint() so the
   // approve/decline/paid handlers below don't have to re-derive it.
@@ -596,11 +646,32 @@
   var backdropEl = document.getElementById("backdrop");
 
   function paint() {
-    var vm = buildModel(state);
-    currentDrawerApplicant = vm.selected;
-    appEl.innerHTML = render(vm, state);
-    drawerEl.innerHTML = renderDrawer(vm.selected);
-    var open = !!vm.selected;
+    var contentHTML, drawerHTML = "";
+    currentDrawerApplicant = null;
+
+    if (state.tab === "sales") {
+      var vm = buildModel(state);
+      currentDrawerApplicant = vm.selected;
+      contentHTML = render(vm, state);
+      drawerHTML = renderDrawer(vm.selected);
+    } else if (state.igStatus !== "ready" || !window.LDC_IG) {
+      contentHTML = igPendingHTML(state.tab === "ig" ? "Instagram numbers" : "calendar");
+    } else if (state.tab === "ig") {
+      contentHTML = window.LDC_IG.renderInsights(state.igData,
+        { range: state.igRange, updatedLabel: state.igUpdatedLabel });
+    } else {
+      if (!state.calMonth) state.calMonth = window.LDC_IG.monthKey(new Date());
+      contentHTML = window.LDC_IG.renderCalendar(state.igData,
+        { month: state.calMonth, updatedLabel: state.igUpdatedLabel });
+      if (state.calDay) drawerHTML = window.LDC_IG.renderCalDrawer(state.igData, state.calDay);
+    }
+
+    appEl.innerHTML =
+      '<div style="width:100%;min-height:100vh;background:var(--ldc-chalk);color:var(--ldc-tarmac)">' +
+      '<div class="stripe" aria-hidden="true" style="height:4px"><span></span><span></span><span></span></div>' +
+      tabsHTML(state.tab) + contentHTML + "</div>";
+    drawerEl.innerHTML = drawerHTML;
+    var open = !!drawerHTML;
     drawerEl.classList.toggle("is-open", open);
     drawerEl.setAttribute("aria-hidden", open ? "false" : "true");
     backdropEl.classList.toggle("is-open", open);
@@ -620,13 +691,29 @@
 
   // Event delegation across the app + drawer.
   function onClick(e) {
-    var t = e.target.closest("[data-action],[data-filter],[data-sort],[data-open]");
+    var t = e.target.closest("[data-action],[data-filter],[data-sort],[data-open],[data-tab],[data-igrange],[data-calnav],[data-calday],[data-copy]");
     if (!t) return;
+    if (t.hasAttribute("data-copy")) return copyToClipboard(t);
     if (t.hasAttribute("data-action")) {
       var a = t.getAttribute("data-action");
       if (a === "refresh") return refresh();
-      if (a === "close") return setSelected(null);
+      if (a === "refresh-ig") { state.igStatus = "idle"; return fetchIG(); }
+      if (a === "close") return closeDrawer();
       if (a === "approve" || a === "decline" || a === "paid" || a === "waitlist") return performAction(a);
+    } else if (t.hasAttribute("data-tab")) {
+      state.tab = t.getAttribute("data-tab");
+      state.selectedId = null; state.calDay = null;
+      if (state.tab !== "sales" && state.igStatus === "idle") return fetchIG();
+      paint();
+    } else if (t.hasAttribute("data-igrange")) {
+      state.igRange = t.getAttribute("data-igrange"); paint();
+    } else if (t.hasAttribute("data-calnav")) {
+      var parts = (state.calMonth || (window.LDC_IG && window.LDC_IG.monthKey(new Date())) || "2026-07").split("-");
+      var d = new Date(Number(parts[0]), Number(parts[1]) - 1 + Number(t.getAttribute("data-calnav")), 1);
+      state.calMonth = d.getFullYear() + "-" + pad(d.getMonth() + 1);
+      paint();
+    } else if (t.hasAttribute("data-calday")) {
+      state.calDay = t.getAttribute("data-calday"); paint();
     } else if (t.hasAttribute("data-filter")) {
       state.filter = t.getAttribute("data-filter"); paint();
     } else if (t.hasAttribute("data-sort")) {
@@ -637,6 +724,64 @@
   }
 
   function setSelected(id) { state.selectedId = id; paint(); }
+  function closeDrawer() { state.selectedId = null; state.calDay = null; paint(); }
+
+  // The calendar drawer's Copy button — final copy onto the clipboard, ready
+  // to paste into the IG caption field. Falls back to the textarea trick on
+  // older mobile browsers.
+  function copyToClipboard(btn) {
+    var text = btn.getAttribute("data-copy") || "";
+    var done = function () {
+      btn.textContent = "Copied";
+      setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { legacyCopy(text); done(); });
+    } else {
+      legacyCopy(text); done();
+    }
+  }
+  function legacyCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); } catch (e) { /* best effort */ }
+    document.body.removeChild(ta);
+  }
+
+  /* ---- Chart tooltip ----------------------------------------------------
+     One shared floating tip for every [data-tip] the IG charts and lists
+     render. "|" in the attribute is a line break. Pointer-only: on touch the
+     same content is reachable through the day drawer and the tables. */
+  var tipEl = document.createElement("div");
+  tipEl.className = "ig-tip";
+  tipEl.hidden = true;
+  document.body.appendChild(tipEl);
+
+  function moveTip(e) {
+    var pad = 14, w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    var x = e.clientX + pad, y = e.clientY + pad;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - pad;
+    tipEl.style.left = x + "px";
+    tipEl.style.top = y + "px";
+  }
+  document.addEventListener("mouseover", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-tip]") : null;
+    if (!t) { tipEl.hidden = true; return; }
+    tipEl.textContent = "";
+    t.getAttribute("data-tip").split("|").forEach(function (line, i) {
+      if (i) tipEl.appendChild(document.createElement("br"));
+      tipEl.appendChild(document.createTextNode(line));
+    });
+    tipEl.hidden = false;
+    moveTip(e);
+  });
+  document.addEventListener("mousemove", function (e) {
+    if (!tipEl.hidden) moveTip(e);
+  });
 
   /* ---- Approve / Decline / Mark paid ------------------------------------
      Calls the same backend logic the sheet-edit trigger uses (see
@@ -680,9 +825,9 @@
 
   appEl.addEventListener("click", onClick);
   drawerEl.addEventListener("click", onClick);
-  backdropEl.addEventListener("click", function () { setSelected(null); });
+  backdropEl.addEventListener("click", closeDrawer);
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && state.selectedId) setSelected(null);
+    if (e.key === "Escape" && (state.selectedId || state.calDay)) closeDrawer();
   });
 
   function refresh() {

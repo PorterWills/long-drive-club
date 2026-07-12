@@ -133,6 +133,34 @@
 }
 .drawer.is-open { transform: translateX(0); }
 
+/* ---- Tab bar (Signups / Instagram / Calendar) ---- */
+.sd-tabs {
+  display: flex;
+  gap: 26px;
+  padding: 0 30px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ldc-hairline-on-dark);
+}
+.sd-tabs .sd-tab { flex-shrink: 0; }
+
+/* ---- Chart tooltip (shared by every [data-tip]) ---- */
+.ig-tip {
+  position: fixed;
+  z-index: 200;
+  max-width: 260px;
+  padding: 9px 12px;
+  background: var(--ldc-tarmac);
+  color: var(--ldc-chalk);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(27, 25, 22, 0.3);
+}
+.ig-tip span:first-child { font-weight: 700; }
+@media (hover: none) { .ig-tip { display: none; } }
+
 /* ---- Full-bleed: never let the page scroll sideways ---- */
 html, .dash-body { overflow-x: hidden; max-width: 100%; }
 
@@ -147,4 +175,19 @@ html, .dash-body { overflow-x: hidden; max-width: 100%; }
   .sd-col-party, .sd-col-contact, .sd-col-arrow { display: none !important; }
   .sd-col-name { flex: 1 1 auto !important; min-width: 0 !important; }
   .sd-col-stage { flex: 0 0 auto !important; }
+
+  /* IG tab: the by-format/feeling/CTA tables keep label, bar and views;
+     the narrower columns go, so nothing squeezes off-screen. */
+  .igt-col { display: none !important; }
+  .igt-bar { flex: 1 1 60px !important; }
+
+  /* IG tab: the framed sections keep their desktop margins otherwise. */
+  .ig-wrap { margin-left: 16px !important; margin-right: 16px !important; }
+
+  /* Calendar: on a phone the month grid keeps the dots and drops the theme
+     and format text — the day drawer carries the detail. */
+  .sd-tabs { gap: 18px; padding: 0 16px; }
+  .cal-theme, .cal-fmt { display: none !important; }
+  .cal-plan { margin-top: 4px !important; }
+  .cal-cell { min-height: 56px !important; padding: 6px 6px !important; }
 }
