@@ -109,10 +109,11 @@ function handleSubmission(data) {
   }
 }
 
-// Legacy entry point. Apps Script web apps send no CORS headers, so a plain
-// POST's response is opaque to the browser (the site can fire one but never
-// read the answer) — kept only so an old cached copy of the site, which still
-// posts here and ignores the response, keeps working.
+// Legacy entry point for form submissions (kept so an old cached copy of the
+// site keeps working), plus the calendar sync: a POST whose JSON body carries
+// igsync writes the IG Calendar tab — see igSyncAction. Sync is a POST (not
+// JSONP) because it's called by a script, not a browser page, and the payload
+// is bigger than a query string should carry.
 function doPost(e) {
   var data;
   try {
@@ -120,6 +121,7 @@ function doPost(e) {
   } catch (parseErr) {
     return jsonOut({ ok: false, error: 'bad request' });
   }
+  if (data && data.igsync) return jsonOut(igSyncAction(data));
   return jsonOut(handleSubmission(data));
 }
 
@@ -871,6 +873,101 @@ function igSeedTab(ss, tabName, header, seed) {
   if (seed.length) sheet.getRange(2, 1, seed.length, header.length).setValues(seed);
   sheet.setFrozenRows(1);
   return sheet;
+}
+
+/* ---- Calendar sync -------------------------------------------------------
+   The content calendar's source of truth is a markdown file on the founders'
+   machine, maintained by Claude Cowork, which keeps a machine-readable JSON
+   block of the schedule at the file's foot. tools/sync-ig-calendar.py posts
+   that block here after every edit and this replaces the IG Calendar rows.
+
+   Guard rails: enabled only when the IG_SYNC_SECRET Script Property is set
+   (generate a long random value), the secret must match, and the write is
+   capped and confined to the IG Calendar tab. The Status column is OWNED BY
+   THE SHEET: a row that survives a sync (matched on date, or on theme for
+   dateless held rows) keeps the status the owners set in the sheet, so
+   flipping a post to Posted is never undone by the next strategy edit. */
+
+function igSyncAction(data) {
+  var secret = PropertiesService.getScriptProperties().getProperty('IG_SYNC_SECRET');
+  if (!secret) return { ok: false, error: 'sync disabled: set IG_SYNC_SECRET' };
+  if (!rateLimitOk('igsync', 30, 3600)) return { ok: false, error: 'rate_limited' };
+  if (String(data.secret || '') !== secret) return { ok: false, error: 'denied' };
+  var rows = data.rows;
+  if (!Array.isArray(rows) || rows.length === 0 || rows.length > 200) {
+    return { ok: false, error: 'bad request: rows must be a non-empty array (max 200)' };
+  }
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+  } catch (lockErr) {
+    return { ok: false, error: 'busy' };
+  }
+  try {
+    var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+    var sheet = ss.getSheetByName(IG_CALENDAR_TAB);
+    if (!sheet) sheet = igSeedTab(ss, IG_CALENDAR_TAB, IG_CALENDAR_HEADER, []);
+
+    // Existing statuses, keyed the same way incoming rows will be.
+    var statusByKey = {};
+    var last = sheet.getLastRow();
+    var width = sheet.getLastColumn();
+    if (last >= 2) {
+      var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
+      var vals = sheet.getRange(2, 1, last - 1, width).getValues();
+      vals.forEach(function (raw) {
+        var rec = {};
+        head.forEach(function (h, i) { if (h) rec[h] = raw[i]; });
+        var key = igRowKey(rec);
+        if (key && rec.status) statusByKey[key] = String(rec.status);
+      });
+    }
+
+    // Incoming rows: accept keys as sheet headers or slugs, write in header
+    // order, preserve the sheet's status for matched rows.
+    var out = rows.map(function (r) {
+      var rec = {};
+      Object.keys(r).forEach(function (k) { rec[igSlug(k)] = r[k]; });
+      var kept = statusByKey[igRowKey(rec)];
+      return IG_CALENDAR_HEADER.map(function (h) {
+        var slug = igSlug(h);
+        var v = (slug === 'status' && kept) ? kept : rec[slug];
+        return v == null ? '' : String(v).slice(0, 5000);
+      });
+    });
+
+    if (last >= 2) sheet.getRange(2, 1, last - 1, width).clearContent();
+    sheet.getRange(2, 1, out.length, IG_CALENDAR_HEADER.length).setValues(out);
+    return { ok: true, rows: out.length, statusesKept: Object.keys(statusByKey).length };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// A row's identity across syncs: its date, or its theme when dateless (held
+// milestone posts). Dates arrive as Date objects from the sheet but as
+// dd/mm/yyyy or yyyy-mm-dd strings from the markdown block — normalise all
+// three in the script's own timezone so July 13 is July 13 on both sides.
+function igRowKey(rec) {
+  var d = igDateKey(rec.date);
+  if (d) return 'd:' + d;
+  var theme = String(rec.theme || '').trim().toLowerCase();
+  return theme ? 't:' + theme : '';
+}
+
+function igDateKey(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var s = String(v || '').trim();
+  if (!s || s.toLowerCase() === '(none)') return '';
+  var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); // dd/mm/yyyy
+  if (m) return m[3] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/); // yyyy-mm-dd
+  if (m) return s;
+  return '';
 }
 
 /* The account's real history to 12/07/2026, from the social tracker.

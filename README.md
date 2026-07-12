@@ -78,9 +78,38 @@ first time the feed is read (the log gets the account's history to
 re-deploying `Code.gs`. After that the sheet is the source of truth:
 log each post's numbers in `IG Post Log` within 24 hours, add an
 `IG Weekly` row each Sunday, and keep `IG Calendar` rows' Status
-current (`Planned` / `Ready` / `Posted` / `Logged` / `Skipped`). Facts
-that are not yet public (the price, the venue) are deliberately absent
-from the seeded plan — hold them in the sheet, which is private.
+current (`Planned` / `Ready` / `Posted` / `Logged` / `Skipped`, plus
+`Held` for milestone posts that slot in on founder confirmation — give
+those a row with an empty Date). Facts that are not yet public (the
+price, the venue) are deliberately absent from the seeded plan — hold
+them in the sheet, which is private.
+
+### Calendar sync (markdown → sheet, automated)
+
+The content strategy lives in a markdown calendar maintained by Claude
+Cowork on the founders' machine, which keeps a machine-readable
+```json block of the schedule at the file's foot.
+`tools/sync-ig-calendar.py` posts that block to the Apps Script
+(`igsync` in `doPost`), which replaces the `IG Calendar` rows — except
+the Status column, which the sheet owns: rows matched on date (or
+theme, for dateless held rows) keep whatever status was set in the
+sheet, so a strategy edit never un-posts a post.
+
+One-time setup:
+
+1. Generate a secret (`openssl rand -hex 24`) and set it as the
+   `IG_SYNC_SECRET` Script Property, then re-deploy `Code.gs`.
+2. Copy `tools/sync-ig-calendar.py` into the folder that holds the
+   calendar markdown, and put the same secret in a `.ldc-sync-secret`
+   file next to it.
+3. Tell Cowork (in that folder's README): after any change to the
+   calendar's Section 7 or 7a, update the JSON block and run
+   `python3 sync-ig-calendar.py`.
+
+The script needs only the Python standard library. It fails loudly —
+unknown fields, invalid JSON, missing secret — rather than writing a
+guess into the sheet. Post stats and the weekly row stay manual: they
+come from IG insights, sheet-ward only.
 
 ## Changing the gate password
 
