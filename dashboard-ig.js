@@ -64,6 +64,7 @@
         taps: toNum(r.link_taps), follows: toNum(r.follows),
         likes: likes, comments: comments, saves: saves,
         watch: toNum(r.watch_time_s),
+        postedTime: String(r.posted_time || "").trim(),
         engagement: eng, er: views ? eng / views : null
       };
     }).filter(function (p) { return p.date; });
@@ -91,6 +92,9 @@
         firstLine: String(r.caption_first_line || "").trim(),
         finalCopy: String(r.final_copy || "").replace(/\r/g, "").trim(),
         confirm: String(r.confirm_before_posting || "").trim(),
+        // Per-row window override; no such sheet column yet, but if one is
+        // added (Post window, HH:MM-HH:MM) this picks it up unchanged.
+        postWindow: String(r.post_window || "").trim(),
         status: String(r.status || "Planned").trim()
       };
     }).filter(function (c) {
@@ -106,7 +110,49 @@
     });
     calendar.forEach(function (c, i) { c.key = c.date ? dayKey(c.date) : "held-" + i; });
 
-    return { posts: posts, weekly: weekly, calendar: calendar };
+    var w = payload.windows || {};
+    var windows = {
+      weekday: String(w.weekday || "07:00-08:00"),
+      weekend: String(w.weekend || "08:00-09:00"),
+      tz: String(w.tz || "Europe/London")
+    };
+
+    return { posts: posts, weekly: weekly, calendar: calendar, windows: windows };
+  }
+
+  /* ---- Posting windows ---------------------------------------------------
+     The window is config from the feed (weekday/weekend, Europe/London),
+     with a per-row override hook (entry.postWindow) for when the sheet ever
+     grows that column. All comparisons happen in the account's timezone so
+     the state is right wherever the dashboard is opened. */
+
+  function windowFor(model, entry, date) {
+    var raw = entry && entry.postWindow;
+    if (!raw) {
+      var d = date || (entry && entry.date);
+      if (!d) return null; // dateless held post: window is the day it slots into
+      var dow = d.getDay();
+      raw = (dow === 0 || dow === 6) ? model.windows.weekend : model.windows.weekday;
+    }
+    var m = String(raw).match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+    if (!m) return null;
+    return { start: Number(m[1]) * 60 + Number(m[2]), end: Number(m[3]) * 60 + Number(m[4]),
+             label: m[1] + ":" + m[2] + " to " + m[3] + ":" + m[4] };
+  }
+
+  // Minutes since midnight in the account's timezone, right now.
+  function nowMinutes(model) {
+    var parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: model.windows.tz, hour: "2-digit", minute: "2-digit", hour12: false
+    }).format(new Date()).split(":");
+    return Number(parts[0]) % 24 * 60 + Number(parts[1]);
+  }
+
+  function minutesLabel(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    if (h && m) return h + "h " + m + "m";
+    if (h) return h + "h";
+    return m + "m";
   }
 
   /* ---- Aggregation ------------------------------------------------------ */
@@ -275,7 +321,7 @@
   function statusDot(entry, today) {
     var s = entry.status.toLowerCase();
     if (s === "posted" || s === "logged") return { bg: GREEN, bd: GREEN, label: entry.status };
-    if (s === "ready") return { bg: MOSS, bd: MOSS, label: "Ready" };
+    if (s === "ready" || s === "scheduled") return { bg: MOSS, bd: MOSS, label: entry.status };
     if (s === "held") return { bg: "transparent", bd: RED, label: "Held" };
     if (s === "skipped") return { bg: "transparent", bd: "var(--hairline-strong)", label: "Skipped" };
     if (entry.date && entry.date < today) return { bg: RED, bd: RED, label: "Planned · date passed" };
@@ -342,6 +388,56 @@
     return '<svg viewBox="0 0 ' + W + " " + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="Views by post">' +
       grid + bars + xLabels + "</svg>" +
       '<div style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:11.5px;color:' + DIM + '"><span style="width:12px;height:3px;background:' + RED + ';display:inline-block"></span>marks a reel</div>';
+  }
+
+  // Views against posted time: 1 dot per post with a logged Posted time, the
+  // target windows shaded. Exists to TEST the window hypothesis — it draws
+  // once 3 posts have times and gently nags for logs until then.
+  function timeChart(posts, model) {
+    var pts = [];
+    posts.forEach(function (p) {
+      var m = String(p.postedTime).match(/^(\d{1,2}):(\d{2})$/);
+      if (m) pts.push({ p: p, mins: Number(m[1]) * 60 + Number(m[2]) });
+    });
+    if (pts.length < 3) {
+      return '<div style="font-size:13px;color:' + DIM + ';line-height:1.6">Posted times logged: ' + pts.length +
+        " of the 3 needed to draw this. The Posted time column (HH:MM) in the Post Log feeds it. " +
+        "The window is a hypothesis. This chart is how it gets tested.</div>";
+    }
+    var W = 560, H = 200, padL = 34, padR = 16, padT = 14, padB = 30;
+    var wd = windowFor(model, null, new Date(2026, 0, 5));  // any weekday
+    var we = windowFor(model, null, new Date(2026, 0, 4));  // any weekend day
+    var xs = pts.map(function (q) { return q.mins; });
+    var x0 = Math.min.apply(null, xs.concat(wd ? [wd.start] : [])) - 45;
+    var x1 = Math.max.apply(null, xs.concat(we ? [we.end] : [])) + 45;
+    var yMax = Math.max(10, Math.ceil(Math.max.apply(null, pts.map(function (q) { return n0(q.p.views); })) * 1.15));
+    var X = function (mins) { return padL + (mins - x0) / (x1 - x0) * (W - padL - padR); };
+    var Y = function (v) { return H - padB - (v / yMax) * (H - padT - padB); };
+    var hm = function (mins) { return pad(Math.floor(mins / 60)) + ":" + pad(mins % 60); };
+    var band = "";
+    [wd, we].forEach(function (w) {
+      if (!w) return;
+      band += '<rect x="' + X(w.start).toFixed(1) + '" y="' + padT + '" width="' + (X(w.end) - X(w.start)).toFixed(1) +
+        '" height="' + (H - padT - padB) + '" fill="var(--ldc-chalk-down)"/>';
+    });
+    var grid = [0, Math.round(yMax / 2), yMax].map(function (v) {
+      return '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '" stroke="var(--hairline)" stroke-width="1"/>' +
+        '<text x="' + (padL - 6) + '" y="' + (Y(v) + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--ldc-tarmac-dim)" font-family="Archivo,sans-serif">' + v + "</text>";
+    }).join("");
+    var ticks = [];
+    for (var t = Math.ceil(x0 / 120) * 120; t <= x1; t += 120) ticks.push(t);
+    var xAxis = ticks.map(function (t2) {
+      return '<text x="' + X(t2).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle" font-size="10" fill="var(--ldc-tarmac-dim)" font-family="Archivo,sans-serif">' + hm(t2) + "</text>";
+    }).join("");
+    var dots = pts.map(function (q) {
+      var tip = "Post " + q.p.num + " · " + ddmm(q.p.date) + " · posted " + hm(q.mins) + "|" +
+        esc(titleFor(q.p)) + "|" + n0(q.p.views) + " views · " + n0(q.p.reach) + " reach";
+      return '<circle cx="' + X(q.mins).toFixed(1) + '" cy="' + Y(n0(q.p.views)).toFixed(1) + '" r="5" fill="' + GREEN + '" stroke="var(--ldc-chalk)" stroke-width="2"/>' +
+        '<rect x="' + (X(q.mins) - 12).toFixed(1) + '" y="' + padT + '" width="24" height="' + (H - padT - padB) + '" fill="transparent" data-tip="' + tip + '"/>';
+    }).join("");
+    return '<svg viewBox="0 0 ' + W + " " + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="Views by posted time">' +
+      band + grid + dots + xAxis + "</svg>" +
+      '<div style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:11.5px;color:' + DIM + '"><span style="width:12px;height:12px;background:var(--ldc-chalk-down);display:inline-block"></span>the target windows</div>';
   }
 
   /* ---- Insights tab ------------------------------------------------------ */
@@ -545,6 +641,9 @@
         '<div style="flex:1 1 340px;background:var(--ldc-chalk);padding:24px 30px">' +
           '<div class="sd-eyebrow" style="color:' + DIM + ';margin-bottom:16px">Views by post · all time</div>' + viewsChart(posts) +
         "</div>" +
+        '<div style="flex:1 1 340px;background:var(--ldc-chalk);padding:24px 30px">' +
+          '<div class="sd-eyebrow" style="color:' + DIM + ';margin-bottom:16px">Views by posted time</div>' + timeChart(posts, model) +
+        "</div>" +
       "</div>" +
 
       '<div class="sd-pad" style="padding:26px 30px 0;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:12px">' +
@@ -581,10 +680,21 @@
 
   function monthKey(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1); }
 
-  function planCard(title, entry, today, fallbackText) {
+  // The full-width state strip under the calendar header. A leftBorder makes
+  // it read as a flag (the missed state) without shouting in red text.
+  function banner(bg, fg, text, leftBorder) {
+    return '<div class="sd-pad" style="padding:14px 30px;background:' + bg + ';color:' + fg +
+      ';border-bottom:1px solid var(--hairline)' +
+      (leftBorder ? ";border-left:5px solid " + leftBorder : "") +
+      ';font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:.03em">' +
+      esc(text) + "</div>";
+  }
+
+  function planCard(model, title, entry, today, fallbackText) {
     var inner;
     if (entry) {
       var dot = statusDot(entry, today);
+      var win = windowFor(model, entry);
       inner =
         '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px">' +
           formatChip(entry.format) +
@@ -592,6 +702,8 @@
           '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:' + DIM + '"><span style="width:8px;height:8px;border-radius:50%;background:' + dot.bg + ';border:1.5px solid ' + dot.bd + '"></span>' + esc(dot.label) + "</span>" +
         "</div>" +
         '<div class="sd-disp" style="font-size:17px;margin-bottom:8px">' + esc(entry.firstLine || entry.concept) + "</div>" +
+        '<div style="font-size:12.5px;color:var(--text-body);margin-bottom:6px;font-weight:700">Window ' +
+          (win ? esc(win.label) : "set by the day it slots into") + "</div>" +
         (entry.peg ? '<div style="font-size:12.5px;color:var(--text-body);margin-bottom:6px">Peg: ' + esc(entry.peg) + "</div>" : "") +
         '<div style="font-size:12.5px;color:' + DIM + ';margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">Asset: ' + esc(entry.asset) + "</div>" +
         '<button class="sd-chip" data-calday="' + entry.key + '" style="cursor:pointer;font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:8px 14px;border-radius:3px;background:var(--ldc-green);color:var(--ldc-chalk);border:none">Open the brief →</button>';
@@ -621,12 +733,39 @@
       if (!nextEntry && c.date && c.date > today) nextEntry = c;
       if (c.status.toLowerCase() === "held") heldEntries.push(c);
     });
+
+    // From midday, tomorrow's post becomes "schedule tonight" — the evening
+    // is the standard prep moment, not the morning of.
+    var now = nowMinutes(model);
+    var tomorrowKey = dayKey(new Date(today.getTime() + DAY));
+    var nextIsTonight = nextEntry && nextEntry.key === tomorrowKey && now >= 12 * 60;
     var nextTitle = nextEntry
-      ? "Next · " + DOWS[(nextEntry.date.getDay() + 6) % 7] + " " + ddmm(nextEntry.date)
+      ? (nextIsTonight ? "Schedule tonight in IG · " : "Next · ") +
+        DOWS[(nextEntry.date.getDay() + 6) % 7] + " " + ddmm(nextEntry.date)
       : "Next";
     var heldCards = heldEntries.map(function (h) {
-      return planCard("Held · on 24 hours' notice", h, today, "");
+      return planCard(model, "Held · on 24 hours' notice", h, today, "");
     }).join("");
+
+    // Today's window state. Late is a fact to record, never a blocker.
+    var stateHTML = "";
+    if (todayEntry) {
+      var win = windowFor(model, todayEntry);
+      var done = ["posted", "logged"].indexOf(todayEntry.status.toLowerCase()) >= 0;
+      if (done) {
+        stateHTML = banner(GREEN, "var(--ldc-chalk)",
+          "Posted. Log the stats and the posted time in the Post Log within 24 hours.");
+      } else if (win && now < win.start) {
+        stateHTML = banner("var(--ldc-chalk)", "var(--text-body)",
+          "Posts today · window " + win.label + " · opens in " + minutesLabel(win.start - now));
+      } else if (win && now <= win.end) {
+        stateHTML = banner(RED, "var(--ldc-chalk)",
+          "The window is open. Post before " + win.label.split(" to ")[1] + ".");
+      } else if (win) {
+        stateHTML = banner("var(--ldc-chalk)", "var(--text-body)",
+          "Window missed (" + win.label + "). Post anyway, then log the actual time in the Post Log.", RED);
+      }
+    }
 
     // Build the Monday-first grid.
     var first = new Date(year, month, 1);
@@ -653,12 +792,14 @@
       "</div>";
       if (info.plan) {
         var dot = statusDot(info.plan, today);
+        var cellWin = windowFor(model, info.plan);
         bits += '<div class="cal-plan" style="margin-top:7px">' +
           '<div style="display:flex;align-items:center;gap:6px">' +
             '<span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + dot.bg + ';border:1.5px solid ' + dot.bd + '" title="' + esc(dot.label) + '"></span>' +
             '<span class="sd-eyebrow cal-fmt" style="font-size:8.5px;color:var(--text-body);letter-spacing:.14em">' + esc(info.plan.format) + "</span>" +
           "</div>" +
           '<div class="cal-theme" style="font-size:11px;color:var(--text-body);margin-top:4px;line-height:1.35">' + esc(info.plan.theme) + "</div>" +
+          (cellWin ? '<div class="cal-theme" style="font-size:10px;color:' + DIM + ';margin-top:3px">' + esc(cellWin.label) + "</div>" : "") +
         "</div>";
       }
       if (info.posts) {
@@ -686,10 +827,12 @@
         "</div>" +
       "</div>" +
 
+      stateHTML +
+
       '<div style="display:flex;flex-wrap:wrap;gap:1px;background:var(--hairline);border-bottom:1px solid var(--hairline)">' +
-        planCard("Today · " + DOWS[(today.getDay() + 6) % 7] + " " + ddmm(today), todayEntry, today,
+        planCard(model, "Today · " + DOWS[(today.getDay() + 6) % 7] + " " + ddmm(today), todayEntry, today,
           "Nothing posts today. The cadence is 3 to 4 grid posts a week on purpose.") +
-        planCard(nextTitle, nextEntry, today, "No planned posts ahead. Time to write the next 4 weeks.") +
+        planCard(model, nextTitle, nextEntry, today, "No planned posts ahead. Time to write the next 4 weeks.") +
         heldCards +
       "</div>" +
 
@@ -733,12 +876,15 @@
     var body = "";
     if (plan) {
       var dot = statusDot(plan, today);
+      var win = windowFor(model, plan);
       body +=
         '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px">' +
           formatChip(plan.format) +
           (plan.feeling ? '<span style="display:inline-block;padding:3px 9px;border:1px solid var(--hairline-strong);border-radius:3px;font-size:11.5px;color:var(--text-body)">' + esc(plan.feeling) + "</span>" : "") +
           '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:' + DIM + '"><span style="width:8px;height:8px;border-radius:50%;background:' + dot.bg + ';border:1.5px solid ' + dot.bd + '"></span>' + esc(dot.label) + "</span>" +
         "</div>" +
+        drawerBlock("Posting window", win ? win.label : "Set by the day it slots into. Weekdays " +
+          model.windows.weekday.replace("-", " to ") + ", weekends " + model.windows.weekend.replace("-", " to ") + ".") +
         drawerBlock("Peg / milestone", plan.peg) +
         drawerBlock("Concept", plan.concept) +
         drawerBlock("Asset to produce", plan.asset) +
