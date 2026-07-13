@@ -39,10 +39,14 @@ src="https://www.facebook.com/tr?id=1323560016550691&ev=PageView&noscript=1"/></
   (function () {
     var ok = false;
     try {
-      ok = sessionStorage.getItem("ldc-member") === "open"
+      var member = sessionStorage.getItem("ldc-member");
+      ok = member === "open"
         || sessionStorage.getItem("ldc-gate") === "open"
         || location.hash.indexOf("access") !== -1;
-      if (ok) sessionStorage.setItem("ldc-member", "open");
+      // Only drop the marker when the slot is empty: app.js stores the
+      // member's JSON identity (name, car, email) under this key, and the
+      // terms-acceptance log needs it intact (see welcome.js).
+      if (ok && !member) sessionStorage.setItem("ldc-member", "open");
     } catch (e) { ok = true; } // storage blocked — don't lock anyone out
     if (!ok) location.replace("/#gate");
   })();

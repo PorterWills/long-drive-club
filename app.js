@@ -1007,12 +1007,15 @@
         try { sessionStorage.setItem("ldc-gate", "open"); } catch (e) {}
         // The gate is the only place a visitor's identity is established, so
         // whatever name/car came back with it is handed to the welcome page
-        // this way. The master password (result === true) carries none —
-        // welcome.js's masthead falls back gracefully when it's missing.
+        // this way. The email is what the terms-acceptance log keys on (see
+        // welcome.js), so it rides along too. The master password
+        // (result === true) carries none — welcome.js's masthead and
+        // acceptance log both fall back gracefully when it's missing.
         if (result !== true) {
           try {
             sessionStorage.setItem("ldc-member", JSON.stringify({
-              name: result.name || "", make: result.make || "", model: result.model || ""
+              name: result.name || "", make: result.make || "", model: result.model || "",
+              email: result.email || ""
             }));
           } catch (e) {}
         }

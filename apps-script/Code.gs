@@ -64,7 +64,8 @@ var COLUMNS = ['timestamp', 'name', 'email', 'phone', 'work', 'car', 'play', 'pa
                'status', 'password', 'approved_at', 'paid_at', 'declined_at', 'waitlisted_at',
                'nudge1_at', 'nudge2_at', 'nudge3_at',
                'make', 'model', 'handicap', 'base', 'city',
-               'token', 'step1_at', 'completed_at', 'recovery_sent'];
+               'token', 'step1_at', 'completed_at', 'recovery_sent',
+               'terms_accepted_at', 'terms_version', 'marketing_optin'];
 
 // The actual submission logic, shared by both entry points below. Returns a
 // plain {ok:true} / {ok:false, error} object rather than writing the
@@ -125,12 +126,15 @@ function doPost(e) {
   return jsonOut(handleSubmission(data));
 }
 
-// Handles seven things, all JSONP (a <script src> the site loads, whose
+// Handles eight things, all JSONP (a <script src> the site loads, whose
 // response calls back into the page) since Apps Script can't send CORS
 // headers a normal fetch could read:
 //  - ?submit=JSON&callback=YYY  a step1/step2 application submission. The
 //    current site uses this (not doPost) so it can see a real ok/error back
 //    rather than assuming success.
+//  - ?accept=JSON&callback=YYY  the welcome page's terms-acceptance record,
+//    written the moment a ticked member presses the pay button — see
+//    recordAcceptance.
 //  - ?recover=TOKEN&callback=YYY  the site asking for the step-one data behind
 //    a recovery token, so it can prefill step two.
 //  - ?password=XXX&callback=YYY  the gate asking if a password is valid; a
@@ -153,6 +157,15 @@ function doGet(e) {
       return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
     }
     return jsonpOrJson(handleSubmission(data), params.callback);
+  }
+  if (params.accept) {
+    var acceptData;
+    try {
+      acceptData = JSON.parse(params.accept);
+    } catch (parseErr) {
+      return jsonpOrJson({ ok: false, error: 'bad request' }, params.callback);
+    }
+    return jsonpOrJson(recordAcceptance(acceptData), params.callback);
   }
   if (params.recover) {
     var lead = leadByToken(params.recover);
@@ -633,12 +646,100 @@ function gateCheck(guess) {
         ok: true,
         name: headers['name'] ? String(values[i][headers['name'] - 1] || '').trim() : '',
         make: headers['make'] ? String(values[i][headers['make'] - 1] || '').trim() : '',
-        model: headers['model'] ? String(values[i][headers['model'] - 1] || '').trim() : ''
+        model: headers['model'] ? String(values[i][headers['model'] - 1] || '').trim() : '',
+        // The welcome page hands this on to the terms-acceptance log (see
+        // recordAcceptance), which keys on it to stamp the applicant's row.
+        email: headers['email'] ? String(values[i][headers['email'] - 1] || '').trim() : ''
       };
     }
   }
   rateLimitBump('gate_guess', 600);
   return { ok: false };
+}
+
+/* ---- Terms acceptance -------------------------------------------------
+   The clickwrap evidence trail. When a member ticks the terms box and
+   presses the pay button, the welcome page sends the full record here:
+   when, on what page, which version of the Terms, the exact checkbox and
+   button wording rendered at the time, and the marketing choice.
+
+   Two writes, deliberately:
+   1. An append-only row on the 'Terms acceptances' tab. Rows there are
+      never edited afterwards, so a re-acceptance adds a row instead of
+      overwriting history — that tab is the evidence.
+   2. Convenience columns stamped on the applicant's row in Applications
+      (terms_accepted_at / terms_version / marketing_optin), so acceptance
+      is visible where the rest of their record lives.
+   The endpoint is public like ?submit= is, so it carries the same style of
+   per-caller throttle. A missing email still logs (write the evidence,
+   flag the gap) but can't stamp an applicant row. */
+
+var ACCEPT_TAB = 'Terms acceptances';
+var ACCEPT_COLUMNS = ['accepted_at', 'email', 'name', 'terms_version', 'page',
+                      'checkbox_text', 'button_text', 'notice_text',
+                      'marketing_optin', 'marketing_text'];
+
+function recordAcceptance(data) {
+  var email = String(data.email || '').trim();
+  if (!rateLimitOk('rl_accept_' + (email || 'anon').toLowerCase(), 10, 3600)) {
+    return { ok: false, error: 'rate_limited' };
+  }
+
+  var clip = function (v) { return String(v || '').trim().slice(0, 2000); };
+  var record = {
+    accepted_at: new Date(),
+    email: email,
+    name: clip(data.name),
+    terms_version: clip(data.terms_version),
+    page: clip(data.page),
+    checkbox_text: clip(data.checkbox_text),
+    button_text: clip(data.button_text),
+    notice_text: clip(data.notice_text),
+    marketing_optin: data.marketing_optin ? 'yes' : 'no',
+    marketing_text: clip(data.marketing_text)
+  };
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(20000);
+  } catch (lockErr) {
+    return { ok: false, error: 'busy' };
+  }
+  try {
+    getAcceptanceSheet().appendRow(ACCEPT_COLUMNS.map(function (c) { return record[c]; }));
+
+    var matched = false;
+    if (email) {
+      var sheet = getSheet();
+      var headers = headerMap(sheet);
+      var row = findRowByEmail(sheet, headers, email);
+      if (row) {
+        writeFields(sheet, row, headers, {
+          terms_accepted_at: record.accepted_at,
+          terms_version: record.terms_version,
+          marketing_optin: record.marketing_optin
+        });
+        matched = true;
+      }
+    }
+    return { ok: true, matched: matched };
+  } catch (err) {
+    console.error(err);
+    return { ok: false, error: String(err) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getAcceptanceSheet() {
+  var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+  var sheet = ss.getSheetByName(ACCEPT_TAB);
+  if (!sheet) {
+    sheet = ss.insertSheet(ACCEPT_TAB);
+    sheet.appendRow(ACCEPT_COLUMNS);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
 }
 
 /* ---- Approval flow ----------------------------------------------------- */
