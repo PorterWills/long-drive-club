@@ -145,36 +145,16 @@
 
   /* ---- Where the reservation goes after the T&Cs ------------------------
      Set STRIPE_PAYMENT_URL to the Stripe Payment Link (or Checkout URL)
-     when payment is ready. Once it's set, agreeing to the T&Cs sends the
-     user straight to Stripe. While it's empty, the card advances to a
-     placeholder payment step so the whole journey can be tested end to end
-     bar the final hop. */
+     when payment is ready. Once it's set, ticking the terms box and pressing
+     the button sends the user straight to Stripe. While it's empty, the card
+     advances to a placeholder payment step so the whole journey can be
+     tested end to end bar the final hop. */
   var STRIPE_PAYMENT_URL = "";
 
-  /* ---- Reserve flow: agree to T&Cs before the payment step --------------
-     The Reserve button opens the T&Cs; agreeing is what kicks off payment. */
-  var modal = document.getElementById("terms-modal");
-  var reserveBtn = document.getElementById("reserve-btn");
-  var agreeCheck = document.getElementById("terms-agree-check");
-  var continueBtn = document.getElementById("terms-continue");
-  var lastFocus = null;
-
-  function openModal() {
-    lastFocus = document.activeElement;
-    modal.hidden = false;
-    document.body.style.overflow = "hidden";
-    agreeCheck.checked = false;
-    continueBtn.disabled = true;
-    var body = document.getElementById("terms-modal-body");
-    if (body) body.scrollTop = 0;
-    // focus the dialog so Escape works and screen readers land inside it
-    modal.querySelector(".modal-panel").focus();
-  }
-  function closeModal() {
-    modal.hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-  }
+  /* The version stamped on /terms (see terms.html's data-terms-version).
+     Logged with every acceptance; update both together when the terms
+     change. */
+  var TERMS_VERSION = "1.0 (9 July 2026)";
 
   /* ---- Route map: the red line draws itself in ------------------------
      Mirrors the map's static "suggested line" but animates it: casing +
@@ -275,33 +255,99 @@
     }
   })();
 
-  if (reserveBtn && modal) {
-    reserveBtn.addEventListener("click", openModal);
+  /* ---- Reserve flow: the clickwrap gate ----------------------------------
+     The terms checkbox is the gate: the pay button stays disabled until it's
+     ticked. On the click we write the acceptance record FIRST, then hand off
+     to payment. The record captures the exact wording rendered on this page
+     (read from the DOM, not from constants), so what's logged is what was
+     shown, even if the markup changes later without this file keeping up. */
+  var reserveBtn = document.getElementById("reserve-btn");
+  var agreeCheck = document.getElementById("terms-agree-check");
+  var marketingCheck = document.getElementById("marketing-check");
 
+  function proceedToPayment() {
+    // Stripe hosts the whole checkout at its own URL, so we redirect straight
+    // there. Until STRIPE_PAYMENT_URL is set, show the inline placeholder so
+    // the journey stays testable.
+    if (STRIPE_PAYMENT_URL) { window.location.href = STRIPE_PAYMENT_URL; return; }
+    var cta = document.getElementById("reserve-cta");
+    var secure = document.getElementById("reserve-secure");
+    var next = document.getElementById("payment-next");
+    if (cta) cta.hidden = true;
+    if (secure) secure.hidden = true;
+    if (next) next.hidden = false;
+  }
+
+  // Collapse runs of whitespace so multi-line markup logs as one clean line.
+  function renderedText(id) {
+    var el = document.getElementById(id);
+    return el ? el.textContent.replace(/\s+/g, " ").trim() : "";
+  }
+
+  /* The evidence trail. JSONP for the same reason as everywhere else on the
+     site: Apps Script can't send CORS headers a normal fetch could read.
+     Resolves true on a confirmed write, false on error or timeout — the
+     caller proceeds to payment either way, because a logging hiccup must
+     never cost the member their place. The backend also timestamps
+     server-side; see recordAcceptance in apps-script/Code.gs. */
+  function logAcceptance() {
+    return new Promise(function (resolve) {
+      if (!APPS_SCRIPT_URL) { resolve(false); return; }
+      var member = {};
+      try { member = JSON.parse(sessionStorage.getItem("ldc-member") || "{}") || {}; }
+      catch (e) { member = {}; }
+      var buttonLabel = reserveBtn.querySelector(".label");
+      var payload = {
+        email: member.email || "",
+        name: member.name || "",
+        terms_version: TERMS_VERSION,
+        page: window.location.href,
+        checkbox_text: renderedText("terms-check-text"),
+        button_text: buttonLabel ? buttonLabel.textContent.trim() : "",
+        notice_text: renderedText("gate-notice-text"),
+        marketing_optin: !!(marketingCheck && marketingCheck.checked),
+        marketing_text: renderedText("marketing-check-text")
+      };
+      var cb = "__ldcaccept_" + Date.now();
+      var script = document.createElement("script");
+      var timer = setTimeout(function () { cleanup(); resolve(false); }, 6000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function (data) { cleanup(); resolve(!!(data && data.ok)); };
+      script.onerror = function () { cleanup(); resolve(false); };
+      script.src = APPS_SCRIPT_URL + "?accept=" + encodeURIComponent(JSON.stringify(payload)) + "&callback=" + cb;
+      document.head.appendChild(script);
+    });
+  }
+
+  if (reserveBtn && agreeCheck) {
     agreeCheck.addEventListener("change", function () {
-      continueBtn.disabled = !agreeCheck.checked;
+      reserveBtn.disabled = !agreeCheck.checked;
     });
 
-    continueBtn.addEventListener("click", function () {
-      if (!agreeCheck.checked) return;
-      closeModal();
-      // T&Cs agreed: hand off to payment. Stripe hosts the whole checkout at
-      // its own URL, so we redirect straight there. Until STRIPE_PAYMENT_URL
-      // is set, show the inline placeholder so the journey stays testable.
-      if (STRIPE_PAYMENT_URL) { window.location.href = STRIPE_PAYMENT_URL; return; }
-      var cta = document.getElementById("reserve-cta");
-      var secure = document.getElementById("reserve-secure");
-      var next = document.getElementById("payment-next");
-      if (cta) cta.hidden = true;
-      if (secure) secure.hidden = true;
-      if (next) next.hidden = false;
-    });
-
-    modal.querySelectorAll("[data-close]").forEach(function (el) {
-      el.addEventListener("click", closeModal);
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !modal.hidden) closeModal();
+    var reserving = false;
+    reserveBtn.addEventListener("click", function () {
+      if (!agreeCheck.checked || reserving) return;
+      reserving = true;
+      reserveBtn.disabled = true;
+      var label = reserveBtn.querySelector(".label");
+      var original = label ? label.textContent : "";
+      // Start the log before touching the label: the payload reads the
+      // button's rendered text, and it must capture the real label, not the
+      // waiting state.
+      var logged = logAcceptance();
+      if (label) label.textContent = "One moment…";
+      logged.then(function () {
+        // Restore the button before the hop, so a back-navigation from
+        // Stripe (or the placeholder path) doesn't strand a dead button.
+        if (label) label.textContent = original;
+        reserveBtn.disabled = !agreeCheck.checked;
+        reserving = false;
+        proceedToPayment();
+      });
     });
   }
 

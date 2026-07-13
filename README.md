@@ -7,9 +7,24 @@ and the images in `assets/`.
 Once an applicant enters a valid password at the gate (`#gate` on
 `index.html`), `app.js` sends them to `welcome.html` — the "You're in"
 page that lays out the drive, the map, the day, the price and the
-reservation. Its behaviour (reveal-on-scroll and the reserve / T&C step)
+reservation. Its behaviour (reveal-on-scroll and the reserve step)
 lives in `welcome.js`; its styles are the `welcome.html` section of
 `styles.css`.
+
+The reserve step is a clickwrap gate: an unticked, mandatory checkbox
+(plus a separate optional marketing one) sits directly above the pay
+button, which stays disabled until the terms box is ticked. The notice
+and checkbox wording are verbatim from the solicitor's gate-language
+document — don't edit them without legal sign-off. The full standing
+Terms live on `/terms` (linked from the checkbox, never shown inline)
+and carry a version stamp that must move in lockstep with
+`TERMS_VERSION` in `welcome.js`. On the pay click, `welcome.js` writes
+the acceptance record — timestamp, page, terms version, the exact
+rendered wording, the marketing choice — to the Apps Script `?accept=`
+endpoint before the Stripe handoff: an append-only row on the
+**Terms acceptances** tab (the evidence), plus convenience columns on
+the applicant's row (see `recordAcceptance` in `apps-script/Code.gs`).
+`/cookies` is a stub pending a real Cookie Notice.
 
 ## Going live (GitHub Pages)
 
