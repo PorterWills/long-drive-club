@@ -818,16 +818,47 @@ var IG_POSTS_TAB = 'IG Post Log';
 var IG_WEEKLY_TAB = 'IG Weekly';
 var IG_CALENDAR_TAB = 'IG Calendar';
 
+/* Posting windows. Held here as config, not sheet schema: the dashboard
+   reads them from the feed and the reminder emails quote them. If a per-post
+   override is ever needed, add a "Post window" column to IG Calendar (and
+   IG_CALENDAR_HEADER, and the sync script's KNOWN_KEYS as post_window) —
+   the dashboard already checks a row's post_window before falling back to
+   these. Format "HH:MM-HH:MM". The window is a hypothesis under test, which
+   is what the Posted time column in the Post Log is for. */
+var IG_TZ = 'Europe/London';
+var IG_WINDOW_WEEKDAY = '07:00-08:00';
+var IG_WINDOW_WEEKEND = '08:00-09:00';
+
+function igWindowFor(d) {
+  var dow = Utilities.formatDate(d, IG_TZ, 'u'); // 1 = Monday .. 7 = Sunday
+  return (dow === '6' || dow === '7') ? IG_WINDOW_WEEKEND : IG_WINDOW_WEEKDAY;
+}
+
 function igPayload(guess) {
   if (!dashboardPasswordValid(guess)) return { ok: false };
   var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+  igEnsurePostedTime(ss);
   return {
     ok: true,
     updatedAt: new Date().toISOString(),
+    windows: { weekday: IG_WINDOW_WEEKDAY, weekend: IG_WINDOW_WEEKEND, tz: IG_TZ },
     posts: igTabObjects(ss, IG_POSTS_TAB, IG_POSTS_HEADER, IG_POSTS_SEED),
     weekly: igTabObjects(ss, IG_WEEKLY_TAB, IG_WEEKLY_HEADER, IG_WEEKLY_SEED),
     calendar: igTabObjects(ss, IG_CALENDAR_TAB, IG_CALENDAR_HEADER, IG_CALENDAR_SEED)
   };
+}
+
+// The Post Log gained a Posted time column (HH:MM) so the window can be
+// tested against views instead of assumed. Existing sheets get the column
+// appended on the next read; fresh sheets seed with it in the header.
+function igEnsurePostedTime(ss) {
+  var sheet = ss.getSheetByName(IG_POSTS_TAB);
+  if (!sheet) return;
+  var width = Math.max(sheet.getLastColumn(), 1);
+  var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
+  if (head.indexOf('posted_time') < 0) {
+    sheet.getRange(1, width + 1).setValue('Posted time').setFontWeight('bold');
+  }
 }
 
 // Reads a whole tab into [{key: value}] keyed on slugged headers
@@ -870,9 +901,120 @@ function igSeedTab(ss, tabName, header, seed) {
     return ss.getSheetByName(tabName); // lost a race; use the existing one
   }
   sheet.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold');
-  if (seed.length) sheet.getRange(2, 1, seed.length, header.length).setValues(seed);
+  if (seed.length) {
+    // Seed rows may be narrower than the header (columns added later);
+    // right-pad with blanks so setValues gets a uniform grid.
+    var padded = seed.map(function (r) {
+      var row = r.slice();
+      while (row.length < header.length) row.push('');
+      return row;
+    });
+    sheet.getRange(2, 1, padded.length, header.length).setValues(padded);
+  }
   sheet.setFrozenRows(1);
   return sheet;
+}
+
+/* ---- Posting reminders ---------------------------------------------------
+   A dashboard has to be opened; an email arrives on its own. Two time-driven
+   sweeps, both in the project timezone (set it to Europe/London in Project
+   Settings or these fire an hour off):
+
+     ~18:00  evening preview — tomorrow's post(s): theme, window, caption and
+             asset brief, so scheduling the evening before is the default.
+     ~06:45  post-day nudge — only if today's row is not already Posted,
+             Logged, Scheduled or Skipped.
+
+   Run installIgReminderTriggers once by hand to schedule both. Recipient is
+   the IG_REMINDER_EMAIL Script Property, falling back to the script owner.
+   Set Script Property IG_REMINDERS to "off" to silence both without
+   uninstalling. Sent with MailApp (the owner's Gmail quota, no API key). */
+
+function installIgReminderTriggers() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    var fn = t.getHandlerFunction();
+    if (fn === 'sendIgEveningPreview' || fn === 'sendIgMorningNudge') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('sendIgEveningPreview').timeBased().everyDays(1).atHour(18).create();
+  ScriptApp.newTrigger('sendIgMorningNudge').timeBased().everyDays(1).atHour(6).nearMinute(45).create();
+}
+
+function igRemindersOn() {
+  var flag = PropertiesService.getScriptProperties().getProperty('IG_REMINDERS');
+  return String(flag || 'on').toLowerCase() !== 'off';
+}
+
+function igReminderRecipient() {
+  var to = PropertiesService.getScriptProperties().getProperty('IG_REMINDER_EMAIL');
+  if (to) return to;
+  try { return Session.getEffectiveUser().getEmail(); } catch (e) { return ''; }
+}
+
+// All IG Calendar rows whose date is the given yyyy-MM-dd key.
+function igCalendarRowsFor(dateKey) {
+  var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+  var sheet = ss.getSheetByName(IG_CALENDAR_TAB);
+  if (!sheet) return [];
+  var last = sheet.getLastRow();
+  var width = sheet.getLastColumn();
+  if (last < 2) return [];
+  var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
+  var vals = sheet.getRange(2, 1, last - 1, width).getValues();
+  var out = [];
+  vals.forEach(function (raw) {
+    var rec = {};
+    head.forEach(function (h, i) { if (h) rec[h] = raw[i]; });
+    if (igDateKey(rec.date) === dateKey) out.push(rec);
+  });
+  return out;
+}
+
+function igReminderBody(rec, d) {
+  var window = String(rec.post_window || '').trim() || igWindowFor(d);
+  return [
+    Utilities.formatDate(d, IG_TZ, 'EEEE d MMMM') + ' · window ' + window.replace('-', ' to '),
+    '',
+    'Theme: ' + (rec.theme || '') + ' (' + (rec.format || '') + ')',
+    rec.peg_milestone ? 'Peg: ' + rec.peg_milestone : null,
+    rec.feeling ? 'Feeling: ' + rec.feeling : null,
+    '',
+    'Asset: ' + (rec.asset_to_produce || ''),
+    '',
+    rec.final_copy ? 'Caption:\n' + rec.final_copy : 'Caption first line: ' + (rec.caption_first_line || '') +
+      '\n(No final copy yet. Draft through ldc-copywriter.)',
+    rec.confirm_before_posting ? '\nConfirm before posting: ' + rec.confirm_before_posting : null,
+    '',
+    'Dashboard: https://longdriveclub.com/dashboard.html'
+  ].filter(function (line) { return line !== null; }).join('\n');
+}
+
+function sendIgEveningPreview() {
+  if (!igRemindersOn()) return;
+  var to = igReminderRecipient();
+  if (!to) return;
+  var d = new Date(Date.now() + 86400000);
+  var rows = igCalendarRowsFor(Utilities.formatDate(d, IG_TZ, 'yyyy-MM-dd'));
+  rows.forEach(function (rec) {
+    MailApp.sendEmail(to,
+      'Tomorrow on LDC Instagram: ' + (rec.theme || 'scheduled post'),
+      'Schedule it in IG tonight.\n\n' + igReminderBody(rec, d));
+  });
+}
+
+function sendIgMorningNudge() {
+  if (!igRemindersOn()) return;
+  var to = igReminderRecipient();
+  if (!to) return;
+  var d = new Date();
+  var rows = igCalendarRowsFor(Utilities.formatDate(d, IG_TZ, 'yyyy-MM-dd'));
+  rows.forEach(function (rec) {
+    var s = String(rec.status || '').toLowerCase();
+    if (s === 'posted' || s === 'logged' || s === 'scheduled' || s === 'skipped') return;
+    var window = (String(rec.post_window || '').trim() || igWindowFor(d)).replace('-', ' to ');
+    MailApp.sendEmail(to,
+      'Post day. Window ' + window,
+      'Today\'s post is not marked Scheduled or Posted.\n\n' + igReminderBody(rec, d));
+  });
 }
 
 /* ---- Calendar sync -------------------------------------------------------
@@ -991,7 +1133,7 @@ function igDateKey(v) {
    Raw numbers only — the dashboard derives engagement and the rates. */
 var IG_POSTS_HEADER = ['Post', 'Date', 'Format', 'Content type', 'Car / subject', 'CTA',
   'Feeling', 'Views', 'Reach', 'Profile visits', 'Link taps', 'Follows',
-  'Likes', 'Comments', 'Saves', 'Watch time (s)'];
+  'Likes', 'Comments', 'Saves', 'Watch time (s)', 'Posted time'];
 var IG_POSTS_SEED = [
   [1,  '2026-06-15', 'Image',    'Car on course',           'Ferrari 360',             'Soft',                    'Longing',      24,  9,   3,  '', 0, 2, 2, '', ''],
   [2,  '2026-06-15', 'Image',    'Car on course',           'Porsche 911',             'None',                    'Recognition',  24,  9,   0,  '', 0, 1, 0, '', ''],

@@ -78,11 +78,35 @@ first time the feed is read (the log gets the account's history to
 re-deploying `Code.gs`. After that the sheet is the source of truth:
 log each post's numbers in `IG Post Log` within 24 hours, add an
 `IG Weekly` row each Sunday, and keep `IG Calendar` rows' Status
-current (`Planned` / `Ready` / `Posted` / `Logged` / `Skipped`, plus
-`Held` for milestone posts that slot in on founder confirmation — give
-those a row with an empty Date). Facts that are not yet public (the
-price, the venue) are deliberately absent from the seeded plan — hold
-them in the sheet, which is private.
+current (`Planned` / `Ready` / `Scheduled` / `Posted` / `Logged` /
+`Skipped`, plus `Held` for milestone posts that slot in on founder
+confirmation — give those a row with an empty Date). Facts that are
+not yet public (the price, the venue) are deliberately absent from the
+seeded plan — hold them in the sheet, which is private.
+
+### Posting windows and reminders
+
+The posting windows (weekdays 07:00–08:00, weekends 08:00–09:00,
+Europe/London) are config constants at the top of the IG section in
+`Code.gs`, not sheet schema. The dashboard shows the window on every
+calendar card and a state strip on post days (opens in…, open now,
+missed — a late post is never blocked, just recorded). From midday the
+next day's card becomes "Schedule tonight in IG". The Post Log's
+`Posted time` column (HH:MM) feeds a views-by-posted-time chart so the
+window can be tested rather than assumed. If a per-post window is ever
+needed, add a "Post window" column to IG Calendar and the slug
+`post_window` to the sync script's KNOWN_KEYS — the dashboard already
+reads it.
+
+Email reminders (the part that doesn't require opening anything): run
+`installIgReminderTriggers` once by hand in Apps Script. Then, around
+18:00 the evening before any scheduled post, an email goes out with
+the theme, window, caption and asset brief; around 06:45 on post day a
+nudge follows unless the row's Status is already Scheduled, Posted,
+Logged or Skipped. Recipient is the `IG_REMINDER_EMAIL` Script
+Property (defaults to the script owner); set `IG_REMINDERS` to `off`
+to silence both. Make sure the project timezone is Europe/London
+(Project Settings) so the triggers fire at the right hour.
 
 ### Calendar sync (markdown → sheet, automated)
 
