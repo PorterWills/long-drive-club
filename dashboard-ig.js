@@ -65,6 +65,7 @@
         likes: likes, comments: comments, saves: saves,
         watch: toNum(r.watch_time_s),
         postedTime: String(r.posted_time || "").trim(),
+        reposts: n0(toNum(r.reposts)),
         engagement: eng, er: views ? eng / views : null
       };
     }).filter(function (p) { return p.date; });
@@ -485,7 +486,8 @@
   function topList(title, list, metricFn, metricLabelFn) {
     var rows = list.length ? list.map(function (p, i) {
       var tip = "Post " + p.num + " · " + ddmm(p.date) + "|" + n0(p.views) + " views · " + n0(p.reach) + " reach|" +
-        p.likes + " likes · " + p.comments + " comments · " + p.saves + " saves|" + n0(p.pv) + " profile visits · " + n0(p.taps) + " link taps";
+        p.likes + " likes · " + p.comments + " comments · " + p.saves + " saves" + (p.reposts ? " · " + p.reposts + " reposts" : "") +
+        "|" + n0(p.pv) + " profile visits · " + n0(p.taps) + " link taps";
       return '<div data-tip="' + tip + '" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--hairline)">' +
         '<span class="sd-num" style="flex:0 0 20px;font-size:14px;color:' + DIM + '">' + (i + 1) + "</span>" +
         '<span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
@@ -916,6 +918,8 @@
           ["Profile visits", n0(p.pv)], ["Link taps", n0(p.taps)], ["ER on views", fmtPct(p.er)]
         ];
         if (p.watch != null) cells.push(["Watch time", p.watch + "s"]);
+        if (p.reposts) cells.push(["Reposts", p.reposts]);
+        if (p.postedTime) cells.push(["Posted at", p.postedTime]);
         body += '<div style="margin-bottom:18px">' +
           '<div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">' + formatChip(p.format) +
             '<span style="font-size:13px;color:var(--text-body)">' + esc(titleFor(p)) + "</span>" +
