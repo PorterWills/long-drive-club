@@ -123,16 +123,21 @@ Property (defaults to the script owner); set `IG_REMINDERS` to `off`
 to silence both. Make sure the project timezone is Europe/London
 (Project Settings) so the triggers fire at the right hour.
 
-### Calendar sync (markdown → sheet, automated)
+### Calendar and stats sync (markdown → sheet, automated)
 
 The content strategy lives in a markdown calendar maintained by Claude
-Cowork on the founders' machine, which keeps a machine-readable
-```json block of the schedule at the file's foot.
-`tools/sync-ig-calendar.py` posts that block to the Apps Script
-(`igsync` in `doPost`), which replaces the `IG Calendar` rows — except
-the Status column, which the sheet owns: rows matched on date (or
-theme, for dateless held rows) keep whatever status was set in the
-sheet, so a strategy edit never un-posts a post.
+Cowork on the founders' machine. `tools/sync-ig-calendar.py` scans its
+fenced ```json blocks and classifies each by shape — rows with
+theme/format fields are the CALENDAR block, rows with a post number
+are the POST LOG block — then posts both to the Apps Script (`igsync`
+in `doPost`). The calendar block replaces the `IG Calendar` rows,
+except the Status column, which the sheet owns: rows matched on date
+(or theme, for dateless held rows) keep whatever status was set in the
+sheet, so a strategy edit never un-posts a post. The log block UPSERTS
+into `IG Post Log` keyed on post number — known posts get the provided
+fields updated (an empty value never blanks a cell), new posts append,
+nothing is deleted. So the stats workflow is: paste IG insights to
+Cowork, Cowork updates the log block, run the sync.
 
 One-time setup:
 

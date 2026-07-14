@@ -949,17 +949,19 @@ function igPayload(guess) {
   };
 }
 
-// The Post Log gained a Posted time column (HH:MM) so the window can be
-// tested against views instead of assumed. Existing sheets get the column
-// appended on the next read; fresh sheets seed with it in the header.
+// Columns added to the Post Log after launch (Posted time tests the window,
+// Reposts is the strongest share signal IG surfaces). Existing sheets get
+// missing ones appended on the next read; fresh sheets seed with them.
 function igEnsurePostedTime(ss) {
   var sheet = ss.getSheetByName(IG_POSTS_TAB);
   if (!sheet) return;
-  var width = Math.max(sheet.getLastColumn(), 1);
-  var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
-  if (head.indexOf('posted_time') < 0) {
-    sheet.getRange(1, width + 1).setValue('Posted time').setFontWeight('bold');
-  }
+  ['Posted time', 'Reposts'].forEach(function (name) {
+    var width = Math.max(sheet.getLastColumn(), 1);
+    var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
+    if (head.indexOf(igSlug(name)) < 0) {
+      sheet.getRange(1, width + 1).setValue(name).setFontWeight('bold');
+    }
+  });
 }
 
 // Reads a whole tab into [{key: value}] keyed on slugged headers
@@ -1137,8 +1139,11 @@ function igSyncAction(data) {
   if (!rateLimitOk('igsync', 30, 3600)) return { ok: false, error: 'rate_limited' };
   if (String(data.secret || '') !== secret) return { ok: false, error: 'denied' };
   var rows = data.rows;
-  if (!Array.isArray(rows) || rows.length === 0 || rows.length > 200) {
-    return { ok: false, error: 'bad request: rows must be a non-empty array (max 200)' };
+  var log = data.log;
+  var hasRows = Array.isArray(rows) && rows.length > 0;
+  var hasLog = Array.isArray(log) && log.length > 0;
+  if ((!hasRows && !hasLog) || (hasRows && rows.length > 200) || (hasLog && log.length > 200)) {
+    return { ok: false, error: 'bad request: send rows (calendar) and/or log (post log), max 200 each' };
   }
 
   var lock = LockService.getScriptLock();
@@ -1149,6 +1154,14 @@ function igSyncAction(data) {
   }
   try {
     var ss = SpreadsheetApp.openById(props_('SHEET_ID'));
+    var logResult = null;
+    if (hasLog) {
+      logResult = igLogUpsert(ss, log);
+      if (logResult.error) return { ok: false, error: logResult.error };
+    }
+    if (!hasRows) {
+      return { ok: true, logAdded: logResult.added, logUpdated: logResult.updated };
+    }
     var sheet = ss.getSheetByName(IG_CALENDAR_TAB);
     if (!sheet) sheet = igSeedTab(ss, IG_CALENDAR_TAB, IG_CALENDAR_HEADER, []);
 
@@ -1199,13 +1212,77 @@ function igSyncAction(data) {
 
     if (last >= 2) sheet.getRange(2, 1, last - 1, width).clearContent();
     sheet.getRange(2, 1, out.length, IG_CALENDAR_HEADER.length).setValues(out);
-    return { ok: true, rows: out.length, statusesKept: Object.keys(statusByKey).length };
+    var res = { ok: true, rows: out.length, statusesKept: Object.keys(statusByKey).length };
+    if (logResult) { res.logAdded = logResult.added; res.logUpdated = logResult.updated; }
+    return res;
   } catch (err) {
     console.error(err);
     return { ok: false, error: String(err) };
   } finally {
     lock.releaseLock();
   }
+}
+
+/* Post Log rows arriving through the sync (Michael pastes IG insights to
+   Cowork, Cowork keeps a log block in the calendar doc, the sync delivers
+   it). UPSERT keyed on the post number: known posts get the provided fields
+   updated (an empty value never blanks an existing cell), new posts append.
+   Nothing is ever deleted — the log is history. */
+var IG_LOG_NUMERIC = ['views', 'reach', 'profile_visits', 'link_taps', 'follows',
+  'likes', 'comments', 'saves', 'watch_time_s', 'reposts'];
+
+function igLogUpsert(ss, rows) {
+  var sheet = ss.getSheetByName(IG_POSTS_TAB);
+  if (!sheet) sheet = igSeedTab(ss, IG_POSTS_TAB, IG_POSTS_HEADER, IG_POSTS_SEED);
+  igEnsurePostedTime(ss);
+  var width = sheet.getLastColumn();
+  var head = sheet.getRange(1, 1, 1, width).getValues()[0].map(igSlug);
+  var postCol = head.indexOf('post') + 1;
+  if (!postCol) return { error: 'the Post Log has no Post column' };
+
+  var last = sheet.getLastRow();
+  var byNum = {};
+  if (last >= 2) {
+    sheet.getRange(2, postCol, last - 1, 1).getValues().forEach(function (v, i) {
+      var n = Number(v[0]);
+      if (n) byNum[n] = i + 2;
+    });
+  }
+
+  var added = 0, updated = 0;
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r || typeof r !== 'object' || Array.isArray(r)) return { error: 'log row ' + (i + 1) + ' is not an object' };
+    var rec = {};
+    Object.keys(r).forEach(function (k) {
+      var v = r[k];
+      rec[igSlug(k)] = (v == null) ? '' : String(v);
+    });
+    var num = Number(rec.post);
+    if (!num || num !== Math.floor(num)) return { error: 'log row ' + (i + 1) + ' needs a whole post number' };
+    if (rec.date && !igDateKey(rec.date)) return { error: 'log row ' + (i + 1) + ': date "' + rec.date + '" is not dd/mm/yyyy or yyyy-mm-dd' };
+    for (var n = 0; n < IG_LOG_NUMERIC.length; n++) {
+      var key = IG_LOG_NUMERIC[n];
+      if (rec[key] != null && rec[key] !== '' && isNaN(Number(rec[key]))) {
+        return { error: 'log row ' + (i + 1) + ': ' + key + ' "' + rec[key] + '" is not a number' };
+      }
+    }
+    var rowIndex = byNum[num];
+    if (rowIndex) {
+      Object.keys(rec).forEach(function (k) {
+        var col = head.indexOf(k) + 1;
+        if (col && k !== 'post' && rec[k] !== '') sheet.getRange(rowIndex, col).setValue(rec[k]);
+      });
+      updated++;
+    } else {
+      var newRowVals = head.map(function (h) { return (h && rec[h] != null) ? rec[h] : ''; });
+      newRowVals[postCol - 1] = num;
+      sheet.getRange(sheet.getLastRow() + 1, 1, 1, width).setValues([newRowVals]);
+      byNum[num] = sheet.getLastRow();
+      added++;
+    }
+  }
+  return { added: added, updated: updated };
 }
 
 // A row's identity across syncs: its date, or its theme when dateless (held
@@ -1234,7 +1311,7 @@ function igDateKey(v) {
    Raw numbers only — the dashboard derives engagement and the rates. */
 var IG_POSTS_HEADER = ['Post', 'Date', 'Format', 'Content type', 'Car / subject', 'CTA',
   'Feeling', 'Views', 'Reach', 'Profile visits', 'Link taps', 'Follows',
-  'Likes', 'Comments', 'Saves', 'Watch time (s)', 'Posted time'];
+  'Likes', 'Comments', 'Saves', 'Watch time (s)', 'Posted time', 'Reposts'];
 var IG_POSTS_SEED = [
   [1,  '2026-06-15', 'Image',    'Car on course',           'Ferrari 360',             'Soft',                    'Longing',      24,  9,   3,  '', 0, 2, 2, '', ''],
   [2,  '2026-06-15', 'Image',    'Car on course',           'Porsche 911',             'None',                    'Recognition',  24,  9,   0,  '', 0, 1, 0, '', ''],
