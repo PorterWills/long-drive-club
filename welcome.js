@@ -62,7 +62,8 @@
         var month = defaultMonth;
         if (data.event_date) {
           var t = Date.parse(data.event_date);
-          if (!isNaN(t)) {
+          // A date already gone is a stale sheet, not the drive; keep the default.
+          if (!isNaN(t) && t > Date.now()) {
             month = new Date(t).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
           }
         }
