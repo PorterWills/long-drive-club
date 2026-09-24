@@ -26,19 +26,26 @@
   var APPS_SCRIPT_URL = window.LDC_CONFIG.APPS_SCRIPT_URL;
 
   // Drive day — the fixed point everything hangs off. Shown only as a
-  // countdown on the page (no calendar name yet), per the brief. This is the
-  // instant fallback; the live value is fetched from the sheet below and, if
-  // valid, replaces it (the clocks re-derive automatically).
-  var EVENT = new Date("2026-08-20T07:00:00");
+  // countdown on the page (no calendar name yet), per the brief. null while
+  // the date is TBC: the clocks then read "Date to follow" under the season
+  // below. Set it here, or as event_date on the sheet (fetched below), and
+  // the clocks come back on their own.
+  var EVENT = null;
+  var SEASON = "Spring 2027";
   function minusDays(d) { return EVENT.getTime() - d * 86400000; }
 
   // Reveal unlocks, derived from drive day so the clocks stay consistent.
-  var TARGETS = {
-    event:   EVENT.getTime(),
-    course:  minusDays(42), // top 100 course — name held back, ~6 weeks out
-    meeting: minusDays(14), // meeting point — ~2 weeks out
-    route:   minusDays(7),  // the route — ~7 days out
-  };
+  var TARGETS = {};
+  function setTargets() {
+    if (!EVENT) { TARGETS = {}; return; }
+    TARGETS = {
+      event:   EVENT.getTime(),
+      course:  minusDays(42), // top 100 course — name held back, ~6 weeks out
+      meeting: minusDays(14), // meeting point — ~2 weeks out
+      route:   minusDays(7),  // the route — ~7 days out
+    };
+  }
+  setTargets();
 
   // The field. Twenty places. Car make + model as text, no photos. Only
   // confirmed places show, so the card never reads as a row of empty slots.
@@ -84,7 +91,49 @@
     return unit;
   }
 
+  // The eyebrow above each clock ("Drive day · counting down", "Unlocks in")
+  // only reads true while there's a date to count to. Keep the original so
+  // it comes back when one is set.
+  function labelFor(el) {
+    var lab = el.previousElementSibling;
+    if (lab && lab.dataset.live == null) lab.dataset.live = lab.textContent;
+    return lab;
+  }
+
+  // No date yet: the masthead shows the season, the sealed cards say so.
+  function renderTbc(el) {
+    var isEvent = el.getAttribute("data-countdown") === "event";
+    var lab = labelFor(el);
+    if (lab) lab.textContent = isEvent ? "Drive day" : "Unlocks";
+    el.innerHTML = "";
+    if (isEvent) {
+      // Sit level with the Region fact beside it, not in the clock's row.
+      el.style.display = "block";
+      if (lab) lab.style.marginBottom = "0";
+    }
+    if (isEvent) {
+      var season = document.createElement("p");
+      season.className = "ldc-display member-fact";
+      season.textContent = SEASON;
+      var note = document.createElement("p");
+      note.className = "ldc-body member-fact-note";
+      note.textContent = "Date to follow.";
+      el.appendChild(season);
+      el.appendChild(note);
+    } else {
+      var wait = document.createElement("span");
+      wait.className = "ldc-eyebrow";
+      wait.textContent = "Once the date is set";
+      el.appendChild(wait);
+    }
+    el.dataset.done = "true";
+  }
+
   function renderClock(el) {
+    if (!EVENT) { renderTbc(el); return; }
+    var lab = labelFor(el);
+    if (lab) { lab.textContent = lab.dataset.live; lab.style.marginBottom = ""; }
+    el.style.display = "";
     var target = TARGETS[el.getAttribute("data-countdown")];
     if (target == null) return;
     var accent = el.getAttribute("data-accent") === "true";
@@ -141,12 +190,10 @@
       cleanup();
       if (!data || !data.event_date) return;
       var t = Date.parse(data.event_date);
-      if (isNaN(t)) return;
+      // A date already gone is a stale sheet, not the drive; stay on TBC.
+      if (isNaN(t) || t <= Date.now()) return;
       EVENT = new Date(t);
-      TARGETS.event = EVENT.getTime();
-      TARGETS.course = minusDays(42);
-      TARGETS.meeting = minusDays(14);
-      TARGETS.route = minusDays(7);
+      setTargets();
       // A clock marked "Revealed" under the old date may not be under the new
       // one — clear the flags so each re-evaluates on the next tick.
       clocks.forEach(function (el) { delete el.dataset.done; });
