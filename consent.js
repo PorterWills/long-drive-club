@@ -44,8 +44,8 @@
     bar.setAttribute("role", "region");
     bar.setAttribute("aria-label", "Cookie choice");
     bar.innerHTML =
-      '<p class="cookie-bar-text">This site uses cookies from Meta and Microsoft Clarity to measure visits. ' +
-      'They stay off unless you accept. <a href="/cookies">Cookie notice</a></p>' +
+      '<p class="cookie-bar-text">We use cookies to understand how people use this site. ' +
+      '<a href="/cookies">Read more</a></p>' +
       '<div class="cookie-bar-actions">' +
         '<button type="button" class="btn btn--md btn--chalk" data-choice="no">Decline</button>' +
         '<button type="button" class="btn btn--md btn--chalk" data-choice="yes">Accept</button>' +
