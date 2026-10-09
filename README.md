@@ -26,6 +26,12 @@ endpoint before the Stripe handoff: an append-only row on the
 the applicant's row (see `recordAcceptance` in `apps-script/Code.gs`).
 `/cookies` is a stub pending a real Cookie Notice.
 
+Meta Pixel and Microsoft Clarity load only after a visitor accepts the
+cookie banner (`consent.js`, loaded on every public page). The choice is
+kept in the browser's `localStorage` (`ldc-consent`); the button on
+`/cookies` clears it so the banner shows again. Add any new tracker
+inside `loadTrackers()` in `consent.js`, never directly in a page.
+
 ## Going live (GitHub Pages)
 
 This repo is the whole website; the files sit at the root on purpose.
@@ -157,15 +163,9 @@ come from IG insights, sheet-ward only.
 
 ## Changing the gate password
 
-The current password is `longway` (carried over from the prototype —
-change it before you email anyone). The page stores only a SHA-256
-hash, never the password itself. To set a new one, run:
-
-```sh
-echo -n "yournewpassword" | shasum -a 256
-```
-
-Put the resulting hex string into `GATE_HASH` near the top of `app.js`.
+There is no master password. Each approved applicant gets their own
+(the `password` column, generated on approval), checked by the Apps
+Script. To test the gate, give a test row in the sheet a password.
 Note: the gate reveals booking details; it is presentation, not real
 security, so don't put anything truly sensitive behind it.
 
@@ -271,9 +271,9 @@ update both if you ever redeploy to a new URL.
 
 ## Imagery
 
-`assets/hero.webp` (hero, portrait) and `assets/lawn.webp` (first
-drive, landscape) came from the original design. Swap the files to
-change the photography; keep the warm, low-saturation, golden-hour mood.
+The home page hero is a carousel; its image list is `IMAGES` in
+`app.js`. Swap the files to change the photography; keep the warm,
+low-saturation, golden-hour mood.
 
 The "You're in" page's map section (`#map`) is `assets/basemap-2.jpg`
 (a clean top-down map, no route baked in) with the route drawn on top
@@ -282,6 +282,6 @@ line, START/FINISH chips and the gliding LDC roundel are all inline
 `<path>`/`<g>` elements sized to the basemap's exact pixel dimensions
 (`viewBox="0 0 2518 1558"`), animated in `welcome.js`. Swapping the
 basemap for a different map requires re-tracing the route path against
-the new image's pixel coordinates. `assets/welcome-lineup.jpg` (the
-lineup on the grass beside the drive copy) is a plain `<img>` slot —
+the new image's pixel coordinates. `assets/We-take-the-long-way-round..jpg`
+(the lineup on the grass beside the drive copy) is a plain `<img>` slot —
 swap it by replacing the file.
