@@ -47,8 +47,8 @@
       '<p class="cookie-bar-text">We use cookies to understand how people use this site. ' +
       '<a href="/cookies">Read more</a></p>' +
       '<div class="cookie-bar-actions">' +
-        '<button type="button" class="btn btn--md btn--chalk" data-choice="no">Decline</button>' +
-        '<button type="button" class="btn btn--md btn--chalk" data-choice="yes">Accept</button>' +
+        '<button type="button" class="btn btn--sm btn--chalk" data-choice="no">Decline</button>' +
+        '<button type="button" class="btn btn--sm btn--chalk" data-choice="yes">Accept</button>' +
       "</div>";
     bar.addEventListener("click", function (e) {
       var choice = e.target.getAttribute && e.target.getAttribute("data-choice");
