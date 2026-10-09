@@ -75,4 +75,4 @@
   .manifesto .what-roundel .ldc-numeral{font-size:20px}
   .manifesto .what-closer{font-size:20px}
 }
-.cookie-bar{position:fixed;left:16px;right:16px;bottom:16px;z-index:1000;max-width:640px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--ldc-tarmac);color:var(--ldc-chalk);border:1px solid var(--ldc-hairline-on-dark-strong);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:14px;line-height:1.5}.cookie-bar-text{margin:0;flex:1 1 280px}.cookie-bar a{color:inherit}.cookie-bar-actions{display:flex;gap:10px}
+.cookie-bar{position:fixed;left:16px;right:16px;bottom:16px;z-index:1000;max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;padding:16px 20px;background:var(--ldc-tarmac);color:var(--ldc-chalk);border-radius:var(--radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:var(--font-body);font-size:14px;line-height:1.5}.cookie-bar-text{margin:0;flex:1 1 280px;text-wrap:balance}.cookie-bar a{color:inherit;white-space:nowrap}.cookie-bar-actions{display:flex;gap:10px}
