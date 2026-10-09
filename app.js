@@ -9,13 +9,11 @@
      application to a Google Sheet and sends the confirmation email. Apps
      Script web apps don't return CORS headers, so submissions are posted
      with mode: "no-cors" and a plain-text body (see postLead).
-     GATE_HASH: SHA-256 of a developer/master password that always unlocks
-     the gate, for testing. Real applicant passwords are unique per person
-     and checked against the Google Sheet via the Apps Script (see the gate
-     section below). To change the master password run:
-       echo -n "newpassword" | shasum -a 256                               */
+     Gate passwords are unique per applicant and checked against the Google
+     Sheet via the Apps Script (see the gate section below). There is no
+     master password in this file: it is public, so a hash here is guessable.
+     For testing, give a test row in the sheet a password. */
   var APPS_SCRIPT_URL = window.LDC_CONFIG.APPS_SCRIPT_URL;
-  var GATE_HASH = "bcfc22e504b7530e149411dfc252af18e5c000c3afd95690f23397aceaef62a4";
 
   /* ---- Entry-sheet headline: hold it on one line -----------------------
      "THE ENTRY SHEET" must never wrap ("SHEET" onto its own line) and must
@@ -952,15 +950,6 @@
     pwInput.style.webkitTextSecurity = "disc";
   }
 
-  function sha256Hex(text) {
-    var data = new TextEncoder().encode(text);
-    return crypto.subtle.digest("SHA-256", data).then(function (buf) {
-      return Array.prototype.map.call(new Uint8Array(buf), function (b) {
-        return b.toString(16).padStart(2, "0");
-      }).join("");
-    });
-  }
-
   // Ask the Apps Script whether a password matches an approved applicant.
   // Apps Script can't answer a normal fetch (no CORS headers), so we use
   // JSONP: load the request as a <script> whose response calls our callback
@@ -1007,18 +996,15 @@
         try { sessionStorage.setItem("ldc-gate", "open"); } catch (e) {}
         // The gate is the only place a visitor's identity is established, so
         // whatever name/car came back with it is handed to the welcome page
-        // this way. The email is what the terms-acceptance log keys on (see
-        // welcome.js), so it rides along too. The master password
-        // (result === true) carries none — welcome.js's masthead and
-        // acceptance log both fall back gracefully when it's missing.
-        if (result !== true) {
-          try {
-            sessionStorage.setItem("ldc-member", JSON.stringify({
-              name: result.name || "", make: result.make || "", model: result.model || "",
-              email: result.email || ""
-            }));
-          } catch (e) {}
-        }
+        // this way. The password rides along too: the terms-acceptance log
+        // (welcome.js) sends it so the server can find the applicant's row
+        // itself, rather than trusting an email the browser supplies.
+        try {
+          sessionStorage.setItem("ldc-member", JSON.stringify({
+            name: result.name || "", make: result.make || "", model: result.model || "",
+            email: result.email || "", password: guess
+          }));
+        } catch (e) {}
         window.location.href = "/welcome";
         return;
       }
@@ -1027,12 +1013,8 @@
       pwError.classList.add("show");
     }
 
-    // The developer/master password (GATE_HASH) unlocks instantly, offline.
-    // Anything else is checked against approved applicants in the sheet.
-    sha256Hex(guess.toLowerCase()).then(function (hex) {
-      if (hex === GATE_HASH) { done(true); return; }
-      checkPasswordRemote(guess).then(done);
-    });
+    // Checked against approved applicants in the sheet.
+    checkPasswordRemote(guess).then(done);
   });
 
   pwInput.addEventListener("input", function () {

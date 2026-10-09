@@ -300,6 +300,7 @@
       var buttonLabel = reserveBtn.querySelector(".label");
       var payload = {
         email: member.email || "",
+        password: member.password || "",
         name: member.name || "",
         terms_version: TERMS_VERSION,
         page: window.location.href,

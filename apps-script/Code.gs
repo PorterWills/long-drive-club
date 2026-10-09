@@ -326,6 +326,8 @@ function seedSettingsTab(ss) {
 
 function jsonpOrJson(obj, callback) {
   var body = JSON.stringify(obj);
+  // A callback is echoed into executable JS, so only plain names are allowed.
+  if (callback && !/^[\w$.]{1,64}$/.test(callback)) callback = '';
   if (callback) {
     return ContentService
       .createTextOutput(callback + '(' + body + ')')
@@ -625,18 +627,20 @@ function sendRecoveryEmail(email, token) {
 function gateCheck(guess) {
   var g = String(guess || '').trim().toUpperCase();
   if (!g) return { ok: false };
-  // 30 wrong guesses per 10 minutes, shared across all guessers — Apps Script
-  // can't key this per caller, but it's enough to make brute-forcing the
-  // ~10,000-combination generated passwords impractical. Only wrong guesses
-  // count against the budget, so a wave of real applicants unlocking the
-  // gate correctly can never lock each other out.
-  if (!rateLimitPeek('gate_guess', 30)) return { ok: false };
+  // 30 wrong guesses per 10 minutes per car brand (the letters before the
+  // digits, e.g. PORSCHE). Apps Script can't key this per caller, so it's
+  // keyed on what's being guessed: brute-forcing one brand's ~9,000 codes
+  // stays impractical, while a flood of junk guesses can only ever lock out
+  // that one brand, never the whole gate. Only wrong guesses count against
+  // the budget, so real applicants unlocking correctly never lock anyone out.
+  var guessKey = gateGuessKey(g);
+  if (!rateLimitPeek(guessKey, 30)) return { ok: false };
   var sheet = getSheet();
   var headers = headerMap(sheet);
   var col = headers['password'];
   if (!col) return { ok: false };
   var last = sheet.getLastRow();
-  if (last < 2) { rateLimitBump('gate_guess', 600); return { ok: false }; }
+  if (last < 2) { rateLimitBump(guessKey, 600); return { ok: false }; }
   var width = sheet.getLastColumn();
   var values = sheet.getRange(2, 1, last - 1, width).getValues();
   for (var i = 0; i < values.length; i++) {
@@ -653,8 +657,12 @@ function gateCheck(guess) {
       };
     }
   }
-  rateLimitBump('gate_guess', 600);
+  rateLimitBump(guessKey, 600);
   return { ok: false };
+}
+
+function gateGuessKey(guess) {
+  return 'gate_guess_' + String(guess).replace(/\d+$/, '').slice(0, 40);
 }
 
 /* ---- Terms acceptance -------------------------------------------------
@@ -671,8 +679,11 @@ function gateCheck(guess) {
       (terms_accepted_at / terms_version / marketing_optin), so acceptance
       is visible where the rest of their record lives.
    The endpoint is public like ?submit= is, so it carries the same style of
-   per-caller throttle. A missing email still logs (write the evidence,
-   flag the gap) but can't stamp an applicant row. */
+   per-caller throttle. The applicant row is found by the gate password the
+   member typed (checked here, server side), never by the email the browser
+   sends, so nobody can stamp an acceptance onto someone else's row. Without
+   a matching password it still logs (write the evidence, flag the gap) but
+   stamps no applicant row. */
 
 var ACCEPT_TAB = 'Terms acceptances';
 var ACCEPT_COLUMNS = ['accepted_at', 'email', 'name', 'terms_version', 'page',
@@ -681,6 +692,7 @@ var ACCEPT_COLUMNS = ['accepted_at', 'email', 'name', 'terms_version', 'page',
 
 function recordAcceptance(data) {
   var email = String(data.email || '').trim();
+  var password = String(data.password || '').trim();
   if (!rateLimitOk('rl_accept_' + (email || 'anon').toLowerCase(), 10, 3600)) {
     return { ok: false, error: 'rate_limited' };
   }
@@ -706,23 +718,22 @@ function recordAcceptance(data) {
     return { ok: false, error: 'busy' };
   }
   try {
+    var sheet = getSheet();
+    var headers = headerMap(sheet);
+    var row = password ? findRowByColumn(sheet, headers, 'password', password, true) : null;
+    // The evidence row carries the applicant's email from the sheet, not the
+    // browser's copy, whenever the password identifies them.
+    if (row) record.email = readCell(sheet, row, headers, 'email') || record.email;
     getAcceptanceSheet().appendRow(ACCEPT_COLUMNS.map(function (c) { return record[c]; }));
 
-    var matched = false;
-    if (email) {
-      var sheet = getSheet();
-      var headers = headerMap(sheet);
-      var row = findRowByEmail(sheet, headers, email);
-      if (row) {
-        writeFields(sheet, row, headers, {
-          terms_accepted_at: record.accepted_at,
-          terms_version: record.terms_version,
-          marketing_optin: record.marketing_optin
-        });
-        matched = true;
-      }
+    if (row) {
+      writeFields(sheet, row, headers, {
+        terms_accepted_at: record.accepted_at,
+        terms_version: record.terms_version,
+        marketing_optin: record.marketing_optin
+      });
     }
-    return { ok: true, matched: matched };
+    return { ok: true, matched: !!row };
   } catch (err) {
     console.error(err);
     return { ok: false, error: String(err) };
@@ -795,7 +806,11 @@ function handleApproved(sheet, row, headers) {
   if (!email) return;
 
   var car = sheet.getRange(row, headers['car']).getValue();
-  var password = makePassword(car);
+  // Regenerate on a clash: the gate matches the first row with a password, so
+  // a duplicate would log one member in as the other.
+  var password;
+  do { password = makePassword(car); }
+  while (findRowByColumn(sheet, headers, 'password', password, true));
   sheet.getRange(row, headers['password']).setValue(password);
 
   var html = renderEmail('email_application_approved', {
@@ -1606,6 +1621,9 @@ function rateLimitOk(key, maxHits, windowSeconds) {
   return true;
 }
 
+// The peek/bump counter is stored as "count:windowStartMs" so each bump keeps
+// the window's original expiry. (Re-putting with the full window on every
+// bump would let a slow trickle of wrong guesses hold a lockout forever.)
 function rateLimitPeek(key, maxHits) {
   var raw = CacheService.getScriptCache().get(key);
   var count = raw ? parseInt(raw, 10) : 0;
@@ -1615,8 +1633,12 @@ function rateLimitPeek(key, maxHits) {
 function rateLimitBump(key, windowSeconds) {
   var cache = CacheService.getScriptCache();
   var raw = cache.get(key);
+  var now = Date.now();
   var count = raw ? parseInt(raw, 10) : 0;
-  cache.put(key, String(count + 1), windowSeconds);
+  var start = raw && raw.indexOf(':') > 0 ? parseInt(raw.split(':')[1], 10) : now;
+  var left = Math.ceil(windowSeconds - (now - start) / 1000);
+  if (!(left > 0)) { count = 0; start = now; left = windowSeconds; }
+  cache.put(key, (count + 1) + ':' + start, left);
 }
 
 // Run this once by hand (select clearLoginLockouts ▸ Run) if the gate or
@@ -1625,6 +1647,14 @@ function rateLimitBump(key, windowSeconds) {
 // window they expire on their own.
 function clearLoginLockouts() {
   var cache = CacheService.getScriptCache();
-  cache.remove('gate_guess');
-  cache.remove('dash_guess');
+  var keys = ['dash_guess', gateGuessKey('DRIVER')];
+  var sheet = getSheet();
+  var col = headerMap(sheet)['password'];
+  if (col && sheet.getLastRow() >= 2) {
+    sheet.getRange(2, col, sheet.getLastRow() - 1, 1).getValues().forEach(function (r) {
+      var p = String(r[0]).trim().toUpperCase();
+      if (p) keys.push(gateGuessKey(p));
+    });
+  }
+  cache.removeAll(keys);
 }
