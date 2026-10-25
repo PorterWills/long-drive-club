@@ -38,3 +38,7 @@ The deployment URL lives once, in `config.js` (`window.LDC_CONFIG.APPS_SCRIPT_UR
 - The sheet owns IG Calendar `Status`. The sync must never overwrite it, and the Post Log is upsert-only (an empty value never blanks a cell, nothing is deleted).
 - Don't ship facts that aren't public yet (price, venue) in repo content. They live in the private sheet.
 - All user-facing copy should go through the `ldc-copywriter` skill (`.claude/skills/`).
+
+## Design tooling
+
+The Impeccable design skill is a git submodule at `vendor/impeccable`, linked into `.claude/skills/impeccable` (in a fresh clone, run `git submodule update --init` first). Product context for it lives in `PRODUCT.md`, and its project config lives in `.impeccable/config.json`. `npx impeccable install` can't work here because the network blocks impeccable.style. To update, run `git submodule update --remote`, then `npx impeccable link --source=vendor/impeccable --providers=claude -y`.
