@@ -109,20 +109,20 @@
   #sc tr.hn th { background: var(--ldc-green); color: var(--ldc-chalk); font: 800 12px Archivo, var(--font); }
   #sc tr.me td { font: 800 14px Archivo, var(--font); height: 30px; }
   #sc .sum { background: rgba(14,42,28,.08); font-weight: 700; }
-  .m { display: inline-grid; place-items: center; min-width: 22px; height: 22px; }
+  .m { display: inline-grid; place-items: center; min-width: 19px; height: 19px; font-size: 12px; }
   .m.b, .m.e { border: 1.5px solid var(--ldc-redline); border-radius: 50%; }
   .m.e { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 3.5px var(--ldc-redline); }
   .m.o, .m.d { border: 1.5px solid var(--ldc-green); }
   .m.d { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 3.5px var(--ldc-green); }
-  .scKey .m { min-width: 12px; height: 12px; margin: 0 4px 0 10px; vertical-align: -2px; }
+  .scKey .m { min-width: 9px; height: 9px; margin: 0 7px 0 16px; vertical-align: -1px; } .scKey .m:first-child { margin-left: 0; } .scKey .m.e, .scKey .m.d { margin: 0 11px 0 20px; } /* the outer ring needs its own room */
   .scKey { padding: 0 16px; }
   .scTotal { display: flex; align-items: baseline; gap: 12px; padding: 4px 16px 10px; border-top: 4px solid var(--ldc-redline); margin: 6px 16px 10px; padding-left: 0; }
   .scTotal .display { font-size: 40px; }
-  .scTotal .voice { font-size: 18px; color: var(--ldc-green); }
+  .scTotal .voice { font-size: 18px; color: var(--ldc-green); white-space: nowrap; }
   @media (max-width: 520px) { /* phones: the whole nine fits without sideways scrolling */
     .scWrap { padding: 0 10px; } #sc table { font-size: 10px; } #sc th, #sc td { padding: 4px 0; min-width: 0; }
     #sc th:first-child, #sc td:first-child { min-width: 0; padding-left: 3px; font-size: 9px; letter-spacing: .04em; }
-    #sc tr.me td { font-size: 12px; } .m { min-width: 18px; height: 18px; } }
+    #sc tr.me td { font-size: 12px; } .m { min-width: 16px; height: 16px; font-size: 10px; } }
   #sc.board .scWrap, #sc.board .scTotal, #sc.board .scKey { display: none; }
   #scBoard { display: none; padding: 0 16px; } #sc.board #scBoard { display: block; }
   #scBoard ol { list-style: none; margin: 0; padding: 0; } #scBoard li { display: grid; grid-template-columns: 30px 1fr 44px 44px; gap: 6px; padding: 8px 4px; border-bottom: 1px solid rgba(14,42,28,.25); font: 400 14px var(--font); }
@@ -141,7 +141,7 @@
   .cardBtns { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
   #cardAsk { margin: 12px 16px 0; padding: 12px 0 0; border-top: 4px solid var(--ldc-redline); }
   #cardAsk .cardBtns { padding: 10px 0 0; }
-  .cardBtns #askNo, .cardBtns #newRound, .cardBtns #lightBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
+  .cardBtns #askNo, .cardBtns #newRound, .cardBtns #lightBtn, .cardBtns #scBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
   button:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 2px; }
   @media (max-width: 520px) { #hole .name { font-size: 11px; } .roundel { width: 38px; height: 38px; font-size: 11px; } #info .num { font-size: 22px; }
     #hole { left: 8px; gap: 8px; padding: 8px 10px; max-width: calc(100% - 176px); } #hole .eyebrow { letter-spacing: .12em; }
@@ -167,7 +167,7 @@
 </div>
 <div id="card" class="panel" role="dialog" aria-label="Holes">
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="lightBtn">Ambiance</button><button id="soundBtn">Sound on</button><button id="cardClose">Close</button></div>
+  <div class="cardBtns"><button id="resume">Back to round</button><button id="scBtn">Scorecard</button><button id="newRound">New round</button><button id="lightBtn">Ambiance</button><button id="soundBtn">Sound on</button><button id="cardClose">Close</button></div>
   <div id="cardAsk" hidden><span id="askText"></span><div class="cardBtns"><button id="askYes">Yes</button><button id="askNo">Cancel</button></div></div>
   <div id="cardTotal" class="eyebrow"></div>
   <div class="hrow head eyebrow"><span>No</span><span>Hole</span><span>Par</span><span>Yd</span><span>SI</span><span>Score</span></div>
@@ -188,7 +188,7 @@
     <button id="scSend">Hand in card</button>
   </form>
   <p id="scMsg" class="voice" hidden></p>
-  <div class="scBtns"><button id="scSubmit">Submit score</button><button id="scView">View leaderboard</button><button id="scAgain">Go round again</button></div>
+  <div class="scBtns"><button id="scSubmit">Submit score</button><button id="scView">View leaderboard</button><button id="scSave">Save image</button><button id="scAgain">Go round again</button><button id="scClose">Back to round</button></div>
 </div>
 <div id="info" class="panel">
   <div><span id="dist" class="num display">0</span> <span class="eyebrow" id="distUnit">yd to pin</span></div>
@@ -444,7 +444,8 @@ const HOLES = [{
   green: { at: [-58.6, 494.9], r: 11 },
   bunkers: [{ at: [-35.8, 514.4], r: 4 }, { at: [-35.8, 490], r: 4 }, { at: [-48.8, 524], r: 4 }],
   water: creek([[-55.4, 117.2], [-81.4, 110.7], [-107.5, 104.2]], 7, [-95, 140])
-    .concat(creek([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6], [-101, 397.2], [-91, 423.3], [-78, 462.4], [-70, 501.4]], 3, [-118, 430])),
+    .concat(creek([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6]], 3, [-170, 300])) // drive zone: drop back on the fairway, not past the green-side creek
+    .concat(creek([[-127, 351.6], [-101, 397.2], [-91, 423.3], [-78, 462.4], [-70, 501.4]], 3, [-118, 430])),
   trees: [[1, 0, 180, 20, 15], [1, 200, 470, 30, 25], [-1, 180, 420, 45, 25], [-1, 0, 100, 15, 12]],
   treeClusters: [{ at: [-94, 296], r: 25 }, { at: [-215, 280], r: 25 }, { at: [-192, 384], r: 8 }],
   cars: [
@@ -722,7 +723,7 @@ function simulate(start, shot, wind, opts = {}) {
     for (let i = 0; i < 20 * 120; i++) {
       let [np, nv] = rk4(p, vel, spin, wind);
       const car = hitCar(np, nv); if (car) { np = car.p; nv = car.vel; spin = mul(spin, .3); }
-      if (inCanopy(np)) { nv = mul(nv, 0.9); spin = mul(spin, 0.9); } // branches soak up speed: a few metres of canopy knocks a drive down
+      if (inCanopy(np)) { nv = v(nv.x * 0.9, nv.y > 0 ? nv.y * 0.9 : nv.y, nv.z * 0.9); spin = mul(spin, 0.9); } // branches soak up forward speed; a falling ball keeps falling (it used to float down)
       apex = Math.max(apex, np.y); t += DT;
       const ground = heightAt(np.x, np.z);
       if (np.y - BALL.r <= ground) {
@@ -1391,10 +1392,12 @@ function tone(f, peak, dec, t0 = 0, type = 'sine', to = SND.out) {
   o.type = type; o.frequency.value = f; env(g, t, peak, 0.001, dec); o.connect(g).connect(to); o.start(t); o.stop(t + dec + 0.05);
 }
 const sfx = {
-  hit(power, putt) { // club face on the ball: a crisp click, a softer tap for putts
+  hit(power, putt) { // real strikes: a putter's dull tick; a full shot's sharp crack with a short metal ring off the clubface
     if (!SND.ac) return;
-    if (putt) { noiseHit({ type: 'lowpass', f: 1500, q: 0.7, peak: 0.1 + 0.2 * power, dec: 0.035 }); return; }
-    noiseHit({ type: 'lowpass', f: 2200, q: 0.7, peak: 0.35 + 0.45 * power, dec: 0.045 }); noiseHit({ f: 900, q: 1.5, peak: 0.2 + 0.3 * power, dec: 0.07 }); // a woody thwack, not a high click
+    if (putt) { noiseHit({ f: 2400, q: 2, peak: 0.08 + 0.2 * power, a: 0.001, dec: 0.018 }); tone(900, 0.05 + 0.1 * power, 0.03); return; }
+    noiseHit({ type: 'highpass', f: 2500, q: 0.7, peak: 0.3 + 0.5 * power, a: 0.0005, dec: 0.012 }); // the crack
+    noiseHit({ type: 'lowpass', f: 900, q: 0.7, peak: 0.2 + 0.3 * power, a: 0.001, dec: 0.04 }); // the body of it
+    [1850, 3120, 4700].forEach((f, k) => tone(f, (0.05 + 0.08 * power) / (k + 1), 0.09 - k * 0.02, 0, 'triangle')); // titanium ring, inharmonic
   },
   bounce(speed, m) { // softer on sand and rough, a firmer thud on fairway and green
     if (!SND.ac) return;
@@ -1404,11 +1407,15 @@ const sfx = {
     noiseHit({ type: 'lowpass', f: 700, q: 0.5, peak: 0.3 * k * soft, dec: 0.05 }); // a dull grassy thump: no pitched tone, which sounded like a drum
   },
   splash() { if (!SND.ac) return; noiseHit({ f: 600, f2: 2400, q: 0.7, peak: 0.35, a: 0.01, dec: 0.45 }); noiseHit({ type: 'lowpass', f: 300, peak: 0.25, dec: 0.2 }); },
-  cup() { if (!SND.ac) return; [0, 0.07, 0.12].forEach((t, k) => tone([2600, 3300, 2900][k], 0.12 / (k + 1), 0.05, t)); }, // ball rattling into the cup
+  cup() { // a hollow plastic clunk, then the ball rattling round the cup
+    if (!SND.ac) return;
+    tone(210, 0.35, 0.16, 0, 'triangle'); tone(470, 0.15, 0.1);
+    [0.05, 0.11, 0.16, 0.2, 0.23].forEach((t, k) => setTimeout(() => SND.ac && noiseHit({ f: 1600 + k * 250, q: 4, peak: 0.25 / (k + 1), dec: 0.03 }), t * 1000));
+  },
 };
 // Background: a soft morning breeze under southern-style birdsong (cardinal slurs, trills, whistles), randomly spaced and panned.
 function ambience() {
-  const ac = SND.ac, bed = ac.createGain(); bed.gain.value = 0.15; // owner: birds were too loud bed.connect(SND.out);
+  const ac = SND.ac, bed = ac.createGain(); bed.gain.value = 0.15; bed.connect(SND.out); // owner: birds were too loud
   const air = ac.createBufferSource(), lp = ac.createBiquadFilter(), ag = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
   air.buffer = SND.noise; air.loop = true; lp.type = 'lowpass'; lp.frequency.value = 350; ag.gain.value = 0.018;
   lfo.frequency.value = 0.07; lg.gain.value = 0.01; lfo.connect(lg).connect(ag.gain); lfo.start();
@@ -1544,6 +1551,17 @@ function openScorecard() {
   $('sc').classList.remove('board'); scButtons();
   $('done').style.display = 'none'; $('card').style.display = 'none'; $('sc').style.display = 'block'; $('scrim').style.display = 'block';
 }
+$('scClose').onclick = () => { $('sc').style.display = 'none'; $('scrim').style.display = 'none'; };
+$('scSave').onclick = async () => { // the card as a PNG; html-to-image loads only when asked
+  $('scSave').disabled = true;
+  try {
+    const { toPng } = await import('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm');
+    const sc = $('sc'), skip = el => !(el.id && ['scBoard', 'scForm', 'scMsg'].includes(el.id) || el.classList?.contains('scBtns'));
+    const url = await toPng(sc, { pixelRatio: 2, backgroundColor: '#EDE9DF', filter: skip, style: { position: 'static', transform: 'none', maxHeight: 'none', overflow: 'visible', margin: '0' }, height: sc.scrollHeight - sc.querySelector('.scBtns').offsetHeight - 10 }); // the whole card, not the scrolled view
+    const a = document.createElement('a'); a.href = url; a.download = `ldc-scorecard-${new Date().toISOString().slice(0, 10)}.png`; a.click();
+  } catch { scMsg('The image wouldn\'t save. Take a screenshot instead.'); }
+  $('scSave').disabled = false;
+};
 $('scAgain').onclick = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
 // leaderboard: the LDC Google Sheet, through the Apps Script web app in leaderboard.gs. Empty URL = leaderboard buttons hidden.
 const LB_URL = 'https://script.google.com/macros/s/AKfycbyIXTvA2Bjf4p9HkL1tlTkrfsMp8Cnx9lRWRt8Z7_SMdl8lhLhfQlbqlXBtKztoVt1Y/exec';
@@ -1551,6 +1569,7 @@ const esc = t => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const scMsg = t => { $('scMsg').textContent = t; $('scMsg').hidden = !t; };
 function scButtons() {
   $('scSubmit').hidden = !LB_URL || !!ROUND.submitted || !roundDone();
+  $('scSave').hidden = $('scAgain').hidden = !roundDone(); $('scClose').hidden = roundDone(); // mid-round: look, then back to play
   $('scView').hidden = !LB_URL;
   $('scView').textContent = $('sc').classList.contains('board') ? 'View scorecard' : 'View leaderboard';
   ['scView', 'scAgain'].forEach(id => $(id).classList.toggle('alt', !$('scSubmit').hidden));
@@ -1613,6 +1632,7 @@ const ask = (text, yes) => { $('askText').textContent = text; askYes = yes; $('c
 $('askYes').onclick = () => askYes();
 $('askNo').onclick = () => { $('cardAsk').hidden = true; };
 $('resume').onclick = () => go();
+$('scBtn').onclick = () => openScorecard();
 const newRound = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
 $('newRound').onclick = () => ROUND.scores.length ? ask('Start a new round? This clears your scorecard.', newRound) : newRound();
 $('cardRows').onclick = e => {
