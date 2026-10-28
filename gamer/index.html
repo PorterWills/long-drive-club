@@ -760,7 +760,8 @@ function autoAim() {
 function setClub(i) {
   state.club = i; $('club').value = i;
   state.aim = state.autoAim = autoAim();
-  state.power = 1; // owner's rule: the game picks the club, the player judges the power
+  // owner's rule: full shots start at 100%; the putter starts at the flat distance to the pin (slope is the player's to read)
+  state.power = CLUBS[i].putter ? clamp(Math.sqrt(2 * G * SURF.green.roll * flat(state.ball, PIN)) / CLUBS[i].speed, 0.01, 1) : 1;
   refresh();
 }
 function refresh() {

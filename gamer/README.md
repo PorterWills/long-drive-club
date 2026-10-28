@@ -89,7 +89,7 @@ Lessons from hole 2:
 - **Aim:** dragging the mouse right swings the aim **left**, at 0.0011 rad per pixel. Arrow keys work but aren't shown on screen. No ◀ ▶ buttons and no "drag to aim" label (the hint reads "Set the power · swing").
 - **Aim readout:** "At pin aim", or e.g. "2.4° L aim".
 - **Power:** **no penalty for full power from the tee, fairway or fringe.** Only rough and sand add seeded wobble.
-- **Power (changed 28 Oct 2026):** the game suggests the club; **power always starts at 100% for every club, putter included**. The player judges the power for the club and the wind. No presets.
+- **Power (changed 28 Oct 2026):** the game suggests the club; **full shots always start at 100%**; the **putter starts at the flat distance to the pin** (5 ft away → bar reads 5 FT), with no allowance for slope. The player judges the power, the wind and the break.
 - **Distance units:** golf standard: yards to the pin, feet only once the ball is on the green.
 - **Cup:** drops a ball moving under 3 m/s, with a 6.6–7.4 cm catch radius, checked along the ball's path (Golf Slate's rule).
 - **Trees:** trunks block shots, and canopies (shaped like the drawn cone or ball) soak up 10% of the ball's speed every 1/120 s, so a few metres of branches knocks a drive down.
