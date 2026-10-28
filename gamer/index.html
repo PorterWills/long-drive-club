@@ -288,7 +288,7 @@ const HOLES = [{
 }, {
   name: 'Blue Steele', par: 5, si: 15,
   tee: [0, 0], pin: [-9.9, 521.1],             // 570 yd tee to pin (back tee, aerial scale 0.259 m/px), uphill all the way
-  wind: { mph: 25, toward_deg: 280 }, // fixed per hole (5–25 mph): the hole's variable
+  wind: { mph: 20, toward_deg: 280 }, // fixed per hole (5–25 mph): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [107.5, 11.6], [207, 5], [306, 5], [405, -14.9], [472, -14.9], [521.1, -9.9]] },
   elevation: [[0, 1], [150, 1.5], [300, 6], [450, 11], [520, 13], [580, 13.5]],
   green: { at: [-9.9, 521.1], r: 10 },
@@ -377,7 +377,8 @@ function heightAt(x, z) {
   h += 0.7 * core + (z - gz) * 0.03 * core + (x - gx) * 0.008 * core;   // raised green, strong back-to-front slope
   for (const m of MOUNDS) h += m.h * Math.exp(-((x - m.x) ** 2 + (z - m.z) ** 2) / m.s2);
   const bd = bunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
-  h += bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0; // flat floor, steep face, grass lip
+  const fwBunker = Math.hypot(x - HOLE.green.at[0], z - HOLE.green.at[1]) > 40 ? .35 : 1; // fairway bunkers are shallow, playable traps; greenside ones stay deep
+  h += (bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0) * fwBunker; // flat floor, steep face, grass lip
   for (const w of HOLE.water) { const d = Math.hypot(x - w.at[0], z - w.at[1]); if (d < w.r + 4) h -= 0.8 * clamp(1 - (d - w.r) / 4, 0, 1); }
   h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
