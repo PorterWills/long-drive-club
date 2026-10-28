@@ -45,7 +45,16 @@
   #stats div.r span:last-child { font-weight: 700; font-variation-settings: "wdth" 115; font-feature-settings: "tnum" 1; }
   #controls { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 28px)); }
   .row { display: flex; gap: 2px; margin-bottom: 2px; }
-  #club { flex: 1; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline); border-radius: 3px; padding: 12px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; }
+  #club { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline); border-radius: 3px; padding: 6px 12px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; text-align: left; }
+  #club:hover { background: var(--ldc-tarmac-up); } #club svg { width: 30px; height: 30px; flex: none; } #club .more { margin-left: auto; color: var(--ldc-chalk-dim); }
+  #bag { display: none; position: absolute; bottom: calc(100% + 2px); left: 0; right: 0; background: var(--ldc-tarmac); border: 1px solid var(--hairline); border-top: 4px solid var(--ldc-redline); padding: 10px; }
+  #bag.open { display: block; } #bag .eyebrow { margin: 0 2px 8px; }
+  #bag .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+  #bag button { display: grid; justify-items: center; gap: 2px; background: var(--ldc-tarmac-up); color: var(--ldc-chalk); border: 1px solid var(--hairline); border-radius: 3px; padding: 8px 2px; font: 600 11px var(--font); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; position: relative; }
+  #bag button:hover { border-color: var(--hairline-strong); } #bag button svg { width: 40px; height: 40px; }
+  #bag button.on { background: var(--ldc-green); border-color: var(--ldc-chalk); }
+  #bag button .yd { color: var(--ldc-chalk-dim); font-feature-settings: "tnum" 1; }
+  #bag button.on::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: var(--ldc-redline); } /* the club in hand */
   #swing { width: 140px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   #swing:hover:not(:disabled) { background: var(--ldc-green-up); }
   #swing:disabled { background: var(--ldc-tarmac-up); color: var(--ldc-chalk-dim); border-color: var(--hairline); cursor: default; }
@@ -65,6 +74,17 @@
   #holesBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
   #holesBtn { margin-top: 8px; padding: 6px 10px; }
   #holesBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
+  #start { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(460px, calc(100% - 28px)); padding: 0 0 20px; z-index: 7; text-align: center; }
+  #start.open { display: block; } #start .stripe { position: static; height: 8px; margin-bottom: 20px; }
+  #start .roundel { width: 64px; height: 64px; margin: 0 auto 12px; font-size: 22px; }
+  #start h2 { margin: 0 0 4px; font-size: 22px; } #start .eyebrow { margin: 14px 16px 10px; }
+  #skies { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 16px; }
+  #skies button { position: relative; display: grid; gap: 8px; padding: 0 0 10px; background: var(--ldc-tarmac-up); color: var(--ldc-chalk); border: 1px solid var(--hairline); border-radius: 3px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; overflow: hidden; }
+  #skies button.on { background: var(--ldc-green); border-color: var(--ldc-chalk); }
+  #skies button.on::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; background: var(--ldc-redline); }
+  #skies .sw { display: grid; grid-template-rows: 2fr 1fr 1fr; height: 64px; } /* the sky in three bands: zenith, mid, horizon */
+  #play { margin-top: 18px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  #play:hover { background: var(--ldc-green-up); }
   #card { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(520px, calc(100% - 28px)); max-height: calc(100% - 60px); overflow: hidden auto; padding: 0 0 16px; z-index: 6; }
   #card .stripe { position: static; height: 8px; margin-bottom: 10px; }
   .hrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 44px 34px 56px; gap: 6px; align-items: center; width: 100%; padding: 10px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
@@ -76,8 +96,8 @@
   .cardBtns { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
   #cardAsk { margin: 12px 16px 0; padding: 12px 0 0; border-top: 4px solid var(--ldc-redline); }
   #cardAsk .cardBtns { padding: 10px 0 0; }
-  .cardBtns #askNo, .cardBtns #newRound, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
-  button:focus-visible, select:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 2px; }
+  .cardBtns #askNo, .cardBtns #newRound, .cardBtns #lightBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
+  button:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 2px; }
   @media (max-width: 520px) { #hole .name { font-size: 11px; } .roundel { width: 38px; height: 38px; font-size: 11px; } #info .num { font-size: 22px; }
     #hole { left: 8px; gap: 8px; padding: 8px 10px; max-width: calc(100% - 176px); } #hole .eyebrow { letter-spacing: .12em; }
     #info { right: 8px; min-width: 0; padding: 8px 10px; } #info .eyebrow { letter-spacing: .16em; }
@@ -92,13 +112,21 @@
   <div class="roundel display">LDC</div>
   <div><div class="name display">Long Drive Club</div><div class="eyebrow"><span id="holeLabel"></span> · <span id="strokes">0</span></div><button id="holesBtn">Holes</button></div>
 </div>
+<div id="start" class="panel" role="dialog" aria-label="Ambiance">
+  <div class="stripe"><i></i><i></i><i></i></div>
+  <div class="roundel display">LDC</div>
+  <h2 class="display">Long Drive Club</h2>
+  <div class="eyebrow">Choose your ambiance</div>
+  <div id="skies"></div>
+  <button id="play">Done</button>
+</div>
 <div id="card" class="panel" role="dialog" aria-label="Holes">
   <div class="stripe"><i></i><i></i><i></i></div>
   <div class="hrow head eyebrow"><span>No</span><span>Hole</span><span>Par</span><span>Yd</span><span>SI</span><span>Score</span></div>
   <div id="cardRows"></div>
   <div id="cardTotal" class="eyebrow"></div>
   <div id="cardAsk" hidden><span id="askText"></span><div class="cardBtns"><button id="askYes">Yes</button><button id="askNo">Cancel</button></div></div>
-  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="cardClose">Close</button></div>
+  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="lightBtn">Ambiance</button><button id="cardClose">Close</button></div>
 </div>
 <div id="info" class="panel">
   <div><span id="dist" class="num display">0</span> <span class="eyebrow" id="distUnit">yd to pin</span></div>
@@ -116,7 +144,8 @@
   <button id="again">Play again</button> <button id="next">Next hole</button>
 </div>
 <div id="controls">
-  <div class="row"><select id="club" aria-label="Club"></select><button id="swing">Swing</button></div>
+  <div id="bag" role="dialog" aria-label="Choose a club"><div class="eyebrow">Choose a club</div><div class="grid"></div></div>
+  <div class="row"><button id="club" aria-haspopup="dialog" aria-expanded="false"></button><button id="swing">Swing</button></div>
   <div id="power" role="slider" aria-label="Power"><div id="powerFill"></div><div id="powerText" class="display"></div></div>
   <div id="hint" class="eyebrow">Set the power · swing</div>
 </div>
@@ -138,11 +167,6 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const YD = 0.9144, MPH = 0.44704, G = 9.81;
 const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
-// daily wind: 0–20 mph from any direction, seeded by the UTC date so everyone shares the day's conditions
-function dailyWind(date = new Date()) {
-  const day = date.toISOString().slice(0, 10), r = rng([...day].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619), 2166136261));
-  return { mph: Math.round(r() * 20), toward_deg: Math.round(r() * 360) };
-}
 
 // ---------- hole (our own format) ----------
 // Layout traced from an aerial of a famous opening par 4: 445 yd, fairway drifting left then bending right
@@ -151,7 +175,7 @@ function dailyWind(date = new Date()) {
 const HOLES = [{
   name: 'Tee Tree', par: 4, si: 9,
   tee: [0, 0], pin: [-55, 403],                  // 445 yd tee to pin
-  wind: dailyWind(),                           // new each day (UTC), the same for every player that day
+  wind: { mph: 8, toward_deg: 200 }, // fixed per hole (5–25 mph): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [112, -8], [197, 2], [265, -8], [333, -29], [408, -56]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
   green: { at: [-56, 405], r: 15 },
@@ -172,7 +196,7 @@ const HOLES = [{
   // left round a stand of trees to a green guarded right and front. Scale 0.337 m/px (535 m over ~1,590 px).
   name: 'Red Catbranch', par: 5, si: 17,
   tee: [0, 0], pin: [164, 509.2],              // 585 yd tee to pin
-  wind: dailyWind(),
+  wind: { mph: 18, toward_deg: 95 }, // fixed per hole (5–25 mph): the hole's variable
   fairway: { half_width: 17, line: [[0, 0], [120, -5], [221, -3], [288, -7], [356, 25], [423, 56], [473, 93], [507, 160]] },
   elevation: [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]],      // downhill all the way
   green: { at: [165, 507], r: 12 },
@@ -188,7 +212,7 @@ const HOLES = [{
 }, {
   name: 'Wilting Mango', par: 4, si: 14,
   tee: [0, 0], pin: [8.5, 320],                // 350 yd tee to pin (aerial scale 0.224 m/px)
-  wind: dailyWind(),
+  wind: { mph: 12, toward_deg: 330 }, // fixed per hole (5–25 mph): the hole's variable
   fairway: { half_width: 20, line: [[0, 0], [58, -14], [114, 12], [170, 29], [237, 33], [293, 20], [320, 8.5]] },
   elevation: [[0, 2], [150, 1], [250, 3], [330, 5], [380, 5.5]],
   green: { at: [8.5, 320], r: 12 },
@@ -204,7 +228,7 @@ const HOLES = [{
 }, {
   name: 'Blossoming Shrimp Pear', par: 3, si: 3,
   tee: [0, 0], pin: [-4.6, 219.4],             // 240 yd tee to pin (back tee, aerial scale 0.172 m/px)
-  wind: dailyWind(),
+  wind: { mph: 15, toward_deg: 160 }, // fixed per hole (5–25 mph): the hole's variable
   fairway: { half_width: 20, line: [[0, 0], [68, 10], [120, 1.4], [171, -2], [219.4, -4.6]] },
   elevation: [[0, 4], [120, 2], [220, 1], [270, 1.5]],
   green: { at: [-4.6, 219.4], r: 13 },
@@ -219,7 +243,7 @@ const HOLES = [{
 }, {
   name: 'Violet', par: 4, si: 5,
   tee: [0, 0], pin: [40.5, 450.8],             // 495 yd tee to pin (back tee, aerial scale 0.319 m/px)
-  wind: dailyWind(),
+  wind: { mph: 18, toward_deg: 250 }, // fixed per hole (5–25 mph): the hole's variable
   fairway: { half_width: 22, line: [[0, 0], [84, -7], [180, -20], [276, -26], [355, -14], [403, 15], [450.8, 40.5]] },
   elevation: [[0, 2], [200, 0], [350, 5], [460, 8], [520, 8.5]],
   green: { at: [40.5, 450.8], r: 11 },
@@ -230,6 +254,66 @@ const HOLES = [{
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
     { at: [10, 470], heading: 90, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Saturn', par: 3, si: 13,
+  tee: [0, 0], pin: [0.6, 164.6],              // 180 yd tee to pin (back tee, aerial scale 0.092 m/px), downhill
+  wind: { mph: 6, toward_deg: 20 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 12, line: [[0, 0], [54, 0.6], [89, 4.7], [125, 7.6], [164.6, 0.6]] },
+  elevation: [[0, 10], [100, 3], [170, 0], [210, 0.5]],
+  green: { at: [0.6, 164.6], r: 13 },
+  bunkers: [{ at: [15.9, 148.2], r: 4 }, { at: [8.8, 145.8], r: 4 }, { at: [4.1, 136.4], r: 4 }],
+  water: [],
+  trees: [[1, 0, 89, 11, 16], [1, 95, 185, 25, 16], [-1, 0, 50, 10, 14], [-1, 108, 190, 21, 16]],
+  treeClusters: [{ at: [-14.7, 82], r: 7 }, { at: [18, 189], r: 6 }, { at: [-21.8, 182], r: 6 }],
+  cars: [
+    { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
+    { at: [-32, 165], heading: 85, colour: '#EDE9DF', kind: 'gt' },
+  ],
+}, {
+  name: 'Pompei', par: 4, si: 10,
+  tee: [0, 0], pin: [-10.6, 411.4],            // 450 yd tee to pin (back tee, aerial scale 0.208 m/px), uphill finish
+  wind: { mph: 10, toward_deg: 120 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 12, line: [[0, 0], [133, -5.3], [213, 0], [293, -2.7], [360, -5.3], [411.4, -10.6]] },
+  elevation: [[0, 2], [250, 0], [400, 5], [460, 6]],
+  green: { at: [-10.6, 411.4], r: 10 },
+  bunkers: [{ at: [2.7, 422], r: 3.5 }, { at: [-14.6, 424.7], r: 3.5 }, { at: [3.2, 402], r: 3.5 }, { at: [-10.6, 398], r: 3.5 }, { at: [-26.6, 399.5], r: 3.5 }],
+  water: [],
+  trees: [[1, 5, 146, 18, 16], [1, 234, 373, 10, 14], [-1, 96, 293, 21, 16], [-1, 351, 394, 16, 14]],
+  treeClusters: [{ at: [21.3, 165], r: 5 }, { at: [26.6, 445], r: 8 }, { at: [-34.6, 439], r: 12 }],
+  cars: [
+    { at: [10, -14], heading: 20, colour: '#262320', kind: 'gt' },
+    { at: [30, 415], heading: -80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Blue Steele', par: 5, si: 15,
+  tee: [0, 0], pin: [-9.9, 521.1],             // 570 yd tee to pin (back tee, aerial scale 0.259 m/px), uphill all the way
+  wind: { mph: 25, toward_deg: 280 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 15, line: [[0, 0], [107.5, 11.6], [207, 5], [306, 5], [405, -14.9], [472, -14.9], [521.1, -9.9]] },
+  elevation: [[0, 1], [150, 1.5], [300, 6], [450, 11], [520, 13], [580, 13.5]],
+  green: { at: [-9.9, 521.1], r: 10 },
+  bunkers: [{ at: [-8.3, 263], r: 4 }, { at: [-9.9, 250], r: 4 }],
+  water: [],
+  trees: [[1, 213, 517, 22, 30], [-1, 276, 445, 18, 25], [-1, 461, 564, 26, 20], [-1, 48, 124, 26, 10]],
+  treeClusters: [{ at: [-34.7, 245], r: 6 }, { at: [-13, 144], r: 5 }, { at: [34.7, 64.5], r: 6 }, { at: [58, 8], r: 10 }, { at: [14.9, 571], r: 8 }],
+  cars: [
+    { at: [-10, -14], heading: -15, colour: '#EDE9DF', kind: 'gt' },
+    { at: [10, -15], heading: 20, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Texan Tangerine', par: 4, si: 12,
+  tee: [0, 0], pin: [46, 418],                 // 460 yd tee to pin (back tee, aerial scale 0.205 m/px), dogleg left
+  wind: { mph: 14, toward_deg: 45 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 14, line: [[0, 0], [100, -15.8], [205, -28.9], [284, -23.7], [350, -5.3], [389, 28.9], [418, 46]] },
+  elevation: [[0, 6], [200, 2], [300, -1], [380, 4], [440, 6]],
+  green: { at: [46, 418], r: 11 },
+  bunkers: [{ at: [57.1, 406], r: 4 }, { at: [43.4, 401], r: 4 }],
+  water: [],
+  trees: [[1, 79, 329, 10, 15], [-1, 174, 352, 16, 20]],
+  treeClusters: [{ at: [7.9, 50], r: 4 }, { at: [10.5, 29], r: 4 }, { at: [-29, 39], r: 14 }, { at: [18, -3], r: 10 }],
+  cars: [
+    { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
+    { at: [75, 420], heading: 70, colour: '#C1121F', kind: 'hyper' },
   ],
 }];
 // round: scores kept in this browser (shortcut: localStorage per viewer, move to the leaderboard database when it exists).
@@ -242,6 +326,7 @@ const askedHole = parseInt(new URLSearchParams(location.search).get('hole'));
 const HOLE_NO = clamp(askedHole || roundHole(), 1, HOLES.length), HOLE = HOLES[HOLE_NO - 1];
 const PRACTICE = roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
 document.title = `Long Drive Club · ${HOLE.name}`;
+if (HOLE.par === 3) HOLE.cars[HOLE.cars.findIndex(c => c.at[1] < 0)] = { at: [HOLE.tee[0] + 12, HOLE.tee[1] + 8], heading: 124, colour: '#EDE9DF', kind: 'hyper', display: true } // 124°: square side-on to the tee camera; // hole-in-one prize car
 document.getElementById('holeLabel').textContent = `${PRACTICE ? 'Practice · ' : ''}Hole ${HOLE_NO} · ${HOLE.name} · Par ${HOLE.par}`;
 // smooth (cosine) interpolation through [z, value] points
 const lerpPts = (pts, z) => {
@@ -274,6 +359,7 @@ function materialAt(x, z) {
   if (g < 1 + 2 / HOLE.green.r) return 'fringe';
   if (Math.abs(x - HOLE.tee[0]) < 6 && Math.abs(z - HOLE.tee[1]) < 9) return 'fairway';
   const off = Math.abs(x - centreX(z));
+  if (z > HOLE.tee[1] && z <= 30 && off < HOLE.fairway.half_width * .7) return 'firstcut'; // mown walk-off between tee and fairway
   if (z > 30 && z < FW_END && off < HOLE.fairway.half_width) return 'fairway';
   if (z > 30 && z < FW_END && off < HOLE.fairway.half_width + 3) return 'firstcut';
   return 'rough';
@@ -281,6 +367,7 @@ function materialAt(x, z) {
 const GZ = HOLE.green.at[1];
 const outOfBounds = (x, z) => Math.abs(x - centreX(Math.min(z, GZ))) > 75 || z < -40 || z > GZ + 70;
 
+const teePad = (x, z) => { const sm = t => t * t * (3 - 2 * t); return sm(clamp((5.8 - Math.abs(x - HOLE.tee[0])) / 1.8, 0, 1)) * sm(clamp((7.8 - Math.abs(z - HOLE.tee[1])) / 1.8, 0, 1)); };
 function heightAt(x, z) {
   let h = lerpPts(HOLE.elevation, z);                                   // tee high, valley at the landing area, climb to the green
   h += 0.6 * Math.sin(x * 0.045 + 1) * Math.cos(z * 0.021) + 0.4 * Math.sin(z * 0.013 + x * 0.01);
@@ -292,6 +379,7 @@ function heightAt(x, z) {
   const bd = bunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
   h += bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0; // flat floor, steep face, grass lip
   for (const w of HOLE.water) { const d = Math.hypot(x - w.at[0], z - w.at[1]); if (d < w.r + 4) h -= 0.8 * clamp(1 - (d - w.r) / 4, 0, 1); }
+  h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
 }
 
@@ -355,12 +443,13 @@ function rk4(p, vel, spin, wind) {
   return [add(p, dp), add(vel, dv)];
 }
 
-// cars collide as a pair of upright cylinders along their length
+// cars collide as three upright cylinders along their length (two alone left a gap down the middle)
 // shortcut: cylinders, not true box shapes; upgrade if balls visibly pass through bumpers
-const CAR_COLLIDERS = HOLE.cars.flatMap(c => {
+const carColliders = c => {
   const h = c.heading * Math.PI / 180, dx = Math.sin(h) * 1.1, dz = Math.cos(h) * 1.1;
-  return [-1, 1].map(s => ({ x: c.at[0] + dx * s, z: c.at[1] + dz * s, r: 1.05, top: heightAt(c.at[0], c.at[1]) + 1.25 }));
-}).concat(TREES.map(t => ({ x: t.x, z: t.z, r: 0.45 * t.s, top: heightAt(t.x, t.z) + 3 * t.s })),
+  return [-1, 0, 1].map(s => ({ x: c.at[0] + dx * s, z: c.at[1] + dz * s, r: 1.05, top: heightAt(c.at[0], c.at[1]) + 1.25 + (c.display ? .3 : 0)}));
+};
+const CAR_COLLIDERS = HOLE.cars.flatMap(carColliders).concat(TREES.map(t => ({ x: t.x, z: t.z, r: 0.45 * t.s, top: heightAt(t.x, t.z) + 3 * t.s })),
   { x: HOLE.pin[0], z: HOLE.pin[1], r: 0.0095, top: heightAt(...HOLE.pin) + 2.4, low: heightAt(...HOLE.pin) + 0.1 }); // flagstick; below the lip putts still drop
 // canopies match the drawn shapes: pines a cone from 3.4s to 12.1s up, broadleaf a ball of 2.4s at 4.6s
 function inCanopy(p) {
@@ -539,16 +628,24 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-// golden hour on every hole: dawn or evening, picked daily (UTC) like the wind, with a low sun and drifting clouds
+// ambiance: day by default; the player can switch to dawn or dusk from Holes → Ambiance (kept in this browser). Looks only; play is unchanged.
+// The sun's compass direction still changes daily (UTC). ?sky=dawn | day | dusk previews one.
+const SKIES = {
+  dawn: { zenith: '#6d8db5', mid: '#f0b9a4', horizon: '#ffe2b8', sun: '#ffd9a8', cloudLit: '#ffe4cc', cloudShade: '#9c8aa0', el: 14 },
+  day:  { zenith: '#3f78bd', mid: '#9cc4e8', horizon: '#e4eef3', sun: '#fff6e6', cloudLit: '#f7f5f0', cloudShade: '#a7b3c2', el: 52 },
+  dusk: { zenith: '#34507e', mid: '#e9995e', horizon: '#ffc27a', sun: '#ffad5c', cloudLit: '#ffc08a', cloudShade: '#7d5a63', el: 14 },
+};
+const SKY_KEY = 'ldc.light';
 const LIGHT = (() => {
   const day = new Date().toISOString().slice(0, 10), r = rng([...day].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 2654435761), 7));
-  const force = new URLSearchParams(location.search).get('sky'); // ?sky=dawn | evening to preview either
-  const roll = r(), dawn = force ? force === 'dawn' : roll < .5, az = r() * 6.283, el = (11 + r() * 6) * Math.PI / 180;
-  return { dawn, dir: new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)),
-    zenith: dawn ? '#6d8db5' : '#34507e', mid: dawn ? '#f0b9a4' : '#e9995e', horizon: dawn ? '#ffe2b8' : '#ffc27a',
-    sun: dawn ? '#ffd9a8' : '#ffad5c', cloudLit: dawn ? '#ffe4cc' : '#ffc08a', cloudShade: dawn ? '#9c8aa0' : '#7d5a63' };
+  let pick = new URLSearchParams(location.search).get('sky');
+  if (pick === 'evening') pick = 'dusk';
+  if (!SKIES[pick]) { try { pick = localStorage.getItem(SKY_KEY); } catch {} }
+  if (!SKIES[pick]) pick = 'day'; // owner's default
+  const k = SKIES[pick], az = r() * 6.283, el = k.el * Math.PI / 180;
+  return { ...k, name: pick, dawn: pick === 'dawn', dir: new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)) };
 })();
-scene.fog = new THREE.Fog(LIGHT.horizon, 220, 900);
+scene.fog = new THREE.Fog(LIGHT.horizon, 140, 650); // haze: far trees melt into the sky
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
@@ -567,15 +664,7 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
       float cl = smoothstep(.42, .75, fbm(uv)) * smoothstep(0., .15, h);
       vec3 cc = mix(cloudShade, cloudLit, clamp(pow(s, 3.) + fbm(uv + .3) * .5, 0., 1.));
       c = mix(c, cc, cl * .9);
-      // painted backdrop: two hazy ridgelines of distant forest round the horizon, drawn in the sky so they cost no geometry
-      vec2 ring = normalize(d.xz);
-      float far = .035 + fbm(ring * 2.5 + 7.) * .07 + noise(ring * 140.) * .012;           // rolling hills, soft treetops
-      float near = .01 + fbm(ring * 4. + 19.) * .05 + pow(noise(ring * 260.), 2.) * .03;   // closer woods, spikier pines
-      vec3 farCol = mix(horizon, mix(zenith, mid, .5), .35), nearCol = mix(horizon, vec3(.13, .16, .12), .6);
-      farCol = mix(farCol, horizon, pow(s, 4.) * .6); nearCol = mix(nearCol, horizon, pow(s, 4.) * .45); // backlit by the low sun
-      if (h < far) c = farCol;
-      if (h < near) c = nearCol;
-      if (h < 0.) c = nearCol;
+      if (h < 0.) c = horizon; // below the horizon the haze takes over (same colour as the fog), no painted backdrop
       gl_FragColor = vec4(c, 1.);
     }`,
 }));
@@ -594,44 +683,217 @@ const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29');
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
   const geo = new THREE.PlaneGeometry(W, D, seg[0], seg[1]); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, col = [], c = new THREE.Color();
+  const pos = geo.attributes.position, col = [], rough = [], c = new THREE.Color();
+  const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color('#6e4a2f');
+  const wob = (x, z) => Math.sin(x * .37 + z * .11) * .9 + Math.sin(z * .23 - x * .19) * .7; // ragged bed edges, metres
+  const strawAt = (x, z) => { // pine straw under the tree lines and clusters, 0..1
+    let a = 0;
+    for (const [side, z0, z1, inner] of HOLE.trees) if (z > z0 - 4 && z < z1 + 4) a = Math.max(a, clamp((side * (x - centreX(Math.min(z, GZ))) - inner + 3 + wob(x, z)) / 2, 0, 1) * clamp(Math.min(z - z0 + 4, z1 + 4 - z) / 3, 0, 1));
+    for (const t of HOLE.treeClusters) a = Math.max(a, clamp((t.r + 2 + wob(x, z) - Math.hypot(x - t.at[0], z - t.at[1])) / 2, 0, 1));
+    return a;
+  };
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + X0 + W / 2, z = pos.getZ(i) + D / 2 - 40;
     const m = materialAt(x, z);
     pos.setXYZ(i, x, m === 'water' ? heightAt(x, z) - 0.05 : heightAt(x, z), z);
     c.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[m]);
-    if (m === 'fairway' && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03); // mow stripes
+    let rg = m === 'rough' || outOfBounds(x, z) ? 1 : m === 'firstcut' ? .35 : m === 'sand' ? .25 : 0;
+    if ((m === 'fairway' || m === 'firstcut' || m === 'rough') && z > HOLE.tee[1] && z < FW_END + 6 && !outOfBounds(x, z)) { // cuts step down softly: fairway, first cut, rough
+      const off = Math.abs(x - centreX(z)), hw = z <= 30 ? HOLE.fairway.half_width * .7 : HOLE.fairway.half_width, fwOn = z > 30 && z < FW_END;
+      const a = fwOn ? clamp((off - hw + 1) / 2, 0, 1) : 1, b = clamp((off - hw - (fwOn ? 2 : -1)) / 3, 0, 1) * (z > FW_END ? 1 : 1);
+      c.copy(FW).lerp(FC, a).lerp(RO, b); rg = a * .35 + b * .65;
+    }
+    const tp = teePad(x, z); if (tp > 0) { c.lerp(TEE, tp); rg *= 1 - tp; }
+    const st = m === 'rough' || outOfBounds(x, z) ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, st * .85); rg = Math.max(rg, st); }
+    if (m === 'fairway' && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
+    if (tp > .9 && Math.floor((x - HOLE.tee[0] + 4) / 1.6) % 2) c.offsetHSL(0, 0, 0.025); // tee pad: crisp stripes
     if (m === 'sand') { const bd = bunkerD(x, z);
       if (bd > .7) c.lerp(SAND_FACE, (bd - .7) / .3 * .7);                              // shaded face
       else if (Math.floor((x + z) * 1.2) % 2) c.offsetHSL(0, 0, -0.015); }              // rake lines on the floor
     else if (bunkerD(x, z) < 1.12) c.lerp(LIP, .6);                                     // dark grass lip
     if (m === 'green') { if ((Math.floor(x / 3) + Math.floor(z / 3)) % 2) c.offsetHSL(0, 0, 0.022); // cross-mown checker
       const gd = greenD(x, z); if (gd > .93) c.lerp(LIP, (gd - .93) / .07 * .35); }     // collar where green meets fringe
-    col.push(c.r, c.g, c.b);
+    col.push(c.r, c.g, c.b); rough.push(rg);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  geo.setAttribute('rough', new THREE.Float32BufferAttribute(rough, 1));
   geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  mat.onBeforeCompile = sh => { // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough; varying float vR; varying vec2 vXZ;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vXZ = position.xz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      varying float vR; varying vec2 vXZ;
+      float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+        return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + 1.), f.x), f.y); }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+      float n = vn(vXZ * 4.) * .35 + vn(vXZ * .9) * .35 + vn(vXZ * .18) * .3;
+      diffuseColor.rgb *= mix(.93 + .14 * n, .66 + .62 * n, vR);`);
+  };
+  const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true; scene.add(mesh);
   for (const w of HOLE.water) {
     const water = new THREE.Mesh(new THREE.CircleGeometry(w.r + 1.5, 48), new THREE.MeshLambertMaterial({ color: COLOURS.water, transparent: true, opacity: .9 }));
     water.rotation.x = -Math.PI / 2; water.position.set(w.at[0], heightAt(w.at[0], w.at[1] + w.r) - 0.35, w.at[1]); scene.add(water);
   }
 }
-// trees: tall pines with high canopies plus rounder broadleaf trees, from the seeded TREES list
+// see-through trees: anything within a few metres of the camera, or of the line from the camera to the ball,
+// dissolves in a fine dither (no sorting, so it stays cheap). Stops the view going black when the ball lies under a tree.
+const SEE = { uBall: { value: new THREE.Vector3() } };
+const seeThrough = mat => { mat.onBeforeCompile = sh => {
+  sh.uniforms.uBall = SEE.uBall;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeeW = (modelMatrix * instanceMatrix * vec4(transformed, 1.)).xyz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW; uniform vec3 uBall;')
+    .replace('void main() {', `void main() {
+      vec3 ab = uBall - cameraPosition, ap = vSeeW - cameraPosition; float t = clamp(dot(ap, ab) / dot(ab, ab), 0., 1.);
+      float d = min(length(ap) - 1.5, length(ap - ab * t) - .4 - 2.2 * t); // tube widens towards the ball
+      if (fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) > smoothstep(0., 3., d)) discard;`);
+}; return mat; };
+// surround: a coarse 4 m ground mesh far beyond the course (forest floor, rising banks), so there's no edge to float over.
+// Inside the course mesh it drops 2 m out of sight; it meets the course mesh exactly at its edge.
 {
-  const r = rng(7), trunkGeo = new THREE.CylinderGeometry(.22, .34, 3, 6);
-  const pineGeo = new THREE.ConeGeometry(2.4, 7, 7), leafGeo = new THREE.IcosahedronGeometry(2.8, 0);
-  const trunkMat = new THREE.MeshLambertMaterial({ color: '#4a3526' });
-  const pineMat = new THREE.MeshLambertMaterial({ color: '#21401f' }), leafMat = new THREE.MeshLambertMaterial({ color: '#2f4f27' });
-  for (const t of TREES) {
-    const g = new THREE.Group(), pine = t.pine, tr = new THREE.Mesh(trunkGeo, trunkMat), top = new THREE.Mesh(pine ? pineGeo : leafGeo, pine ? pineMat : leafMat);
-    tr.position.y = 1.5; top.position.y = pine ? 6.2 : 4.6; top.castShadow = true; g.add(tr, top);
-    g.scale.set(t.s, t.s * (pine ? 1.25 : 1), t.s); g.rotation.y = r() * 6.28; g.position.set(t.x, heightAt(t.x, t.z), t.z); scene.add(g);
+  const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, X1 = Math.max(...xs) + 80, Z0 = -40, Z1 = GZ + 70; // the course mesh's footprint
+  const W = X1 - X0 + 800, D = Z1 - Z0 + 800, geo = new THREE.PlaneGeometry(W, D, Math.ceil(W / 4), Math.ceil(D / 4)); geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position, col = [], c = new THREE.Color(), FLOOR = new THREE.Color('#3b3524'), RO = new THREE.Color('#2a4122');
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i) + (X0 + X1) / 2, z = pos.getZ(i) + (Z0 + Z1) / 2, inside = x > X0 + 1 && x < X1 - 1 && z > Z0 + 1 && z < Z1 - 1;
+    pos.setXYZ(i, x, heightAt(x, z) - (inside ? 2 : 0), z);
+    c.copy(RO).lerp(FLOOR, .5 + .5 * Math.sin(x * .05) * Math.sin(z * .043)); col.push(c.r, c.g, c.b);
   }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
+  scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })));
+}
+// trees: tiered pines and clumped broadleaf trees, from the seeded TREES list. Every part is one InstancedMesh
+// (a handful of draws for the whole course), and no tree casts a shadow: the shadow box follows the ball, so tree shadows popped in.
+{
+  const r = rng(7), m4 = new THREE.Matrix4(), part = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color();
+  const leafy = (geo, seed) => { // flat faces, each a slightly different green, so the canopy reads as leaves not plastic
+    geo = geo.toNonIndexed(); const n = geo.attributes.position.count, c = [], rr = rng(seed);
+    for (let i = 0; i < n; i += 3) { const k = .75 + rr() * .45; for (let j = 0; j < 3; j++) c.push(k, k, k); }
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); geo.computeVertexNormals(); return geo;
+  };
+  // parts in tree space (unscaled); they fill the same shapes the canopy collisions use
+  const PINE = [[new THREE.ConeGeometry(2.5, 3.6, 8), 0, 4.6, 0], [new THREE.ConeGeometry(2.0, 3.4, 8), 0, 6.6, 0], [new THREE.ConeGeometry(1.4, 3.0, 8), 0, 8.4, 0]];
+  const LEAF = [[new THREE.IcosahedronGeometry(2.1, 1), 0, 4.4, 0], [new THREE.IcosahedronGeometry(1.5, 1), 1.3, 5.2, .5], [new THREE.IcosahedronGeometry(1.5, 1), -1.1, 5.0, -.7], [new THREE.IcosahedronGeometry(1.3, 1), .2, 6.1, -.3]];
+  // outer forest: rows of out-of-bounds trees round the hole so the course sits in woodland, never on an edge.
+  // Drawn only (no collisions); every shot that reaches them is already out of bounds.
+  const OUTER = [], fr = rng(77);
+  for (let z = -130; z < GZ + 150; z += 7) for (let side = -1; side <= 1; side += 2) for (let off = 78; off < 150; off += 7) {
+    const zz = z + fr() * 5, x = centreX(clamp(zz, 0, GZ)) + side * (off + fr() * 5);
+    if (outOfBounds(x, zz)) OUTER.push({ x, z: zz, s: 1 + fr() * .8, pine: fr() < .6, outer: true });
+  }
+  for (const [z0, z1] of [[-130, -42], [GZ + 72, GZ + 150]]) for (let z = z0; z < z1; z += 7) for (let off = -78; off < 78; off += 7) { // behind the tee and the green
+    const zz = z + fr() * 5, x = centreX(clamp(zz, 0, GZ)) + off + fr() * 5;
+    if (outOfBounds(x, zz)) OUTER.push({ x, z: zz, s: 1 + fr() * .8, pine: fr() < .6, outer: true });
+  }
+  const DRAWN = TREES.concat(OUTER);
+  const pines = DRAWN.filter(t => t.pine), leaves = DRAWN.filter(t => !t.pine);
+  const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.22, .34, 3, 6), seeThrough(new THREE.MeshLambertMaterial({ color: '#4a3526' })), DRAWN.length);
+  const groups = [[PINE, pines, '#21401f', 1.25], [LEAF, leaves, '#2f4f27', 1]].map(([parts, list, colour, ys], gi) =>
+    ({ list, ys, colour, meshes: parts.map(([g, x, y, z], pi) => ({ m: new THREE.InstancedMesh(leafy(g, 11 + gi * 7 + pi), seeThrough(new THREE.MeshLambertMaterial({ vertexColors: true })), list.length), off: new THREE.Vector3(x, y, z) })) }));
+  const tm = new Map(); // tree -> its world matrix
+  DRAWN.forEach((t, i) => {
+    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+    const ys = t.pine ? 1.25 : 1, w = new THREE.Matrix4().compose(new THREE.Vector3(t.x, heightAt(t.x, t.z), t.z), q, new THREE.Vector3(t.s, t.s * ys, t.s));
+    tm.set(t, w); trunks.setMatrixAt(i, m4.multiplyMatrices(w, part.makeTranslation(0, 1.5, 0)));
+  });
+  for (const g of groups) g.list.forEach((t, i) => {
+    col.set(g.colour).offsetHSL(r() * .03 - .015, 0, r() * .06 - .03 - (t.outer ? .04 : 0)); // each tree a shade apart, the outer forest darker
+    for (const { m, off } of g.meshes) { m.setMatrixAt(i, m4.multiplyMatrices(tm.get(t), part.makeTranslation(off.x, off.y, off.z))); m.setColorAt(i, col); }
+  });
+  scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
+}
+// azalea-style shrubs along the tree-line edges and grass tufts near the tee and green.
+// Decoration only (no collisions). Each kind is one InstancedMesh, so hundreds cost one draw.
+{
+  const r = rng(4242), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
+  const clear = (x, z) => !outOfBounds(x, z) && materialAt(x, z) === 'rough' && teePad(x, z) === 0 && bunkerD(x, z) > 1.3
+    && !HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 4.5) && Math.hypot(x - HOLE.tee[0] + 6, z - HOLE.tee[1] - 4) > 2.5; // keep the sign clear
+  const nearView = z => z < HOLE.tee[1] + 45 || Math.abs(z - GZ) < 45; // where the camera spends its time
+
+  const shrubs = [];
+  for (const [side, z0, z1, inner] of HOLE.trees)
+    for (let z = z0; z < z1; z += nearView(z) ? 2.2 + r() * 2 : 14 + r() * 16) {
+      const x = centreX(Math.min(z, GZ)) + side * (inner - 1.5 + r() * 2.5);
+      if (clear(x, z)) shrubs.push([x, z]);
+    }
+  for (const t of HOLE.treeClusters) for (let k = 0; k < 4; k++) {
+    const a = r() * 6.28, x = t.at[0] + Math.cos(a) * (t.r + .5), z = t.at[1] + Math.sin(a) * (t.r + .5);
+    if (nearView(z) && clear(x, z)) shrubs.push([x, z]);
+  }
+  const BLOOMS = ['#f08aa8', '#f4ece0', '#c8487a', '#e86f96', '#f08aa8', '#3d6332'];
+  const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(.7, 1), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1a1f' }))); // a touch of glow so blooms read in low sun
+  const shrubMesh = new THREE.InstancedMesh(bush.geometry, bush.material, shrubs.length);
+  shrubs.forEach(([x, z], i) => {
+    const s = 1.1 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+    shrubMesh.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z) + .25 * s, z), q, sc.set(s * (1 + r() * .5), s * .6, s)));
+    shrubMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
+  });
+  scene.add(shrubMesh);
+
+  // tufts: five thin blades fanned round a point, about 25 cm tall
+  const blades = [];
+  for (let k = 0; k < 7; k++) { const a = k * .898, cx = Math.cos(a), sz = Math.sin(a), lean = .06;
+    blades.push(-.035 * sz, 0, .035 * cx,  .035 * sz, 0, -.035 * cx,  cx * lean * 2, .32, sz * lean * 2); }
+  const tuftGeo = new THREE.BufferGeometry(); tuftGeo.setAttribute('position', new THREE.Float32BufferAttribute(blades, 3)); tuftGeo.computeVertexNormals();
+  const phone = matchMedia('(pointer: coarse)').matches, tufts = [];
+  for (const [cx, cz] of [HOLE.tee, HOLE.green.at]) // 30 m round the tee and the green
+    for (let k = 0; k < (phone ? 2000 : 4000); k++) {
+      const a = r() * 6.28, d = 4 + Math.sqrt(r()) * 30, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
+      if (clear(x, z)) tufts.push([x, z]);
+    }
+  const tuftMesh = new THREE.InstancedMesh(tuftGeo, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, emissive: '#1c2a14' }), tufts.length);
+  tufts.forEach(([x, z], i) => {
+    const s = .7 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+    tuftMesh.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z), z), q, sc.set(s, s, s)));
+    tuftMesh.setColorAt(i, col.set('#5a7d42').offsetHSL(r() * .05 - .025, 0, r() * .1 - .04));
+  });
+  scene.add(tuftMesh);
+}
+function makeBag() { // Racing Green golf bag on a stand, Redline band, club heads poking out
+  const bag = new THREE.Group(), green = new THREE.MeshStandardMaterial({ color: '#0E2A1C', roughness: .6 }), red = new THREE.MeshLambertMaterial({ color: '#C1121F' }), steel = new THREE.MeshStandardMaterial({ color: '#9a968c', metalness: .8, roughness: .3 });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(.15, .13, .9, 16), green); body.position.y = .5;
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(.155, .155, .07, 16), red); band.position.y = .8;
+  bag.add(body, band);
+  for (const [x, z, h] of [[-.06, .04, .3], [.05, .05, .26], [0, -.06, .34], [.07, -.03, .22], [-.07, -.05, .24]]) { // club heads poking out the top
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(.006, .006, h, 6), steel); shaft.position.set(x, .95 + h / 2, z);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(.09, .045, .04), steel); head.position.set(x + .03, .95 + h, z); bag.add(shaft, head);
+  }
+  for (const s of [-1, 1]) { const leg = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .8, 6), steel); leg.position.set(.12 * s, .38, .22); leg.rotation.x = -.35; bag.add(leg); }
+  return bag;
 }
 // look-alike cars: low-poly, no brands
+function makeConvertible(c) { // side-profile sports convertible with the golf bag in the passenger seat
+  const g = new THREE.Group(), paint = new THREE.MeshStandardMaterial({ color: c.colour, metalness: .3, roughness: .35 });
+  const dark = new THREE.MeshLambertMaterial({ color: '#1B1916' }), chrome = new THREE.MeshStandardMaterial({ color: '#CFC9BB', metalness: .9, roughness: .25 });
+  const sh = new THREE.Shape(); // profile along the car's length (front is +), height up
+  [[2.2, .32], [2.28, .52], [2.1, .66], [1.4, .76], [.45, .82], [-.2, .8], [-1.4, .84], [-2.0, .86], [-2.22, .74], [-2.24, .4], [-2.1, .32]].forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
+  const bodyGeo = new THREE.ExtrudeGeometry(sh, { depth: 1.7, bevelEnabled: true, bevelSize: .08, bevelThickness: .08, bevelSegments: 2, curveSegments: 4 });
+  bodyGeo.rotateY(-Math.PI / 2).translate(.85, 0, 0);
+  g.add(new THREE.Mesh(bodyGeo, paint));
+  const tub = new THREE.Mesh(new THREE.BoxGeometry(1.5, .06, 1.4), dark); tub.position.set(0, .86, -.55); g.add(tub); // open cockpit
+  for (const x of [-.38, .38]) { // seats
+    const base = new THREE.Mesh(new THREE.BoxGeometry(.5, .14, .5), dark); base.position.set(x, .92, -.45);
+    const back = new THREE.Mesh(new THREE.BoxGeometry(.5, .55, .12), dark); back.position.set(x, 1.15, -.78); back.rotation.x = -.2; g.add(base, back);
+  }
+  const screen = new THREE.Mesh(new THREE.BoxGeometry(1.5, .42, .03), new THREE.MeshStandardMaterial({ color: '#10161c', metalness: .8, roughness: .1, transparent: true, opacity: .55 }));
+  screen.position.set(0, 1.02, .38); screen.rotation.x = -.55; g.add(screen);
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.54, .04, .05), chrome); frame.position.set(0, 1.2, .27); frame.rotation.x = -.55; g.add(frame);
+  for (const [x, z] of [[-.92, 1.45], [.92, 1.45], [-.92, -1.4], [.92, -1.4]]) {
+    const tyre = new THREE.Mesh(new THREE.CylinderGeometry(.36, .36, .26, 20), dark); tyre.rotation.z = Math.PI / 2; tyre.position.set(x, .36, z);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .27, 16), chrome); rim.rotation.z = Math.PI / 2; rim.position.copy(tyre.position); g.add(tyre, rim);
+  }
+  for (const x of [-.6, .6]) {
+    const head = new THREE.Mesh(new THREE.BoxGeometry(.32, .1, .05), new THREE.MeshLambertMaterial({ color: '#EDE9DF', emissive: '#6b665c' })); head.position.set(x, .58, 2.3); head.rotation.x = .5;
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(.36, .08, .05), new THREE.MeshLambertMaterial({ color: '#5a0a10', emissive: '#3a0508' })); tail.position.set(x, .7, -2.32); g.add(head, tail);
+  }
+  const bag = makeBag(); bag.position.set(.38, .95, -.3); bag.rotation.set(-1.0, 0, 0); bag.scale.setScalar(1.15); g.add(bag); // passenger seat, clubs pointing out the back
+  return g;
+}
 function makeCar(c) {
+  if (c.display) return finishCar(makeConvertible(c), c);
   const g = new THREE.Group(), paint = new THREE.MeshStandardMaterial({ color: c.colour, metalness: .6, roughness: .3 });
   const glass = new THREE.MeshStandardMaterial({ color: '#10161c', metalness: .8, roughness: .1 });
   const tyre = new THREE.MeshLambertMaterial({ color: '#111' });
@@ -644,12 +906,51 @@ function makeCar(c) {
   for (const [x, z] of [[-.95, 1.4], [.95, 1.4], [-.95, -1.4], [.95, -1.4]]) {
     const w = new THREE.Mesh(new THREE.CylinderGeometry(.36, .36, .3, 16), tyre); w.rotation.z = Math.PI / 2; w.position.set(x, .36, z); g.add(w);
   }
+  return finishCar(g, c);
+}
+function finishCar(g, c) {
   g.traverse(m => { if (m.isMesh) m.castShadow = true; });
   g.rotation.y = c.heading * Math.PI / 180;
   g.position.set(c.at[0], heightAt(c.at[0], c.at[1]), c.at[1]);
+  if (c.display) { // prize car on a low Tarmac plinth with a Redline edge
+    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(3, 3.1, 1, 48), new THREE.MeshLambertMaterial({ color: '#1B1916' })); plinth.position.y = -.5;
+    const edge = new THREE.Mesh(new THREE.CylinderGeometry(3.02, 3.02, .04, 48), new THREE.MeshLambertMaterial({ color: '#C1121F' })); edge.position.y = -.08;
+    plinth.receiveShadow = true; g.add(plinth, edge); g.position.y += .3;
+  }
   return g;
 }
 HOLE.cars.forEach(c => scene.add(makeCar(c)));
+
+// the tee: white markers, golf bag on the right, hole sign behind it (+x is the player's left)
+const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[0] + dx, HOLE.tee[1] + dz), HOLE.tee[1] + dz);
+{
+  const chalk = new THREE.MeshStandardMaterial({ color: '#EDE9DF', roughness: .5 });
+  for (const s of [-1, 1]) { const m = new THREE.Mesh(new THREE.SphereGeometry(.11, 16, 12), chalk); m.position.copy(teeAt(2.8 * s, 1.2)).y += .1; m.castShadow = true; scene.add(m); }
+
+  const bag = makeBag();
+  bag.rotation.set(-.22, .5, 0); bag.position.copy(teeAt(-3.4, 2)); bag.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(bag);
+
+  const tex = new THREE.CanvasTexture(document.createElement('canvas'));
+  const yd = Math.round(Math.hypot(HOLE.pin[0] - HOLE.tee[0], HOLE.pin[1] - HOLE.tee[1]) / 0.9144);
+  const drawSign = () => {
+    const cv = tex.image; cv.width = 512; cv.height = 320; const g = cv.getContext('2d');
+    g.fillStyle = '#0E2A1C'; g.fillRect(0, 0, 512, 320); g.strokeStyle = '#EDE9DF'; g.lineWidth = 4; g.strokeRect(14, 14, 484, 292);
+    g.fillStyle = '#EDE9DF'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '800 64px Archivo'; g.fillText(`HOLE ${HOLE_NO}`, 256, 80);
+    let size = 34; do g.font = `800 ${size--}px Archivo`; while (g.measureText(HOLE.name.toUpperCase()).width > 440);
+    g.fillText(HOLE.name.toUpperCase(), 256, 146);
+    g.font = '600 26px Archivo'; g.fillText(`PAR ${HOLE.par}  ·  ${yd} YD  ·  SI ${HOLE.si}`, 256, 204);
+    if (HOLE.par === 3) { g.fillStyle = '#C1121F'; g.fillRect(14, 244, 484, 62); g.fillStyle = '#EDE9DF'; g.font = '800 26px Archivo'; g.fillText('ACE THIS HOLE', 256, 276); }
+    tex.needsUpdate = true;
+  };
+  drawSign(); document.fonts.load('800 30px Archivo').then(drawSign);
+  const sign = new THREE.Group(), wood = new THREE.MeshLambertMaterial({ color: '#3a2a1e' });
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1), new THREE.MeshLambertMaterial({ map: tex })); face.position.set(0, 1.5, .035);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.1, .06), wood); back.position.y = 1.5;
+  sign.add(face, back);
+  for (const s of [-1, 1]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.08, 1.5, .08), wood); post.position.set(.7 * s, .75, -.04); sign.add(post); }
+  sign.rotation.y = Math.PI + .5; sign.position.copy(teeAt(-6, 4)); sign.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(sign);
+}
 
 // flag, ball, aim line, trail
 const flag = new THREE.Group();
@@ -686,8 +987,23 @@ const cupWall = new THREE.Mesh(new THREE.CylinderGeometry(CUP_R, CUP_R, CUP_D, 2
 cupWall.position.set(PIN.x, CUP_Y - CUP_D / 2, PIN.z); inCup(cupWallMat); cupWall.renderOrder = 2; scene.add(cupWall);
 const cupFloor = new THREE.Mesh(new THREE.CircleGeometry(CUP_R, 24), cupFloorMat);
 cupFloor.rotation.x = -Math.PI / 2; cupFloor.position.set(PIN.x, CUP_Y - CUP_D, PIN.z); inCup(cupFloorMat); cupFloor.renderOrder = 2; scene.add(cupFloor);
-const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4 }));
+// the LDC roundel printed on two sides of the ball, like a real ball's logo; it reads as a flicker when the ball turns
+const ballTex = new THREE.CanvasTexture(document.createElement('canvas'));
+const drawBallLogo = () => {
+  const cv = ballTex.image; cv.width = 512; cv.height = 256; const g = cv.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 512, 256);
+  for (const x of [128, 384]) {
+    g.save(); g.translate(x, 128); g.scale(1.6, 1); // equirectangular map squashes width, so stretch to stay round
+    g.beginPath(); g.arc(0, 0, 30, 0, 6.283); g.lineWidth = 6; g.strokeStyle = '#C1121F'; g.stroke();
+    g.fillStyle = '#1B1916'; g.font = '800 17px Archivo'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('LDC', 0, 1);
+    g.restore();
+  }
+  ballTex.needsUpdate = true;
+};
+drawBallLogo(); document.fonts.load('800 17px Archivo').then(drawBallLogo);
+const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4, map: ballTex }));
 ballMesh.castShadow = true; scene.add(ballMesh);
+const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
 const BALL_NEAR = BALL.r / .08; // drawn ball is .08 radius; this scale makes it the real 1.68 in
 const cupBallMat = new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4 });
 const cupBall = new THREE.Mesh(ballMesh.geometry, cupBallMat); inCup(cupBallMat); cupBall.renderOrder = 3; cupBall.scale.setScalar(BALL_NEAR); cupBall.visible = false; scene.add(cupBall);
@@ -737,18 +1053,39 @@ const greenLines = (() => {
   };
   scene.add(lines); return lines;
 })();
-const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(aimLine);
+const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#EDE9DF', vertexColors: true, transparent: true })); scene.add(aimLine);
 const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(trail);
 aimLine.frustumCulled = trail.frustumCulled = false; // geometry is rewritten every frame, so its cached bounds go stale and hide the line
 
 // ---------- UI ----------
 const $ = id => document.getElementById(id);
-CLUBS.forEach((c, i) => $('club').add(new Option(c.name, i)));
+// club icons: side-on head silhouettes, loft grows down the bag
+const clubIcon = c => {
+  const loft = { dr: 8, '3w': 12, '5i': 22, '7i': 30, '9i': 38, pw: 44, sw: 54, pt: 2 }[c.id], wood = c.id === 'dr' || c.id === '3w';
+  const head = c.putter ? '<rect x="10" y="27" width="22" height="7" rx="1"/>'
+    : wood ? `<ellipse cx="${c.id === 'dr' ? 20 : 21}" cy="28" rx="${c.id === 'dr' ? 12 : 9.5}" ry="${c.id === 'dr' ? 7 : 5.5}"/>`
+    : `<path d="M10 33 L30 33 L${30 - loft / 6} ${33 - 9 - loft / 10} L12 25 Z"/>`;
+  return `<svg viewBox="0 0 40 40" aria-hidden="true"><line x1="${c.putter ? 29 : 30}" y1="4" x2="${c.putter ? 26 : wood ? 27 : 27}" y2="${c.putter ? 27 : 24}" stroke="#CFC9BB" stroke-width="2"/>`
+    + `<g fill="#EDE9DF" transform="rotate(${-loft / 3} 20 30)">${head}</g></svg>`;
+};
+const bag = $('bag');
+const openBag = open => {
+  bag.classList.toggle('open', open); $('club').setAttribute('aria-expanded', open);
+  if (!open) return;
+  const lie = materialAt(state.ball.x, state.ball.z);
+  bag.querySelector('.grid').innerHTML = CLUBS.map((c, i) => `<button data-i="${i}" class="${i === state.club ? 'on' : ''}">${clubIcon(c)}<span>${c.name.replace('Sand Wedge', 'Sand W.')}</span>`
+    + `<span class="yd">${c.putter ? 'Green' : Math.round(carryAt(i, 1, lie)) + ' yd'}</span></button>`).join('');
+  bag.querySelector('.on').focus();
+};
+bag.onclick = e => { const b = e.target.closest('button'); if (b) { setClub(+b.dataset.i, true); openBag(false); refresh(); } };
+$('club').onclick = () => state.phase === 'aim' && openBag(!bag.classList.contains('open'));
+addEventListener('pointerdown', e => { if (!e.target.closest('#bag, #club')) openBag(false); }, true);
 function suggestClub(dist) {
   if (materialAt(state.ball.x, state.ball.z) === 'green') return 7;
   if (dist < 25) return materialAt(state.ball.x, state.ball.z) === 'fringe' ? 7 : 6;
-  for (let i = CLUBS.length - 2; i >= 0; i--) if (carryAt(i, 1, materialAt(state.ball.x, state.ball.z)) >= dist * 0.95) return i;
-  return 0;
+  const longest = Math.hypot(state.ball.x - HOLE.tee[0], state.ball.z - HOLE.tee[1]) < 1 ? 0 : 1; // driver only off the tee; after that the 3 wood is the longest suggestion
+  for (let i = CLUBS.length - 2; i >= longest; i--) if (carryAt(i, 1, materialAt(state.ball.x, state.ball.z)) >= dist * 0.95) return i;
+  return longest;
 }
 // auto-aim: at the pin, or along the fairway when the pin is beyond the club's reach. Ignores wind on purpose.
 function autoAim() {
@@ -757,11 +1094,11 @@ function autoAim() {
   const z = Math.min(PIN.z, b.z + reach * 0.97);
   return Math.atan2(centreX(z) - b.x, z - b.z);
 }
-function setClub(i) {
-  state.club = i; $('club').value = i;
-  state.aim = state.autoAim = autoAim();
-  // owner's rule: full shots start at 100%; the putter starts at the flat distance to the pin (slope is the player's to read)
-  state.power = CLUBS[i].putter ? clamp(Math.sqrt(2 * G * SURF.green.roll * flat(state.ball, PIN)) / CLUBS[i].speed, 0.01, 1) : 1;
+function setClub(i, keepAim) { // keepAim: the player changed club mid-shot, so leave their aim alone
+  state.club = i; $('club').innerHTML = `${clubIcon(CLUBS[i])}<span>${CLUBS[i].name}</span><span class="more" aria-hidden="true">▴</span>`; $('club').setAttribute('aria-label', `Club: ${CLUBS[i].name}. Change club`);
+  state.autoAim = autoAim(); if (!keepAim) state.aim = state.autoAim;
+  // owner's rules: full shots start at 100%, but 60% within 50 yd of the pin; the putter starts at the flat distance to the pin (slope is the player's to read)
+  state.power = CLUBS[i].putter ? clamp(Math.sqrt(2 * G * SURF.green.roll * flat(state.ball, PIN)) / CLUBS[i].speed, 0.01, 1) : flat(state.ball, PIN) / YD <= 50 ? .6 : 1;
   refresh();
 }
 function refresh() {
@@ -791,7 +1128,10 @@ function refresh() {
     const reach = Math.min(14, carryAt(state.club, state.power, lie) * YD); // short pointer like Golf Slate, not the full carry
     for (let s = 0; s <= reach; s += 1) { const x = b.x + Math.sin(state.aim) * s, z = b.z + Math.cos(state.aim) * s; pts.push(new THREE.Vector3(x, heightAt(x, z) + .08, z)); }
   }
-  aimLine.geometry.setFromPoints(pts); aimLine.visible = state.phase === 'aim';
+  aimLine.geometry.setFromPoints(pts);
+  // last 10% fades to nothing instead of a hard end
+  aimLine.geometry.setAttribute('color', new THREE.Float32BufferAttribute(pts.flatMap((_, k) => [1, 1, 1, Math.min(1, (pts.length - 1 - k) / Math.max(1, (pts.length - 1) * .1))]), 4));
+  aimLine.visible = state.phase === 'aim';
   greenLines.visible = c.putter || d < 40;
 }
 function toast(t) { const e = $('toast'); e.textContent = t; e.style.opacity = 1; setTimeout(() => e.style.opacity = 0, 1600); }
@@ -875,7 +1215,6 @@ $('power').addEventListener('pointerdown', e => { if (state.phase !== 'aim') ret
 $('power').addEventListener('pointermove', e => powering && setPowerFromX(e.clientX));
 ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => $('power').addEventListener(t, () => powering = false));
 $('swing').onclick = swing;
-$('club').onchange = e => setClub(+e.target.value);
 $('again').onclick = reset;
 // always navigate (setting an unchanged location.search doesn't reload); no ?hole = the round's next hole
 const go = (q = '') => { location.href = location.pathname + q; };
@@ -899,6 +1238,14 @@ function openCard() {
   $('card').style.display = 'block';
 }
 $('holesBtn').onclick = openCard;
+// ambiance panel: opened from Holes, never forced. Picking one reloads so the whole scene relights behind the panel
+const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+$('skies').innerHTML = Object.entries(SKIES).map(([k, c]) => `<button data-sky="${k}" class="${k === LIGHT.name ? 'on' : ''}" aria-pressed="${k === LIGHT.name}">`
+  + `<span class="sw" aria-hidden="true"><i style="background:${c.zenith}"></i><i style="background:${c.mid}"></i><i style="background:${c.horizon}"></i></span>${k}</button>`).join('');
+$('skies').onclick = e => { const k = e.target.closest('button')?.dataset.sky; if (k && k !== LIGHT.name) { store(SKY_KEY, k); try { sessionStorage.setItem('ldc.ambiance', '1'); } catch {} const u = new URL(location.href); u.searchParams.delete('sky'); location.replace(u); } }; // drop a ?sky preview so the pick wins
+$('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
+$('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
+try { if (sessionStorage.getItem('ldc.ambiance')) $('start').classList.add('open'); } catch {} // stay open across the relight reload
 $('cardClose').onclick = () => { $('card').style.display = 'none'; $('cardAsk').hidden = true; };
 // in-card confirm: browser confirm() is blocked in some embeds and silently answers no
 let askYes = null;
@@ -916,7 +1263,9 @@ $('cardRows').onclick = e => {
   ask(`Practise hole ${no}? It won't count towards your round.`, () => go(`?hole=${no}&practice`));
 };
 addEventListener('keydown', e => {
+  if ($('start').classList.contains('open')) return;
   if (state.phase === 'done' && e.key === 'Enter') return reset();
+  if (bag.classList.contains('open')) { if (e.key === 'Escape') { openBag(false); $('club').focus(); } return; } // keys belong to the popup while it's open
   if (state.phase !== 'aim') return;
   const fine = e.shiftKey ? 0.2 : 1;
   if (e.key === 'ArrowLeft') state.aim += 0.004 * fine;
@@ -924,13 +1273,13 @@ addEventListener('keydown', e => {
   else if (e.key === 'ArrowUp') state.power = Math.min(1, state.power + 0.02);
   else if (e.key === 'ArrowDown') state.power = Math.max(0.01, state.power - 0.02);
   else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); return swing(); }
-  else if (e.key >= '1' && e.key <= '8') return setClub(+e.key - 1);
+  else if (e.key >= '1' && e.key <= '8') return setClub(+e.key - 1, true);
   else return;
   e.preventDefault(); refresh();
 });
 
 // ---------- loop ----------
-const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), _spinAxis = new THREE.Vector3();
 function frame(now) {
   requestAnimationFrame(frame);
   let ball = state.ball;
@@ -942,7 +1291,14 @@ function frame(now) {
     if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; setTimeout(endShot, 700); if (sh.r.outcome === 'holed') state.dropT0 = now; }
   }
   const bs = BALL_NEAR + (1 - BALL_NEAR) * clamp((flat(ball, PIN) - 20) / 20, 0, 1); // true size near the cup so what you see is what drops; eases by distance only so it never pops mid-roll
-  ballMesh.scale.setScalar(bs); ballMesh.position.set(ball.x, ball.y - BALL.r + 0.08 * bs + 0.005, ball.z);
+  { // turn the ball by the distance it moved: rolls forward on the ground, backspins in the air
+    const p = ballMesh.position, dx = ball.x - p.x, dz = ball.z - p.z, d = Math.hypot(dx, dz);
+    if (d > 1e-4 && d < 5) { const air = ball.y - heightAt(ball.x, ball.z) > BALL.r + .05; ballMesh.rotateOnWorldAxis(_spinAxis.set(dz / d, 0, -dx / d), (air ? -.15 : 1) * d / (.08 * bs)); }
+  }
+  const teed = state.phase === 'aim' && !CLUBS[state.club].putter && Math.hypot(ball.x - HOLE.tee[0], ball.z - HOLE.tee[1]) < .5, lift = teed ? .05 * bs : 0;
+  ballMesh.scale.setScalar(bs); ballMesh.position.set(ball.x, ball.y - BALL.r + 0.08 * bs + 0.005 + lift, ball.z);
+  SEE.uBall.value.copy(ballMesh.position);
+  peg.visible = teed; peg.scale.setScalar(bs); peg.position.set(ball.x, ball.y - BALL.r + .03 * bs, ball.z);
   if (state.dropT0) { // holed: fall under gravity to the cup floor, with a small settle bounce
     const t = (now - state.dropT0) / 1000, fall = Math.min(CUP_D, 4.9 * t * t), bounce = t > .14 ? Math.abs(Math.sin((t - .14) * 18)) * .015 * Math.max(0, 1 - (t - .14) * 4) : 0;
     cupBall.position.set(PIN.x, CUP_Y + BALL.r - fall + bounce, PIN.z);
