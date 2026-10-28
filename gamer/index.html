@@ -64,13 +64,13 @@
   #hint { text-align: center; margin-top: 8px; color: var(--ldc-chalk); text-shadow: none; }
   #toast { position: fixed; top: 36%; left: 50%; transform: translate(-50%,-50%); background: var(--ldc-tarmac); border: 1px solid var(--hairline); border-top: 4px solid var(--ldc-redline);
     padding: 14px 22px; font-size: 22px; pointer-events: none; opacity: 0; transition: opacity .3s ease-out; white-space: nowrap; }
-  #done { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; padding: 0 0 22px; width: min(360px, calc(100% - 28px)); overflow: hidden; }
-  #done .stripe { position: static; height: 8px; margin-bottom: 22px; }
+  #done, #water { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; padding: 0 0 22px; width: min(360px, calc(100% - 28px)); overflow: hidden; }
+  #done .stripe, #water .stripe { position: static; height: 8px; margin-bottom: 22px; }
   #done .roundel { width: 76px; height: 76px; margin: 0 auto 14px; font-size: 30px; border-width: 5px; box-shadow: 0 0 0 3px var(--ldc-chalk); }
-  #done h2 { margin: 0; font-size: 34px; }
-  #done .voice { font-size: 19px; margin: 10px 22px 6px; color: var(--ldc-chalk); }
-  #done button { margin-top: 16px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 26px; border-radius: 3px; font: 600 14px var(--font); cursor: pointer; }
-  #done button:hover { background: var(--ldc-green-up); }
+  #done h2, #water h2 { margin: 0; font-size: 34px; }
+  #done .voice, #water .voice { font-size: 19px; margin: 10px 22px 6px; color: var(--ldc-chalk); }
+  #done button, #water button { margin-top: 16px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 26px; border-radius: 3px; font: 600 14px var(--font); cursor: pointer; }
+  #done button:hover, #water button:hover { background: var(--ldc-green-up); }
   #holesBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
   #holesBtn { margin-top: 8px; padding: 6px 10px; }
   #holesBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
@@ -86,13 +86,58 @@
   #play { margin-top: 18px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   #play:hover { background: var(--ldc-green-up); }
   #card { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(520px, calc(100% - 28px)); max-height: calc(100% - 60px); overflow: hidden auto; padding: 0 0 16px; z-index: 6; }
-  #card .stripe { position: static; height: 8px; margin-bottom: 10px; }
-  .hrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 44px 34px 56px; gap: 6px; align-items: center; width: 100%; padding: 10px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
+  #card .stripe { position: static; height: 8px; margin-bottom: 0; }
+  #card > .cardBtns { padding-top: 12px; }
+  .hrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 44px 34px 56px; gap: 6px; align-items: center; width: 100%; padding: 7px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
   .hrow span:nth-child(n+3) { text-align: right; font-feature-settings: "tnum" 1; }
   .hrow.head { cursor: default; padding-top: 6px; padding-bottom: 6px; }
   button.hrow:hover { background: var(--ldc-tarmac-up); }
   .hrow.here { background: var(--ldc-green); box-shadow: inset 4px 0 0 var(--ldc-redline); }
-  #cardTotal { padding: 12px 16px 0; color: var(--ldc-chalk); }
+  #cardTotal { padding: 12px 16px 8px; color: var(--ldc-chalk); }
+  /* the round's scorecard: printed card stock (Chalk) with Racing Green ink */
+  #sc { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(560px, calc(100% - 20px)); max-height: calc(100% - 30px); overflow: hidden auto; z-index: 8; background: var(--ldc-chalk); color: var(--ldc-green); padding: 0 0 18px; }
+  #sc .stripe { position: static; height: 8px; }
+  #scrim { display: none; position: fixed; inset: 0; z-index: 7; background: rgba(27,25,22,.72); } /* dims the course so the card has the stage */
+  .scHead { display: flex; gap: 14px; align-items: center; padding: 16px 16px 10px; }
+  .scHead .roundel { width: 54px; height: 54px; background: var(--ldc-green); color: var(--ldc-chalk); border-color: var(--ldc-green); }
+  .scHead h2 { margin: 2px 0; font-size: 26px; }
+  #sc .eyebrow { color: var(--ldc-green); }
+  .scWrap { padding: 0 16px; margin-bottom: 10px; overflow-x: auto; }
+  #sc table { width: 100%; border-collapse: collapse; font: 400 12px var(--font); font-feature-settings: "tnum" 1; }
+  #sc th, #sc td { border: 1px solid var(--ldc-green); padding: 5px 2px; text-align: center; min-width: 24px; }
+  #sc th:first-child, #sc td:first-child { text-align: left; padding-left: 6px; font: 600 11px var(--font); letter-spacing: .12em; text-transform: uppercase; min-width: 44px; }
+  #sc tr.hn th { background: var(--ldc-green); color: var(--ldc-chalk); font: 800 12px Archivo, var(--font); }
+  #sc tr.me td { font: 800 14px Archivo, var(--font); height: 30px; }
+  #sc .sum { background: rgba(14,42,28,.08); font-weight: 700; }
+  .m { display: inline-grid; place-items: center; min-width: 22px; height: 22px; }
+  .m.b, .m.e { border: 1.5px solid var(--ldc-redline); border-radius: 50%; }
+  .m.e { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 3.5px var(--ldc-redline); }
+  .m.o, .m.d { border: 1.5px solid var(--ldc-green); }
+  .m.d { box-shadow: 0 0 0 2px var(--ldc-chalk), 0 0 0 3.5px var(--ldc-green); }
+  .scKey .m { min-width: 12px; height: 12px; margin: 0 4px 0 10px; vertical-align: -2px; }
+  .scKey { padding: 0 16px; }
+  .scTotal { display: flex; align-items: baseline; gap: 12px; padding: 4px 16px 10px; border-top: 4px solid var(--ldc-redline); margin: 6px 16px 10px; padding-left: 0; }
+  .scTotal .display { font-size: 40px; }
+  .scTotal .voice { font-size: 18px; color: var(--ldc-green); }
+  @media (max-width: 520px) { /* phones: the whole nine fits without sideways scrolling */
+    .scWrap { padding: 0 10px; } #sc table { font-size: 10px; } #sc th, #sc td { padding: 4px 0; min-width: 0; }
+    #sc th:first-child, #sc td:first-child { min-width: 0; padding-left: 3px; font-size: 9px; letter-spacing: .04em; }
+    #sc tr.me td { font-size: 12px; } .m { min-width: 18px; height: 18px; } }
+  #sc.board .scWrap, #sc.board .scTotal, #sc.board .scKey { display: none; }
+  #scBoard { display: none; padding: 0 16px; } #sc.board #scBoard { display: block; }
+  #scBoard ol { list-style: none; margin: 0; padding: 0; } #scBoard li { display: grid; grid-template-columns: 30px 1fr 44px 44px; gap: 6px; padding: 8px 4px; border-bottom: 1px solid rgba(14,42,28,.25); font: 400 14px var(--font); }
+  #scBoard li b { font: 800 14px Archivo, var(--font); text-align: right; } #scBoard li span:last-child { text-align: right; }
+  #scBoard li.me { background: var(--ldc-green); color: var(--ldc-chalk); }
+  #scForm { display: grid; gap: 6px; padding: 10px 16px 0; } #scForm[hidden] { display: none; }
+  #scForm input { font: 400 16px var(--font); padding: 10px; border: 1px solid var(--ldc-green); border-radius: 3px; background: #F6F3EC; color: var(--ldc-tarmac); }
+  #scForm button { justify-self: start; margin-top: 6px; }
+  #scMsg { margin: 10px 16px 0; font-size: 17px; color: var(--ldc-green); }
+  #sc button.alt { background: transparent; color: var(--ldc-green); box-shadow: inset 0 0 0 1px var(--ldc-green); }
+  .scBtns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px 0; }
+  .scBtns button, #scForm button { background: var(--ldc-green); color: var(--ldc-chalk); border: 0; border-radius: 3px; padding: 12px 20px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
+  .scBtns button:hover { background: var(--ldc-green-up); }
+  .hrow.pick { background: var(--ldc-green-up); box-shadow: inset 4px 0 0 var(--ldc-chalk); }
+  .hrow .go { grid-column: 3 / -1; text-align: right; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; }
   .cardBtns { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
   #cardAsk { margin: 12px 16px 0; padding: 12px 0 0; border-top: 4px solid var(--ldc-redline); }
   #cardAsk .cardBtns { padding: 10px 0 0; }
@@ -122,11 +167,28 @@
 </div>
 <div id="card" class="panel" role="dialog" aria-label="Holes">
   <div class="stripe"><i></i><i></i><i></i></div>
+  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="lightBtn">Ambiance</button><button id="soundBtn">Sound on</button><button id="cardClose">Close</button></div>
+  <div id="cardAsk" hidden><span id="askText"></span><div class="cardBtns"><button id="askYes">Yes</button><button id="askNo">Cancel</button></div></div>
+  <div id="cardTotal" class="eyebrow"></div>
   <div class="hrow head eyebrow"><span>No</span><span>Hole</span><span>Par</span><span>Yd</span><span>SI</span><span>Score</span></div>
   <div id="cardRows"></div>
-  <div id="cardTotal" class="eyebrow"></div>
-  <div id="cardAsk" hidden><span id="askText"></span><div class="cardBtns"><button id="askYes">Yes</button><button id="askNo">Cancel</button></div></div>
-  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="lightBtn">Ambiance</button><button id="cardClose">Close</button></div>
+</div>
+<div id="scrim"></div>
+<div id="sc" class="panel" role="dialog" aria-label="Scorecard">
+  <div class="stripe"><i></i><i></i><i></i></div>
+  <div class="scHead"><div class="roundel display">LDC</div><div><div class="eyebrow">Long Drive Club</div><h2 class="display">Scorecard</h2><div class="eyebrow" id="scDate"></div></div></div>
+  <div class="scWrap"><table id="scFront"></table></div>
+  <div class="scWrap"><table id="scBack"></table></div>
+  <div class="scTotal"><span class="display" id="scScore"></span><span class="voice" id="scPar"></span></div>
+  <div class="scKey eyebrow"><i class="m b"></i>Birdie <i class="m e"></i>Eagle <i class="m o"></i>Bogey <i class="m d"></i>Double +</div>
+  <div id="scBoard"></div>
+  <form id="scForm" hidden>
+    <label class="eyebrow" for="scName">Name on the board</label><input id="scName" maxlength="24" autocomplete="nickname" required>
+    <label class="eyebrow" for="scEmail">Email (optional, never shown)</label><input id="scEmail" type="email" maxlength="120" autocomplete="email">
+    <button id="scSend">Hand in card</button>
+  </form>
+  <p id="scMsg" class="voice" hidden></p>
+  <div class="scBtns"><button id="scSubmit">Submit score</button><button id="scView">View leaderboard</button><button id="scAgain">Go round again</button></div>
 </div>
 <div id="info" class="panel">
   <div><span id="dist" class="num display">0</span> <span class="eyebrow" id="distUnit">yd to pin</span></div>
@@ -142,6 +204,12 @@
   <p class="voice" id="doneVoice"></p>
   <div id="doneSub" class="eyebrow"></div>
   <button id="again">Play again</button> <button id="next">Next hole</button>
+</div>
+<div id="water" class="panel" role="dialog" aria-label="Water">
+  <div class="stripe"><i></i><i></i><i></i></div>
+  <h2 class="display">Water</h2>
+  <p class="voice">One stroke. Your call where you play the next.</p>
+  <button id="wReplay">Replay from last spot</button> <button id="wDrop">Drop zone</button>
 </div>
 <div id="controls">
   <div id="bag" role="dialog" aria-label="Choose a club"><div class="eyebrow">Choose a club</div><div class="grid"></div></div>
@@ -172,6 +240,11 @@ const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Mat
 // Layout traced from an aerial of a famous opening par 4: 445 yd, fairway drifting left then bending right
 // to an elevated green, a fairway bunker right, a bunker front-left of the green, tree lines both sides.
 // World +x is the player's LEFT (screen-left from behind the ball); z runs from tee to green, in metres.
+// a creek as overlapping circles every r metres along [x, z] points, all sharing one drop zone
+const creek = (pts, r, drop) => pts.slice(1).flatMap(([x, z], i) => {
+  const [px, pz] = pts[i], n = Math.max(1, Math.ceil(Math.hypot(x - px, z - pz) / r));
+  return Array.from({ length: n + (i === pts.length - 2) }, (_, k) => ({ at: [px + (x - px) * k / n, pz + (z - pz) * k / n], r, drop }));
+});
 const HOLES = [{
   name: 'Tee Tree', par: 4, si: 9,
   tee: [0, 0], pin: [-55, 403],                  // 445 yd tee to pin
@@ -314,6 +387,149 @@ const HOLES = [{
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
     { at: [75, 420], heading: 70, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Jamelia', par: 4, si: 6,
+  tee: [0, 0], pin: [79.2, 445.7],             // 495 yd tee to pin (back tee, aerial scale 0.344 m/px), steep downhill, sweeping left
+  wind: { mph: 12, toward_deg: 160 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 15, line: [[0, 0], [104.7, -9.4], [212.1, -14.8], [292.7, 1.3], [357.1, 28.2], [405.4, 49.7], [445.7, 79.2]] },
+  elevation: [[0, 20], [200, 8], [350, 0], [460, 1]],
+  green: { at: [79.2, 445.7], r: 12 },
+  bunkers: [{ at: [47, 386.6], r: 6 }, { at: [37.6, 365], r: 6 }, { at: [60.4, 440.3], r: 4 }, { at: [59, 433], r: 3.5 }],
+  water: [],
+  trees: [[1, 40, 440, 30, 18], [-1, 160, 420, 38, 18]],
+  treeClusters: [{ at: [-51, 139.6], r: 6 }, { at: [95, 465], r: 10 }, { at: [30, 455], r: 8 }],
+  cars: [
+    { at: [-10, -14], heading: -20, colour: '#EDE9DF', kind: 'gt' },
+    { at: [110, 440], heading: 80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Grey Catree', par: 4, si: 1,
+  tee: [0, 0], pin: [-14.5, 475.3],            // 520 yd tee to pin (back tee, aerial scale 0.414 m/px), pond front left of the green
+  wind: { mph: 15, toward_deg: 300 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 18, line: [[0, 0], [113, 3.2], [226, 6.5], [307, 3.2], [388, -6.5], [475.3, -14.5]] },
+  elevation: [[0, 12], [250, 6], [450, 0], [520, 0]],
+  green: { at: [-14.5, 475.3], r: 13 },
+  bunkers: [{ at: [-27.5, 494.6], r: 3.5 }, { at: [-21, 242.5], r: 3 }],
+  water: [{ at: [3.2, 468.8], r: 9, drop: [-28, 440] }, { at: [3.2, 452.6], r: 9, drop: [-28, 440] },
+    { at: [25.9, 491], r: 8, drop: [-28, 440] }, { at: [0, 517], r: 7, drop: [-28, 440] }, { at: [45, 462], r: 7, drop: [-28, 440] }],
+  trees: [[1, 0, 430, 25, 25], [-1, 0, 230, 22, 18], [-1, 250, 370, 40, 20]],
+  treeClusters: [{ at: [-16, 330], r: 4 }, { at: [-24, 315], r: 3 }, { at: [-21, 242.5], r: 8 }, { at: [-38, 190], r: 6 }],
+  cars: [
+    { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
+    { at: [-50, 470], heading: 80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Silver Cymbal', par: 3, si: 4,
+  tee: [0, 0], pin: [0.6, 141.7],              // 155 yd tee to pin (back tee, aerial scale 0.163 m/px), creek across the front
+  wind: { mph: 10, toward_deg: 300 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 14, line: [[0, 0], [141.7, 0.6]] },
+  elevation: [[0, 2], [100, 0], [150, 1], [190, 3]],
+  green: { at: [0.6, 141.7], r: 9 },
+  bunkers: [{ at: [-6, 134], r: 2.5 }, { at: [3.2, 153.2], r: 3 }, { at: [-1.9, 157], r: 3 }],
+  water: creek([[27.5, 89.4], [18.5, 98.3], [9.6, 106], [0.6, 112.4], [-8.3, 118.8], [-17.2, 126.4], [-26.2, 135.4], [-35.1, 145.6], [-44, 155.8]], 7, [-5, 92])
+    .concat([{ at: [9.6, 117.5], r: 5, drop: [-5, 92] }]),
+  trees: [[1, 110, 200, 15, 20], [-1, 150, 200, 20, 15]],
+  treeClusters: [{ at: [27.5, 67.7], r: 7 }, { at: [-30, 51], r: 5 }, { at: [-25, 35.8], r: 6 }],
+  cars: [
+    { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
+    { at: [-40, 120], heading: 85, colour: '#EDE9DF', kind: 'gt' },
+  ],
+}, {
+  name: 'Bulgaria', par: 5, si: 18,
+  tee: [0, 0], pin: [-58.6, 494.9],            // 545 yd tee to pin (back tee, aerial scale 0.417 m/px), dogleg left, creek down the left and across the front
+  wind: { mph: 12, toward_deg: 60 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 18, line: [[0, 0], [52.1, -45.6], [133.5, -100.9], [214.9, -159.5], [312.6, -172.5], [394, -146.5], [459.1, -100.9], [494.9, -58.6]] },
+  elevation: [[0, 4], [200, 0], [350, 1], [480, 2], [530, 3]],
+  green: { at: [-58.6, 494.9], r: 11 },
+  bunkers: [{ at: [-35.8, 514.4], r: 4 }, { at: [-35.8, 490], r: 4 }, { at: [-48.8, 524], r: 4 }],
+  water: creek([[-55.4, 117.2], [-81.4, 110.7], [-107.5, 104.2]], 7, [-95, 140])
+    .concat(creek([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6], [-101, 397.2], [-91, 423.3], [-78, 462.4], [-70, 501.4]], 3, [-118, 430])),
+  trees: [[1, 0, 180, 20, 15], [1, 200, 470, 30, 25], [-1, 180, 420, 45, 25], [-1, 0, 100, 15, 12]],
+  treeClusters: [{ at: [-94, 296], r: 25 }, { at: [-215, 280], r: 25 }, { at: [-192, 384], r: 8 }],
+  cars: [
+    { at: [10, -14], heading: 20, colour: '#262320', kind: 'gt' },
+    { at: [-150, 480], heading: 80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Shenzhen Silk', par: 4, si: 8,
+  tee: [0, 0], pin: [24.8, 401.6],             // 440 yd tee to pin (back tee, aerial scale 0.317 m/px), no bunkers, raised green
+  wind: { mph: 9, toward_deg: 220 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 15, line: [[0, 0], [88, -12.4], [187.2, -12.4], [261.5, -5], [335.9, 9.9], [401.6, 24.8]] },
+  elevation: [[0, 3], [200, 0], [330, 2], [400, 6], [440, 6.5]],
+  green: { at: [24.8, 401.6], r: 14 },
+  bunkers: [],
+  water: [],
+  trees: [[1, 60, 350, 22, 18], [-1, 150, 370, 28, 18]],
+  treeClusters: [{ at: [-54.5, 169.8], r: 10 }, { at: [24.8, 145], r: 5 }, { at: [17.4, 130], r: 4 }, { at: [24.8, 75.6], r: 10 }, { at: [-2.5, 437.6], r: 5 }, { at: [54.5, 415], r: 8 }],
+  cars: [
+    { at: [-10, -14], heading: -20, colour: '#EDE9DF', kind: 'gt' },
+    { at: [-30, 420], heading: -80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Icepick', par: 5, si: 16,
+  tee: [0, 0], pin: [6.3, 502.9],              // 550 yd tee to pin (back tee, aerial scale 0.404 m/px), pond in front of the green and another beyond
+  wind: { mph: 18, toward_deg: 10 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 18, line: [[0, 0], [107.2, 0], [233.3, 3.2], [359.4, 9.5], [438.3, 9.5], [502.9, 6.3]] },
+  elevation: [[0, 8], [250, 10], [400, 4], [500, 0], [560, 0]],
+  green: { at: [6.3, 502.9], r: 11 },
+  bunkers: [{ at: [-15.8, 493.4], r: 3.5 }],
+  water: [{ at: [9.5, 474.5], r: 7, drop: [25, 455] }, { at: [-6.3, 468.2], r: 7, drop: [25, 455] }, { at: [22.1, 482.4], r: 5, drop: [25, 455] },
+    { at: [34.7, 545.5], r: 10, drop: [5, 525] }, { at: [9.5, 551.8], r: 7, drop: [5, 525] }],
+  trees: [[1, 0, 520, 45, 15], [-1, 0, 520, 45, 15]],
+  treeClusters: [{ at: [66, 432], r: 12 }, { at: [34.7, 343.7], r: 14 }, { at: [56.8, 280.6], r: 12 }, { at: [53.6, 217.6], r: 12 }, { at: [31.5, 141.9], r: 10 }, { at: [18.9, 82], r: 6 },
+    { at: [-33.1, 438.3], r: 10 }, { at: [-34.7, 353], r: 10 }, { at: [-33.1, 290], r: 12 }, { at: [-36.3, 214], r: 5 }, { at: [-31.5, 126], r: 10 }, { at: [-28.4, 44], r: 8 },
+    { at: [0, 536], r: 6 }, { at: [-26.8, 485.6], r: 4 }],
+  cars: [
+    { at: [10, -14], heading: 20, colour: '#262320', kind: 'gt' },
+    { at: [-45, 500], heading: 80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Greenpetal', par: 3, si: 11,
+  tee: [0, 0], pin: [-8.4, 155.2],             // 170 yd tee to pin (back tee, aerial scale 0.154 m/px), pond down the left
+  wind: { mph: 8, toward_deg: 250 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 14, line: [[0, 0], [155.2, -8.4]] },
+  elevation: [[0, 4], [60, 0], [150, 1], [190, 2]],
+  green: { at: [-8.4, 155.2], r: 11 },
+  bunkers: [{ at: [7.2, 159.4], r: 3.5 }, { at: [-20.4, 174.4], r: 5 }, { at: [-20.4, 140.7], r: 3.5 }],
+  water: [[8.4, 146.8, 8], [3.6, 128.7, 11], [-1.2, 113.1, 12], [1.2, 95, 12], [2.4, 77, 12], [2.4, 59, 12], [1.2, 48, 9]].map(([x, z, r]) => ({ at: [x, z], r, drop: [-25, 100] })),
+  trees: [[1, 0, 90, 35, 12]],
+  treeClusters: [{ at: [24, 173], r: 10 }, { at: [-14.4, 185], r: 8 }, { at: [-33.7, 155], r: 8 }, { at: [-47, 119], r: 12 }, { at: [-27.7, 77], r: 8 }],
+  cars: [
+    { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
+    { at: [-45, 150], heading: 85, colour: '#262320', kind: 'gt' },
+  ],
+}, {
+  name: 'Mamdani', par: 4, si: 9,
+  tee: [0, 0], pin: [-14.5, 402],              // 440 yd tee to pin (back tee, aerial scale 0.310 m/px), uphill finish
+  wind: { mph: 11, toward_deg: 140 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 16, line: [[0, 0], [82.4, -7.3], [179.2, -17], [276.1, -19.4], [348.8, -17], [402, -14.5]] },
+  elevation: [[0, 2], [200, 0], [350, 4], [420, 6]],
+  green: { at: [-14.5, 402], r: 9 },
+  bunkers: [{ at: [0, 391], r: 3 }, { at: [-19.4, 387.5], r: 3 }],
+  water: [],
+  trees: [[1, 0, 460, 45, 12], [-1, 0, 460, 45, 12]],
+  treeClusters: [{ at: [2.4, 307.6], r: 14 }, { at: [7.3, 252], r: 8 }, { at: [21.8, 203], r: 6 }, { at: [21.8, 143], r: 14 }, { at: [19.4, 94.5], r: 12 },
+    { at: [-50.9, 312.4], r: 12 }, { at: [-50.9, 247], r: 10 }, { at: [-46, 172], r: 10 }, { at: [-48.4, 143], r: 5 }, { at: [-31.5, 58], r: 10 }, { at: [-53.3, 375], r: 5 }, { at: [-12.1, 34], r: 5 }],
+  cars: [
+    { at: [10, -14], heading: 20, colour: '#EDE9DF', kind: 'gt' },
+    { at: [-45, 420], heading: -80, colour: '#C1121F', kind: 'hyper' },
+  ],
+}, {
+  name: 'Polly', par: 4, si: 7,
+  tee: [0, 0], pin: [-91.8, 415.1],            // 465 yd tee to pin (back tee, aerial scale 0.341 m/px), uphill chute, dogleg right
+  wind: { mph: 13, toward_deg: 200 }, // fixed per hole (5–25 mph): the hole's variable
+  fairway: { half_width: 15, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
+  elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
+  green: { at: [-91.8, 415.1], r: 10 },
+  bunkers: [{ at: [-71.8, 399], r: 4 }, { at: [-102.4, 403], r: 4 }, { at: [-5.3, 312.7], r: 5 }, { at: [2.7, 294], r: 4 }],
+  water: [],
+  trees: [],
+  treeClusters: [{ at: [24, 161], r: 15 }, { at: [24, 241], r: 12 }, { at: [18.6, 307], r: 6 }, { at: [42.6, 272.8], r: 6 }, { at: [10.6, 25], r: 4 },
+    { at: [-40, 161], r: 15 }, { at: [-40, 241], r: 14 }, { at: [-50.6, 81], r: 12 }, { at: [-29, 14.6], r: 8 }, { at: [-82.5, 339], r: 10 }, { at: [-74.5, 318], r: 5 }],
+  cars: [
+    { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
+    { at: [-120, 420], heading: 70, colour: '#C1121F', kind: 'hyper' },
   ],
 }];
 // round: scores kept in this browser (shortcut: localStorage per viewer, move to the leaderboard database when it exists).
@@ -496,11 +712,11 @@ function strike(club, power, aim, lie, rand) {
 
 function simulate(start, shot, wind, opts = {}) {
   let p = { ...start }, vel = { ...shot.vel }, spin = { ...shot.spin }, t = 0;
-  const pts = [{ ...p }], pin = opts.pin;
+  const pts = [{ ...p }], pin = opts.pin, hits = []; // hits: ground impacts for the sound (point index, impact speed, surface)
   let landing = null, apex = p.y, hang = 0, outcome = 'rest';
   // Golf Slate's rule: drops below 3 m/s, catch radius 6.6 cm growing to 7.4 cm as the ball slows
   const CUP_SPEED = 3, cupR = s => 0.066 + 0.008 * (1 - Math.min(1, s / CUP_SPEED));
-  const finish = o => ({ pts, final: p, landing: landing || p, apex: apex - start.y, hang, outcome: o, material: materialAt(p.x, p.z) });
+  const finish = o => ({ pts, hits, final: p, landing: landing || p, apex: apex - start.y, hang, outcome: o, material: materialAt(p.x, p.z) });
 
   if (!opts.rolling) {
     for (let i = 0; i < 20 * 120; i++) {
@@ -516,6 +732,7 @@ function simulate(start, shot, wind, opts = {}) {
         const m = materialAt(p.x, p.z);
         if (m === 'water') return finish('water');
         const S = SURF[m], n = normalAt(p.x, p.z), vn = dot(vel, n), tan = sub(vel, mul(n, vn)), ts = len(tan);
+        hits.push({ i: pts.length - 1, s: -vn, m });
         const bite = clamp(len(spin) * BALL.r * 0.3 * S.grip, 0, ts * 0.85);
         const keep = Math.max(0, ts * S.keep - bite);
         vel = add(mul(n, -vn * S.bounce), ts > 1e-6 ? mul(tan, keep / ts) : v(0, 0, 0));
@@ -563,7 +780,8 @@ const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 if (location.search.includes('test')) {
   const tee = v(0, 50, 0), calm = v(0, 0, 0), dr = CLUBS[0];
   const flatHeight = heightAt; // physics checks run high above terrain, landing on the real course is fine
-  const carry = (wind, aim = 0) => { const s = strike(dr, 0.75, aim, 'fairway', () => 0.5); const r = simulate(v(0, heightAt(0, 0) + BALL.r, 0), s, wind); return r; };
+  const [lz, lx] = HOLE.fairway.line[1], along = Math.abs(Math.atan2(lx, lz)) > .3 ? Math.atan2(lx, lz) : 0; // sharp dogleg off the tee (13): fire down the first leg, clear of the chute's trees
+  const carry = (wind, aim = along) => { const s = strike(dr, 0.75, aim, 'fairway', () => 0.5); const r = simulate(v(0, heightAt(0, 0) + BALL.r, 0), s, wind); return r; };
   const r0 = carry(calm), rHead = carry(v(0, 0, -6)), rCross = carry(v(6, 0, 0));
   const c0 = flat(r0.landing, v(0, 0, 0)) / YD;
   const out = [
@@ -1148,13 +1366,86 @@ function showStats(s, r, putt) {
 }
 $('stats').onclick = () => $('stats').classList.toggle('open');
 
+// ---------- sound (all synthesised with Web Audio: no files, no licences) ----------
+// Browsers only allow sound after the first tap or key, so everything starts then.
+const SND_KEY = 'ldc.sound';
+const SND = { on: (() => { try { return localStorage.getItem(SND_KEY) !== 'off'; } catch { return true; } })(), ac: null, out: null };
+function sndStart() {
+  if (SND.ac) { if (SND.ac.state === 'suspended') SND.ac.resume(); return; }
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  const ac = SND.ac = new AC(); SND.out = ac.createGain(); SND.out.gain.value = SND.on ? 1 : 0; SND.out.connect(ac.destination);
+  SND.noise = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate);
+  const d = SND.noise.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  ambience();
+}
+['pointerdown', 'keydown'].forEach(e => addEventListener(e, sndStart, { passive: true }));
+const env = (g, t, peak, a, dec) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + dec); };
+function noiseHit({ type = 'bandpass', f, q = 1, peak, a = 0.002, dec, f2, to = SND.out }) {
+  const ac = SND.ac, t = ac.currentTime, src = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+  src.buffer = SND.noise; fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q;
+  if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + a + dec);
+  env(g, t, peak, a, dec); src.connect(fl).connect(g).connect(to); src.start(t, Math.random()); src.stop(t + a + dec + 0.05);
+}
+function tone(f, peak, dec, t0 = 0, type = 'sine', to = SND.out) {
+  const ac = SND.ac, t = ac.currentTime + t0, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type; o.frequency.value = f; env(g, t, peak, 0.001, dec); o.connect(g).connect(to); o.start(t); o.stop(t + dec + 0.05);
+}
+const sfx = {
+  hit(power, putt) { // club face on the ball: a crisp click, a softer tap for putts
+    if (!SND.ac) return;
+    if (putt) { noiseHit({ type: 'lowpass', f: 1500, q: 0.7, peak: 0.1 + 0.2 * power, dec: 0.035 }); return; }
+    noiseHit({ type: 'lowpass', f: 2200, q: 0.7, peak: 0.35 + 0.45 * power, dec: 0.045 }); noiseHit({ f: 900, q: 1.5, peak: 0.2 + 0.3 * power, dec: 0.07 }); // a woody thwack, not a high click
+  },
+  bounce(speed, m) { // softer on sand and rough, a firmer thud on fairway and green
+    if (!SND.ac) return;
+    const k = clamp(speed / 18, 0.05, 1);
+    if (m === 'sand') return noiseHit({ type: 'lowpass', f: 1400, peak: 0.25 * k, dec: 0.18 });
+    const soft = m === 'rough' ? 0.5 : m === 'firstcut' ? 0.75 : 1;
+    noiseHit({ type: 'lowpass', f: 700, q: 0.5, peak: 0.3 * k * soft, dec: 0.05 }); // a dull grassy thump: no pitched tone, which sounded like a drum
+  },
+  splash() { if (!SND.ac) return; noiseHit({ f: 600, f2: 2400, q: 0.7, peak: 0.35, a: 0.01, dec: 0.45 }); noiseHit({ type: 'lowpass', f: 300, peak: 0.25, dec: 0.2 }); },
+  cup() { if (!SND.ac) return; [0, 0.07, 0.12].forEach((t, k) => tone([2600, 3300, 2900][k], 0.12 / (k + 1), 0.05, t)); }, // ball rattling into the cup
+};
+// Background: a soft morning breeze under southern-style birdsong (cardinal slurs, trills, whistles), randomly spaced and panned.
+function ambience() {
+  const ac = SND.ac, bed = ac.createGain(); bed.gain.value = 0.15; // owner: birds were too loud bed.connect(SND.out);
+  const air = ac.createBufferSource(), lp = ac.createBiquadFilter(), ag = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain();
+  air.buffer = SND.noise; air.loop = true; lp.type = 'lowpass'; lp.frequency.value = 350; ag.gain.value = 0.018;
+  lfo.frequency.value = 0.07; lg.gain.value = 0.01; lfo.connect(lg).connect(ag.gain); lfo.start();
+  air.connect(lp).connect(ag).connect(bed); air.start();
+  const note = (t, f0, f1, dur, peak, pan) => {
+    const o = ac.createOscillator(), g = ac.createGain(), p = ac.createStereoPanner ? ac.createStereoPanner() : null;
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + dur * 0.2); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); if (p) { p.pan.value = pan; g.connect(p).connect(bed); } else g.connect(bed); o.start(t); o.stop(t + dur + 0.02);
+  };
+  const songs = [
+    (t, pan, v) => { for (let k = 0; k < 3; k++) note(t + k * 0.32, 4200, 2000, 0.26, v, pan); }, // "cheer cheer cheer" down-slurs
+    (t, pan, v) => { const f = 3000 + Math.random() * 1500; for (let k = 0; k < 8; k++) note(t + k * 0.06, f, f * 1.15, 0.05, v * 0.7, pan); }, // trill
+    (t, pan, v) => { note(t, 2400, 3600, 0.35, v, pan); note(t + 0.4, 3600, 2200, 0.4, v * 0.8, pan); }, // whistle up, then down
+    (t, pan, v) => { for (let k = 0; k < 4; k++) note(t + k * 0.13, 5200 - k * 300, 4600 - k * 300, 0.08, v * 0.6, pan); }, // quick chips
+  ];
+  // owner: a bird is quiet, then sings for a while, then goes quiet again. One bird per spell: same song, same place.
+  const spell = () => {
+    const song = songs[Math.floor(Math.random() * songs.length)], pan = Math.random() * 1.6 - 0.8, vol = 0.012 + Math.random() * 0.02;
+    let t = 0;
+    for (let k = 3 + Math.floor(Math.random() * 4); k > 0; k--) { setTimeout(() => SND.on && song(ac.currentTime + 0.05, pan, vol), t); t += 1500 + Math.random() * 2500; }
+    setTimeout(spell, t + 20000 + Math.random() * 40000); // then 20–60 s of quiet
+  };
+  setTimeout(spell, 4000);
+}
+const soundLabel = () => { $('soundBtn').textContent = SND.on ? 'Sound on' : 'Sound off'; };
+soundLabel();
+$('soundBtn').onclick = () => { SND.on = !SND.on; try { localStorage.setItem(SND_KEY, SND.on ? 'on' : 'off'); } catch {} if (SND.out) SND.out.gain.value = SND.on ? 1 : 0; soundLabel(); };
+
 function swing() {
   if (state.phase !== 'aim') return;
   const c = CLUBS[state.club], lie = materialAt(state.ball.x, state.ball.z);
   state.strokes++;
   const s = strike(c, state.power, state.aim, lie, rng(state.seed + state.strokes * 7919));
   const r = simulate(state.ball, s, WIND, { pin: PIN, rolling: !!c.putter });
-  state.shot = { from: { ...state.ball }, s, r, i: 0, t0: performance.now() };
+  state.shot = { from: { ...state.ball }, s, r, i: 0, t0: performance.now(), heard: 0 };
+  sfx.hit(state.power, !!c.putter);
   state.phase = 'flying';
   refresh();
 }
@@ -1179,11 +1470,22 @@ function endShot() {
     $('done').style.display = 'block';
     return;
   }
-  if (r.outcome === 'water' || r.outcome === 'ob') {
-    toast(r.outcome === 'water' ? 'Water · one stroke' : 'Out of bounds · one stroke');
+  if (r.outcome === 'water') { // owner's rule: one stroke, then replay from the last spot or the hole's drop zone (no back-on-the-line)
     state.strokes++;
-    state.ball = r.outcome === 'water' ? dropNear(r.final, from) : { ...from };
-  } else state.ball = { ...r.final };
+    const w = HOLE.water.reduce((a, b) => flat(r.final, v(a.at[0], 0, a.at[1])) < flat(r.final, v(b.at[0], 0, b.at[1])) ? a : b);
+    const dz = w.drop ? v(w.drop[0], heightAt(...w.drop) + BALL.r, w.drop[1]) : dropNear(r.final, from); // shortcut: no drop set → old step-back drop
+    $('wReplay').onclick = () => playOn({ ...from });
+    $('wDrop').onclick = () => playOn(dz);
+    state.phase = 'water'; $('water').style.display = 'block';
+    return;
+  }
+  if (r.outcome === 'ob') { toast('Out of bounds · one stroke'); state.strokes++; state.ball = { ...from }; }
+  else state.ball = { ...r.final };
+  playOn(state.ball);
+}
+function playOn(ball) {
+  $('water').style.display = 'none';
+  state.ball = ball;
   trail.geometry.setFromPoints([]);
   state.phase = 'aim';
   setClub(suggestClub(flat(state.ball, PIN) / YD));
@@ -1219,7 +1521,64 @@ $('swing').onclick = swing;
 $('again').onclick = reset;
 // always navigate (setting an unchanged location.search doesn't reload); no ?hole = the round's next hole
 const go = (q = '') => { location.href = location.pathname + q; };
-$('next').onclick = () => roundDone() ? openCard() : go();
+$('next').onclick = () => roundDone() ? openScorecard() : go();
+// the finished round as a printed LDC scorecard: front nine, back nine, Out / In / Total, golf's birdie and bogey marks
+function openScorecard() {
+  const yd = h => Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD), sum = a => a.reduce((x, y) => x + y, 0);
+  const mark = (sc, par) => { const d = sc - par, c = d <= -2 ? 'e' : d === -1 ? 'b' : d === 1 ? 'o' : d >= 2 ? 'd' : ''; return `<span class="m ${c}">${sc}</span>`; };
+  const nine = (from, label, extra) => {
+    const hs = HOLES.slice(from, from + 9), sc = ROUND.scores.slice(from, from + 9);
+    const row = (cls, name, cells, tot, all) => `<tr class="${cls}"><td>${name}</td>${cells.join('')}<td class="sum">${tot}</td>${extra ? `<td class="sum">${all}</td>` : ''}</tr>`;
+    return `<tr class="hn"><th>Hole</th>${hs.map((_, i) => `<th>${from + i + 1}</th>`).join('')}<th>${label}</th>${extra ? '<th>Tot</th>' : ''}</tr>` +
+      row('', 'Yards', hs.map(h => `<td>${yd(h)}</td>`), sum(hs.map(yd)), sum(HOLES.map(yd))) +
+      row('', 'Par', hs.map(h => `<td>${h.par}</td>`), sum(hs.map(h => h.par)), sum(HOLES.map(h => h.par))) +
+      row('', 'SI', hs.map(h => `<td>${h.si}</td>`), '', '') +
+      row('me', 'Score', hs.map((h, i) => `<td>${sc[i] ? mark(sc[i], h.par) : ''}</td>`), sum(sc) || '', sum(ROUND.scores) || '');
+  };
+  $('scFront').innerHTML = nine(0, 'Out', false);
+  $('scBack').innerHTML = nine(9, 'In', true);
+  const total = sum(ROUND.scores), d = total - sum(HOLES.slice(0, ROUND.scores.length).map(h => h.par));
+  $('scScore').textContent = total;
+  $('scPar').textContent = d === 0 ? 'Level par.' : `${Math.abs(d)} ${d < 0 ? 'under' : 'over'} par.`;
+  $('scDate').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  $('sc').classList.remove('board'); scButtons();
+  $('done').style.display = 'none'; $('card').style.display = 'none'; $('sc').style.display = 'block'; $('scrim').style.display = 'block';
+}
+$('scAgain').onclick = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
+// leaderboard: the LDC Google Sheet, through the Apps Script web app in leaderboard.gs. Empty URL = leaderboard buttons hidden.
+const LB_URL = 'https://script.google.com/macros/s/AKfycbyIXTvA2Bjf4p9HkL1tlTkrfsMp8Cnx9lRWRt8Z7_SMdl8lhLhfQlbqlXBtKztoVt1Y/exec';
+const esc = t => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+const scMsg = t => { $('scMsg').textContent = t; $('scMsg').hidden = !t; };
+function scButtons() {
+  $('scSubmit').hidden = !LB_URL || !!ROUND.submitted || !roundDone();
+  $('scView').hidden = !LB_URL;
+  $('scView').textContent = $('sc').classList.contains('board') ? 'View scorecard' : 'View leaderboard';
+  ['scView', 'scAgain'].forEach(id => $(id).classList.toggle('alt', !$('scSubmit').hidden));
+}
+$('scSubmit').onclick = () => { $('scForm').hidden = false; $('scSubmit').hidden = true; scMsg(''); $('scName').focus(); };
+$('scForm').onsubmit = async e => {
+  e.preventDefault();
+  $('scSend').disabled = true; scMsg('Handing it in…');
+  try {
+    const r = await (await fetch(LB_URL, { method: 'POST', body: JSON.stringify({ name: $('scName').value, email: $('scEmail').value, holes: ROUND.scores }) })).json();
+    if (!r.ok) throw new Error(r.error);
+    ROUND.submitted = $('scName').value.trim(); saveRound();
+    $('scForm').hidden = true; scMsg('Signed and handed in. It\'s on the board.'); scButtons(); showBoard();
+  } catch (err) { scMsg(`That didn't go through (${err.message || 'no connection'}). Try again.`); }
+  $('scSend').disabled = false;
+};
+async function showBoard() {
+  $('sc').classList.add('board'); scButtons();
+  $('scBoard').innerHTML = '<p class="eyebrow">Loading the board…</p>';
+  try {
+    const r = await (await fetch(LB_URL)).json();
+    $('scBoard').innerHTML = `<p class="eyebrow">Global leaderboard · 18 holes</p><ol>` + (r.rows.length ? r.rows.map((x, i) =>
+      `<li class="${ROUND.submitted && x.name === ROUND.submitted && x.score === ROUND.scores.reduce((a, b) => a + b, 0) ? 'me' : ''}"><span>${i + 1}</span><span>${esc(x.name)}</span><b>${x.score}</b><span>${toPar(x.toPar)}</span></li>`).join('')
+      : '<li><span></span><span>No cards handed in yet.</span></li>') + '</ol>';
+  } catch { $('scBoard').innerHTML = '<p class="voice">The board won\'t load right now.</p>'; }
+}
+$('scView').onclick = () => { if ($('sc').classList.contains('board')) { $('sc').classList.remove('board'); scButtons(); } else showBoard(); };
+if (new URLSearchParams(location.search).has('scorecard')) openScorecard(); // preview the card
 // holes panel: the card, round scores, practice any hole
 const toPar = n => n === 0 ? 'E' : (n > 0 ? `+${n}` : `${n}`);
 function roundTotal() {
@@ -1254,14 +1613,20 @@ const ask = (text, yes) => { $('askText').textContent = text; askYes = yes; $('c
 $('askYes').onclick = () => askYes();
 $('askNo').onclick = () => { $('cardAsk').hidden = true; };
 $('resume').onclick = () => go();
-const newRound = () => { ROUND.scores = []; saveRound(); go(); };
+const newRound = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
 $('newRound').onclick = () => ROUND.scores.length ? ask('Start a new round? This clears your scorecard.', newRound) : newRound();
 $('cardRows').onclick = e => {
   const no = +e.target.closest('.hrow')?.dataset.hole;
   if (!no) return;
   if (no === HOLE_NO) return $('cardClose').onclick();
   if (no === roundHole() && !roundDone()) return go();
-  ask(`Practise hole ${no}? It won't count towards your round.`, () => go(`?hole=${no}&practice`));
+  // owner: tap a hole to select it, its numbers become a Practise button; tap again to go
+  const row = e.target.closest('.hrow');
+  if (row.classList.contains('pick')) return go(`?hole=${no}&practice`);
+  openCard(); // clears any earlier pick
+  const r = $('cardRows').children[no - 1]; r.classList.add('pick');
+  [...r.children].slice(2).forEach(c => c.remove());
+  r.insertAdjacentHTML('beforeend', '<span class="go">Practise ›</span>');
 };
 addEventListener('keydown', e => {
   if ($('start').classList.contains('open')) return;
@@ -1284,12 +1649,13 @@ const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), _spinAxis = n
 function frame(now) {
   requestAnimationFrame(frame);
   let ball = state.ball;
-  if (state.phase === 'settle') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
+  if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
   if (state.phase === 'flying') {
     const sh = state.shot, i = clamp(Math.floor((now - sh.t0) / 1000 * 120 * 1.15), 0, sh.r.pts.length - 1); // rAF's now can be a hair before t0
     ball = sh.r.pts[i];
+    while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); }
     trail.geometry.setFromPoints(sh.r.pts.slice(0, i + 1).filter((_, k) => k % 3 === 0).map(p => new THREE.Vector3(p.x, p.y, p.z)));
-    if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; setTimeout(endShot, 700); if (sh.r.outcome === 'holed') state.dropT0 = now; }
+    if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); } if (sh.r.outcome === 'water') sfx.splash(); }
   }
   const bs = BALL_NEAR + (1 - BALL_NEAR) * clamp((flat(ball, PIN) - 20) / 20, 0, 1); // true size near the cup so what you see is what drops; eases by distance only so it never pops mid-roll
   { // turn the ball by the distance it moved: rolls forward on the ground, backspins in the air
