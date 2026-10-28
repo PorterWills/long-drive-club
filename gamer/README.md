@@ -89,7 +89,8 @@ Lessons from hole 2:
 - **Aim:** dragging the mouse right swings the aim **left**, at 0.0011 rad per pixel. Arrow keys work but aren't shown on screen. No ◀ ▶ buttons and no "drag to aim" label (the hint reads "Set the power · swing").
 - **Aim readout:** "At pin aim", or e.g. "2.4° L aim".
 - **Power:** **no penalty for full power from the tee, fairway or fringe.** Only rough and sand add seeded wobble.
-- **Presets:** wedges preset to the distance. The putter presets to reach the hole, **allowing for uphill and downhill** (as Golf Slate does).
+- **Power (changed 28 Oct 2026):** the game suggests the club; **power always starts at 100% for every club, putter included**. The player judges the power for the club and the wind. No presets.
+- **Distance units:** golf standard: yards to the pin, feet only once the ball is on the green.
 - **Cup:** drops a ball moving under 3 m/s, with a 6.6–7.4 cm catch radius, checked along the ball's path (Golf Slate's rule).
 - **Trees:** trunks block shots, and canopies (shaped like the drawn cone or ball) soak up 10% of the ball's speed every 1/120 s, so a few metres of branches knocks a drive down.
 
@@ -117,7 +118,7 @@ Lessons from hole 2:
 ## Next steps (agreed direction)
 1. **9 and 18 holes:** `HOLES`, the Holes panel and the round scorecard exist. Still to do: holes 6–9, then a start screen to choose 9 or 18 ("Play a round" or "Practise a hole"). Ship 9 first. Holes are designed from aerials, as above.
 2. **Leaderboard:** name and score per round, 9 and 18 ranked separately. A small hosted database (e.g. Supabase). Send the seed and each shot's inputs so the server can rerun the round and reject faked scores. The owner wants **brand fun, not lead capture**.
-3. **Going live (next thread, 28 Oct 2026):** the owner wants to start testing on the live site. First step agreed: put the game on its own unlisted page (e.g. `longdriveclub.com/golf`), with the home page untouched, then decide where it sits on the home page. Open questions: what serves longdriveclub.com today, and whether the local repo `~/Documents/Work/LDC/ldc` (remote `github.com/PorterWills/Claude`, with LDC site commits) is the real site source. The `gh` CLI isn't installed on this Mac.
+3. **Live test page (28 Oct 2026):** the game is live at **longdriveclub.com/gamer** (owner chose the name; public, `noindex`). It's a copy in the `gamer/` folder of github.com/PorterWills/long-drive-club, served by GitHub Pages from `main`. This folder stays the master copy; to update the site, copy `index.html` into `gamer/` and keep the `noindex` line. **Never upload to the repo root**: on 28 Oct an upload there replaced the home page for about 15 minutes before it was reverted.
 3. **Website embed:** the site runs on Squarespace or Wix. Host the game statically (Netlify, Vercel or Cloudflare Pages) and embed it with an iframe code block.
 4. **Polish still open:**
    - hiding the slope arrows nearest the low putting camera, if they distract

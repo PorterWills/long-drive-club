@@ -757,26 +757,19 @@ function autoAim() {
   const z = Math.min(PIN.z, b.z + reach * 0.97);
   return Math.atan2(centreX(z) - b.x, z - b.z);
 }
-// when even this club's full swing flies past the pin, preset the power so carry matches the distance
-function wedgePower(i) {
-  const lie = materialAt(state.ball.x, state.ball.z), dist = flat(state.ball, PIN) / YD;
-  if (carryAt(i, 1, lie) <= dist) return 1;
-  let lo = 0.01, hi = 1;
-  for (let k = 0; k < 20; k++) { const mid = (lo + hi) / 2; carryAt(i, mid, lie) < dist ? lo = mid : hi = mid; }
-  return hi;
-}
 function setClub(i) {
   state.club = i; $('club').value = i;
   state.aim = state.autoAim = autoAim();
-  state.power = CLUBS[i].putter ? puttPower(state.ball, PIN) : wedgePower(i);
+  state.power = 1; // owner's rule: the game picks the club, the player judges the power
   refresh();
 }
 function refresh() {
   const b = state.ball, lie = materialAt(b.x, b.z), c = CLUBS[state.club];
   $('strokes').textContent = `${state.strokes} stroke${state.strokes === 1 ? '' : 's'}`;
   const d = flat(b, PIN);
-  $('dist').textContent = d < 20 ? Math.round(d / 0.3048) : Math.round(d / YD);
-  $('distUnit').textContent = d < 20 ? 'ft to pin' : 'yd to pin';
+  const onGreen = lie === 'green'; // golf standard: yards until you're on the putting surface, then feet
+  $('dist').textContent = onGreen ? Math.round(d / 0.3048) : Math.round(d / YD);
+  $('distUnit').textContent = onGreen ? 'ft to pin' : 'yd to pin';
   $('windMph').textContent = HOLE.wind.mph;
   // arrow shows where the wind blows relative to the current aim (up = with you). World +x is screen-left from behind the ball.
   $('wind').style.transform = `rotate(${-90 - (HOLE.wind.toward_deg * Math.PI / 180 - state.aim) * 180 / Math.PI}deg)`;
