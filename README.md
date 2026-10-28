@@ -1,287 +1,132 @@
-# Long Drive Club — longdriveclub.com
+# Long Drive Club: Golf Game Prototype
 
-The application-gated front door for Long Drive Club. A static site:
-no build step, no framework — just `index.html`, `styles.css`, `app.js`,
-and the images in `assets/`.
+A browser golf game for the Long Drive Club website. It plays like golfslate.com (whose mechanics were reverse engineered with REA on 28 Oct 2026). Cars are parked on the course, and it's branded with the LDC Design System.
 
-Once an applicant enters a valid password at the gate (`#gate` on
-`index.html`), `app.js` sends them to `welcome.html` — the "You're in"
-page that lays out the drive, the map, the day, the price and the
-reservation. Its behaviour (reveal-on-scroll and the reserve step)
-lives in `welcome.js`; its styles are the `welcome.html` section of
-`styles.css`.
+**Status (28 Oct 2026):** five holes, a round scorecard with practice mode, and shaped greens and bunkers. All five holes are signed off. The mechanics are signed off by the owner ("playing pretty much like Golf Slate").
+- Hole 1 **Tee Tree**: par 4, 445 yd, stroke index 9 (modelled on Augusta's 1st)
+- Hole 2 **Red Catbranch**: par 5, 585 yd, stroke index 17 (modelled on Augusta's 2nd)
+- Hole 3 **Wilting Mango**: par 4, 350 yd, stroke index 14 (aerial scale 0.224 m/px)
+- Hole 4 **Blossoming Shrimp Pear**: par 3, 240 yd, stroke index 3 (aerial scale 0.172 m/px, from the back tee)
+- Hole 5 **Violet**: par 4, 495 yd, stroke index 5 (aerial scale 0.319 m/px, from the back tee)
+- **Round and practice:** with no `?hole`, the game opens the round's next unplayed hole. Scores are kept in the browser (`localStorage` key `ldc.round`) until the leaderboard exists. Any other hole (`?hole=N`, or picked from the **Holes** panel) is **practice** and never counts. The **Holes** button opens the card: par, yards, SI, round scores, the running total, *Back to round* and *New round*. A round hole can't be replayed (no Play again button); the result card's button goes to the next round hole, or to the scorecard after the last hole. Confirmations sit inside the card, not in `confirm()`, which some embedded browsers block (it silently answers no).
+- **Next:** start screen (9 or 18), leaderboard, website embed.
 
-The reserve step is a clickwrap gate: an unticked, mandatory checkbox
-(plus a separate optional marketing one) sits directly above the pay
-button, which stays disabled until the terms box is ticked. The notice
-and checkbox wording are verbatim from the solicitor's gate-language
-document — don't edit them without legal sign-off. The full standing
-Terms live on `/terms` (linked from the checkbox, never shown inline)
-and carry a version stamp that must move in lockstep with
-`TERMS_VERSION` in `welcome.js`. On the pay click, `welcome.js` writes
-the acceptance record — timestamp, page, terms version, the exact
-rendered wording, the marketing choice — to the Apps Script `?accept=`
-endpoint before the Stripe handoff: an append-only row on the
-**Terms acceptances** tab (the evidence), plus convenience columns on
-the applicant's row (see `recordAcceptance` in `apps-script/Code.gs`).
-`/cookies` is a stub pending a real Cookie Notice.
+### Log
+- **28 Oct 2026 (session 2):** holes 3–5 built from aerials. Added the Holes panel, the round scorecard and practice mode (owner's rules: play in order by default, practise any hole, practice never counts, leaving a round pauses it). Fixed the card's buttons doing nothing (`confirm()` blocked, unchanged `location.search` not reloading). Shaped every green and bunker: organic outlines, a bunker floor, face and lip with shading and rake lines, two seeded mounds per green, a cross-mown pattern and a collar, and a half-metre terrain grid. All holes pass `?test`, and the page loads in about 1.1 s. Only hole 4's green and bunkers have been looked at up close; the others still need a look in play.
 
-Meta Pixel and Microsoft Clarity load only after a visitor accepts the
-cookie banner (`consent.js`, loaded on every public page). The choice is
-kept in the browser's `localStorage` (`ldc-consent`); the button on
-`/cookies` clears it so the banner shows again. Add any new tracker
-inside `loadTrackers()` in `consent.js`, never directly in a page.
+- Game: [index.html](index.html), one self-contained file (Three.js 0.160 from jsDelivr, fonts from Google Fonts)
+- Original research and plan: [../golf-car-game-blueprint.md](../golf-car-game-blueprint.md). Where it disagrees with this README, **this README wins**.
+- Brand source: the "LDC Design System" artifact, https://claude.ai/artifact/P2yhCjwbg5yavpyZ4fdHtL
 
-## Going live (GitHub Pages)
+---
 
-This repo is the whole website; the files sit at the root on purpose.
+- **28 Oct 2026 (session 3):** mobile pass. Fixed the top panels colliding on phones (the Holes button was hidden), moved the shot stats above the controls on phones, and widened the portrait field of view (up to 80°; landscape and desktop keep 55°). Checked in a 375×812 phone view. Not yet tried on a real phone. Shot stats moved into the top-right yardage panel as two lines (carry, total; putts: roll, left); tap them for the full list. Owner's call: nothing sits over the lower part of the course.
 
-1. **Settings → Pages.**
-2. Under **Build and deployment → Source**, choose **Deploy from a branch**.
-3. Set **Branch** to `main` and the folder to **/ (root)**, then **Save**.
-4. Under **Custom domain**, enter `longdriveclub.com` and **Save**
-   (the `CNAME` file in this repo already sets this — it'll just confirm).
-5. Tick **Enforce HTTPS** once GitHub finishes issuing the certificate
-   (can take a few minutes to an hour).
+## Run it
+- **Play:** double-click `index.html` (needs internet for Three.js and fonts).
+- **Self-checks:** open with `?test` on the end of the address. The tab title shows `TEST PASS` or `TEST FAIL`, and the results go to the console (`window.__test`). It checks driver carry, headwind, crosswind, the ball coming to rest, putt distance (uphill aware), and firm short putts dropping.
+  - `?test` doesn't survive a `file://` preview. Serve the file over http instead.
+  - **macOS blocks local servers from reading `~/Documents`**, so copy `index.html` to the session scratchpad and serve it from there (a tiny Node server works; Python's `http.server` fails on `getcwd`).
+- **Claude's browser pane can't reload a `file://` tab**, so *Next hole* and the Holes card do nothing there. In the pane, play from an http address instead (same Node server as above).
+- **Fast syntax check before reloading:** extract the `<script type="module">` block to a `.mjs` file and run `node --check` on it.
 
-### DNS (at your domain registrar)
+## How the file is organised
+| Section in `index.html` | What it holds |
+|---|---|
+| `// vectors` | maths helpers, `rng(seed)`, `dailyWind()` |
+| `// hole (our own format)` | `HOLE` (the course data), `materialAt`, `heightAt`, `TREES` |
+| `// physics` | ball, surface and lie tables, `CLUBS`, `accel`/`rk4`, collisions (cars and tree trunks), `strike`, `simulate` |
+| `// self-check` | the `?test` checks |
+| `// state` | pin, wind, the simulated carry table `carryAt` |
+| `// 3D` | terrain mesh, trees, look-alike cars, flag, green contours and animated slope arrows, lines |
+| `// UI` | club suggestion, auto-aim, power presets, HUD, shot stats, result card, input |
+| `// loop` | animation and the camera |
 
-Point the domain at GitHub Pages:
+---
 
-- Four `A` records on the apex (`longdriveclub.com`):
-  `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-- One `CNAME` record for `www` → `porterwills.github.io`
+## Building a new hole
+The game holds a `HOLES` array; `?hole=N` picks one (default 1). To add a hole, append an object. Hole 2 is Red Catbranch (par 5, 585 yd, SI 17). The terrain mesh, `outOfBounds()` and tree lines now size themselves from the hole data. For the start screen and scorecard, see *Next steps*.
 
-Propagation is usually minutes, occasionally up to a day.
+```js
+const HOLE = {
+  name: 'Tee Tree', par: 4,
+  tee: [0, 0], pin: [-55, 403],          // [x, z] metres; +x = player's LEFT, z = tee → green
+  wind: dailyWind(),                      // keep: daily, the same for every player
+  fairway: { half_width: 15, line: [[0,0],[112,-8],[197,2],[265,-8],[333,-29],[408,-56]] }, // [z, x] centreline, smoothly joined
+  elevation: [[0,3],[90,1.2],[200,-1],[280,0.5],[345,4],[400,6.5],[460,7.5]],             // [z, height m]
+  green: { at: [-56, 405], r: 15 },
+  bunkers: [{ at: [-23, 232], r: 5 }],    // circles; overlap several for long shapes
+  water: [],                              // circles, same shape as bunkers
+  trees: [[1, 82, 392, 24, 16]],          // tree lines: [side +1 left / -1 right, z from, z to, inner offset from centreline, depth]
+  treeClusters: [{ at: [-48, 60], r: 16 }],
+  cars: [{ at: [9, -14], heading: 20, colour: '#C1121F', kind: 'hyper' }], // kind: 'hyper' | 'gt'
+};
+```
 
-## Where applications go
+**Turning an aerial image into a hole** (the method used for Tee Tree):
+1. Mark the tee and the green centre in image pixels. Scale = real tee-to-pin metres ÷ pixel distance (Tee Tree: 407 m over about 1,200 px, so 0.34 m/px).
+2. `x = -(px - teePx) × scale` (image right = player's right = −x), and `z = (teeY - py) × scale`.
+3. Trace 5–7 centreline points, the bunkers and the green, then set the pin so the yardage is exact (yd = m ÷ 0.9144).
+4. Check: the HUD at the tee shows the yards to the pin. Run `?test`.
 
-The entry sheet is a two-step flow. Step one (name, email, car) POSTs to
-the deployed Google Apps Script web app (`APPS_SCRIPT_URL` near the top
-of `app.js`) and is saved immediately as a `step1_complete` lead, keyed
-on email — so a drop-off before step two is still a contactable,
-recoverable lead in the sheet. Step two (phone, the golf and the day)
-POSTs again and merges into that same row, marking it `complete` and
-sending the applicant the confirmation email. Because Apps Script web apps don't
-return CORS headers, the form posts with `mode: "no-cors"` and a
-plain-text body and treats a resolved request as success. To point the
-form at a different deployment, update `APPS_SCRIPT_URL`.
+Adding a hole is now just appending to `HOLES`. The terrain mesh, `outOfBounds()`, tree lines and `FW_END` all size themselves from the hole data. Still shared by every hole:
+- the green's base slope in `heightAt` (strong back to front). On top of it, each hole gets two seeded mounds or hollows (`MOUNDS`, seeded by hole number). Bunker and green outlines are wobbled circles (`blobD`), also seeded, so the data stays as circles.
+- the `TREES` seed (1934), so a tree line's random scatter differs per hole only because the data differs
 
-### Recovery email
+Lessons from hole 2:
+- Trace the centreline down the middle of the corridor between the tree lines, not the painted fairway.
+- On a sharp dogleg, the default pin aim points over the corner trees. That's intended: high shots can clear the trees, and shots into the branches drop.
+- Clusters on the inside of a dogleg (`treeClusters`) give it its teeth.
+- Check from the tee with `?hole=N&test`: the HUD yardage must match the card, and the title must read TEST PASS.
 
-A lead left at `step1_complete` past a delay gets a recovery email (one
-nudge at `RECOVERY_DELAY_1_HOURS`, a final one at
-`RECOVERY_DELAY_2_HOURS`, both in `apps-script/Code.gs`). Reaching
-`complete` cancels it. The email's **Finish the sheet** button links to
-`/?recover=TOKEN`; the site reads the step-one data back through the
-Apps Script `doGet` recover endpoint and drops the applicant into step
-two with name, email, phone and car already loaded — no re-entry.
+**Naming rule:** never use Augusta National, the Masters or real hole names ("Tea Olive" and so on) on the site. They're protected trademarks. Recreating a layout is fine. Tee Tree is LDC's name for its hole modelled on Augusta's 1st.
 
-### Apps Script setup
+---
 
-After deploying `apps-script/Code.gs`, run these once each by hand
-(select the function ▸ Run): `setupColumns` (adds the new columns to an
-existing sheet), `installApprovalTrigger` (the status-column email
-trigger), `installNudgeTrigger` (the hourly approved-but-unpaid nudges),
-and `installRecoveryTrigger` (the timed recovery-email sweep). Re-running
-any installer is safe — each clears its old copy first. Re-deploy a new
-version after any edit.
+## Decisions the owner made (don't undo them)
+**Mechanics**
+- **Wind:** changes daily, 0–20 mph from any direction, seeded by the UTC date so everyone gets the same conditions. It changes drag and spin via airflow relative to the ball. **Auto-aim ignores the wind**: aiming into it is the core skill.
+- **Aim:** dragging the mouse right swings the aim **left**, at 0.0011 rad per pixel. Arrow keys work but aren't shown on screen. No ◀ ▶ buttons and no "drag to aim" label (the hint reads "Set the power · swing").
+- **Aim readout:** "At pin aim", or e.g. "2.4° L aim".
+- **Power:** **no penalty for full power from the tee, fairway or fringe.** Only rough and sand add seeded wobble.
+- **Presets:** wedges preset to the distance. The putter presets to reach the hole, **allowing for uphill and downhill** (as Golf Slate does).
+- **Cup:** drops a ball moving under 3 m/s, with a 6.6–7.4 cm catch radius, checked along the ball's path (Golf Slate's rule).
+- **Trees:** trunks block shots, and canopies (shaped like the drawn cone or ball) soak up 10% of the ball's speed every 1/120 s, so a few metres of branches knocks a drive down.
 
-### The dashboard's Instagram + Calendar tabs
+**Lines and putting**
+- **Full-shot aim line:** a short 14 m pointer, straight, ignoring wind.
+- **Putt preview:** the real predicted roll, curving with the slope, drawn for the **first 30%** only.
+- **Greens:** chalk contour lines plus arrowheads that **point downhill**, drift and fade on a loop (faster on steeper slopes). They show when putting or within 40 m.
+- **Sky:** every hole is golden hour, dawn or evening, picked daily (UTC) with the sun's direction; low sun (11–17°), shader sky with drifting clouds and two hazy forest ridgelines painted round the horizon (no geometry) so high shots have a backdrop. Preview with `?sky=dawn` or `?sky=evening`.
+- **Flag:** at full mast, hinged on the pole, rippling with the wind, Redline with the LDC roundel printed readably on both faces. The stick is solid above the lip (from 10 cm up), so putts can still drop with the pin in.
+- **Ball and cup:** the ball eases from oversized at 40 m from the pin to **true size** at 20 m, and the cup is drawn true size (4.25 in, 4 in deep). Owner's call: what you see is exactly what drops. Don't draw either bigger again, or balls will visibly cross the hole and not drop. Green arrows are half size on a 3.4 m grid. The flagstick is a real 3/4 in thick, and there's no ring marker under the ball.
 
-`dashboard.html` has three tabs behind the one password: **Signups**
-(the entry sheet), **Instagram** (performance) and **Calendar** (the
-content plan). The last two read three tabs in the same spreadsheet —
-`IG Post Log`, `IG Weekly` and `IG Calendar` — through the Apps Script
-`?ig=` endpoint. The tabs are created and seeded automatically the
-first time the feed is read (the log gets the account's history to
-12/07/2026, the calendar gets the 4-week plan), so the only setup is
-re-deploying `Code.gs`. After that the sheet is the source of truth:
-log each post's numbers in `IG Post Log` within 24 hours, add an
-`IG Weekly` row each Sunday, and keep `IG Calendar` rows' Status
-current (`Planned` / `Ready` / `Scheduled` / `Posted` / `Logged` /
-`Skipped`, plus `Held` for milestone posts that slot in on founder
-confirmation — give those a row with an empty Date). Facts that are
-not yet public (the price, the venue) are deliberately absent from the
-seeded plan — hold them in the sheet, which is private.
+**Camera**
+- **One framing for aiming, flight and settling.** It follows the ball at the same distance (10 m back, 3.8 m up; putting 3.2 m / 1.3 m, moved in by the owner once ball and cup went true size), looks just past the ball so the ball sits above the controls, and keeps the line you hit until the next shot.
+- Once the ball stops, the camera stays on it, then turns to face the next shot. (Bugs fixed: zooming out and back in on every shot; flying back to the tee after the ball stopped.)
 
-### Posting windows and reminders
+**Brand (LDC Design System)**
+- **Colours:** Racing Green `#0E2A1C`, Tarmac `#1B1916`, Chalk `#EDE9DF`, Redline `#C1121F` (about 3%). Never pure black or pure white.
+- **Type:** Archivo Expanded 800 in caps for names and numbers, 11px tracked eyebrows, Source Serif 4 italic for the club's voice only. Minimum text size 11px.
+- **Surfaces and devices:** opaque Tarmac panels with square corners (3px on controls), no shadows, blur or gradients. Livery stripes top and bottom, the LDC roundel, a Redline stitch on the power bar.
+- **Copy:** sentence case, no exclamation marks, a dry line on the result card.
+- **Cars:** GTA-style **look-alikes, never real brands**. On-palette liveries, with one Redline car.
 
-The posting windows (weekdays 07:00–08:00, weekends 08:00–09:00,
-Europe/London) are config constants at the top of the IG section in
-`Code.gs`, not sheet schema. The dashboard shows the window on every
-calendar card and a state strip on post days (opens in…, open now,
-missed — a late post is never blocked, just recorded). From midday the
-next day's card becomes "Schedule tonight in IG". The Post Log's
-`Posted time` column (HH:MM) feeds a views-by-posted-time chart so the
-window can be tested rather than assumed. If a per-post window is ever
-needed, add a "Post window" column to IG Calendar and the slug
-`post_window` to the sync script's KNOWN_KEYS — the dashboard already
-reads it.
+---
 
-Email reminders (the part that doesn't require opening anything): run
-`installIgReminderTriggers` once by hand in Apps Script. Then, around
-18:00 the evening before any scheduled post, an email goes out with
-the theme, window, caption and asset brief; around 06:45 on post day a
-nudge follows unless the row's Status is already Scheduled, Posted,
-Logged or Skipped. Recipient is the `IG_REMINDER_EMAIL` Script
-Property (defaults to the script owner); set `IG_REMINDERS` to `off`
-to silence both. Make sure the project timezone is Europe/London
-(Project Settings) so the triggers fire at the right hour.
+## Next steps (agreed direction)
+1. **9 and 18 holes:** `HOLES`, the Holes panel and the round scorecard exist. Still to do: holes 6–9, then a start screen to choose 9 or 18 ("Play a round" or "Practise a hole"). Ship 9 first. Holes are designed from aerials, as above.
+2. **Leaderboard:** name and score per round, 9 and 18 ranked separately. A small hosted database (e.g. Supabase). Send the seed and each shot's inputs so the server can rerun the round and reject faked scores. The owner wants **brand fun, not lead capture**.
+3. **Going live (next thread, 28 Oct 2026):** the owner wants to start testing on the live site. First step agreed: put the game on its own unlisted page (e.g. `longdriveclub.com/golf`), with the home page untouched, then decide where it sits on the home page. Open questions: what serves longdriveclub.com today, and whether the local repo `~/Documents/Work/LDC/ldc` (remote `github.com/PorterWills/Claude`, with LDC site commits) is the real site source. The `gh` CLI isn't installed on this Mac.
+3. **Website embed:** the site runs on Squarespace or Wix. Host the game statically (Netlify, Vercel or Cloudflare Pages) and embed it with an iframe code block.
+4. **Polish still open:**
+   - hiding the slope arrows nearest the low putting camera, if they distract
+   - a golfer character (currently just the ball; the old ring marker was removed at the owner's request)
+   - better car placement (the owner says "fine for now")
+   - a test option that forces a strong wind
+   - checking the result card's layout in a browser
 
-### Calendar and stats sync (markdown → sheet, automated)
-
-The content strategy lives in a markdown calendar maintained by Claude
-Cowork on the founders' machine. `tools/sync-ig-calendar.py` scans its
-fenced ```json blocks and classifies each by shape — rows with
-theme/format fields are the CALENDAR block, rows with a post number
-are the POST LOG block — then posts both to the Apps Script (`igsync`
-in `doPost`). The calendar block replaces the `IG Calendar` rows,
-except the Status column, which the sheet owns: rows matched on date
-(or theme, for dateless held rows) keep whatever status was set in the
-sheet, so a strategy edit never un-posts a post. The log block UPSERTS
-into `IG Post Log` keyed on post number — known posts get the provided
-fields updated (an empty value never blanks a cell), new posts append,
-nothing is deleted. So the stats workflow is: paste IG insights to
-Cowork, Cowork updates the log block, run the sync.
-
-One-time setup:
-
-1. Generate a secret (`openssl rand -hex 24`) and set it as the
-   `IG_SYNC_SECRET` Script Property, then re-deploy `Code.gs`.
-2. Copy `tools/sync-ig-calendar.py` into the folder that holds the
-   calendar markdown, and put the same secret in a `.ldc-sync-secret`
-   file next to it.
-3. Tell Cowork (in that folder's README): after any change to the
-   calendar's Section 7 or 7a, update the JSON block and run
-   `python3 sync-ig-calendar.py`.
-
-The script needs only the Python standard library. It fails loudly —
-unknown fields, invalid JSON, missing secret — rather than writing a
-guess into the sheet. Post stats and the weekly row stay manual: they
-come from IG insights, sheet-ward only.
-
-## Changing the gate password
-
-There is no master password. Each approved applicant gets their own
-(the `password` column, generated on approval), checked by the Apps
-Script. To test the gate, give a test row in the sheet a password.
-Note: the gate reveals booking details; it is presentation, not real
-security, so don't put anything truly sensitive behind it.
-
-### Stopping direct access to `welcome.html`
-
-When the gate is passed, `app.js` sets a `sessionStorage` marker
-(`ldc-gate=open`) before sending the visitor to `welcome.html`. A guard
-script at the top of `welcome.html` redirects back to the gate if that
-marker is missing, so a welcome URL shared with someone who didn't enter
-the password lands them on the password screen instead.
-
-This is a deterrent, not real security: `welcome.html` is a public file
-on GitHub Pages, so anyone determined can still read its source or set
-the marker by hand. Truly restricting access needs server-side gating —
-e.g. putting the site behind Cloudflare Access / Zero Trust, a host with
-built-in password protection, or a serverless function that only returns
-the content after checking the password.
-
-### Stopping direct access to `members.html`
-
-`members.html` is the post-payment event page (the drive, the reveals,
-the garage, the day sheet). A member reaches it from the **View event
-details** button in the place-confirmed email, which links to
-`members.html#access`. A guard at the top of the page admits a visitor
-who carries that `#access` marker, already holds a member session
-(`sessionStorage` key `ldc-member`), or passed the password gate this
-session; everyone else is redirected to the gate. Once admitted, the
-marker is stripped from the URL and the session is remembered, so the
-member can move around the page and refresh without re-triggering it.
-
-Like the welcome guard, this is a deterrent, not real security: the file
-is public, so the `#access` marker is visible to anyone who reads the
-email or the source. Server-side gating (as above) is the only way to
-truly restrict it.
-
-## The signup dashboard
-
-`dashboard.html` is a private, password-gated read-out of the application
-sheet — the same `Applications` tab the entry form fills. It shows places
-filled against a target, the sign-up → form → approved → paid funnel, a row
-of counts, and a sortable, filterable applicant list; clicking a row opens a
-slide-over with the full record and a timeline. It's a faithful static build
-of the Claude Design "Signup Dashboard" (`dashboard.css` and `dashboard.js`
-carry the layout and logic; the colour, type and components reuse `styles.css`
-— "The Livery").
-
-Unlike the welcome/members guards, this one is **real** gating: the data
-never ships in the page. `dashboard.js` asks the Apps Script web app for the
-rows over JSONP, and `doGet` only returns them when the supplied password
-matches the `DASHBOARD_PASSWORD` Script Property. A wrong password gets
-nothing. The token and the generated gate passwords are never exposed — only
-the columns in `DASHBOARD_FIELDS` (`Code.gs`) are sent.
-
-### Setup
-
-1. In the Apps Script project, **Project Settings ▸ Script Properties**, add
-   `DASHBOARD_PASSWORD`. Set it to the password(s) the dashboard should accept,
-   separated by commas — one per viewer, e.g. `ABC123, DEF456`. These can be
-   the same passwords the viewers already use at the site gate. The check is
-   case-insensitive. (Keep the real values here, never in the repo.)
-2. **Deploy ▸ Manage deployments ▸ Edit ▸ New version** so the updated
-   `doGet` goes live (the `/exec` URL stays the same).
-3. Visit `https://longdriveclub.com/dashboard.html`, enter the password.
-
-The password is held in `sessionStorage` for the tab's life, so Refresh and
-reloads don't re-prompt; closing the tab clears it. The page is `noindex` and
-disallowed in `robots.txt`, and isn't linked from anywhere on the site.
-
-### Tuning it (no code)
-
-The display values live in a **`Dashboard` tab** in the spreadsheet — a plain
-two-column `setting` / `value` list. Edit a cell, hit **Refresh** on the
-dashboard, done. The tab is created and pre-filled automatically the first
-time the dashboard loads after deploy, so there's nothing to set up.
-
-| setting | what it does |
-| --- | --- |
-| `event_name` | the heading (e.g. `THE FIRST DRIVE`) |
-| `event_date` | drive day — drives the four "Counting down" clocks |
-| `places_target` | capacity the "places filled" bar fills toward |
-| `ig_show` | `yes`/`no` — show the Instagram strip |
-| `ig_followers` | follower count shown |
-| `ig_change` | optional "↑ N since last check" pill — blank hides it |
-| `ig_reach` | optional "N reach this week" — blank hides it |
-
-The **Counting down** section shows the same four reveal clocks as the members
-page (drive day, the course, the meeting point, the route). They all derive
-from `event_date` using the offsets in `members.js` (course −42 days, meeting
-−14, route −7). The members page reads the **same** `event_date` from the sheet
-(via the no-auth `?meta` endpoint in `Code.gs`, which returns only the public
-display values — no applicant data), so setting drive day once in the sheet
-updates both the dashboard and the members page. `members.js` keeps a hardcoded
-date as an instant fallback if that fetch is slow or fails. Each clock ticks
-live and reads "Revealed" once it passes.
-
-Under the hood: `Code.gs` `readSettings()` returns this tab in the dashboard
-feed, and `applySettings()` in `dashboard.js` lets any value present override
-the matching default in the `CONFIG` block at the top of `dashboard.js`. So
-`CONFIG` is just the fallback if a row is missing or the tab is empty.
-
-`APPS_SCRIPT_URL` (in `CONFIG`) is the same deployment the entry form uses;
-update both if you ever redeploy to a new URL.
-
-## Imagery
-
-The home page hero is a carousel; its image list is `IMAGES` in
-`app.js`. Swap the files to change the photography; keep the warm,
-low-saturation, golden-hour mood.
-
-The "You're in" page's map section (`#map`) is `assets/basemap-2.jpg`
-(a clean top-down map, no route baked in) with the route drawn on top
-by an animated SVG overlay in `welcome.html` — the line, casing, ghost
-line, START/FINISH chips and the gliding LDC roundel are all inline
-`<path>`/`<g>` elements sized to the basemap's exact pixel dimensions
-(`viewBox="0 0 2518 1558"`), animated in `welcome.js`. Swapping the
-basemap for a different map requires re-tracing the route path against
-the new image's pixel coordinates. `assets/We-take-the-long-way-round..jpg`
-(the lineup on the grass beside the drive copy) is a plain `<img>` slot —
-swap it by replacing the file.
+## Working with the owner
+- **Never give time estimates in days or weeks.** Describe scope and complexity instead.
+- **If an automated attempt fails, ask for help instead of retrying.** The owner is happy to record a video or open their own Dia.
+  - To drive their real browser: `open -a Dia --args --remote-debugging-port=9222`, then use the private browsing context created over CDP.
