@@ -30,11 +30,9 @@
   .stripe i { display: block; } .stripe i:nth-child(1) { flex: 7; background: var(--ldc-green); }
   .stripe i:nth-child(2) { flex: 1.4; background: var(--ldc-chalk); } .stripe i:nth-child(3) { flex: .5; background: var(--ldc-redline); }
   .panel { position: fixed; background: var(--ldc-tarmac); border: 1px solid var(--hairline); padding: 10px 14px; }
-  /* the LDC roundel, rings in the master logo's proportions: chalk disc, tarmac ring, green gap, thin chalk rim */
-  .roundel { flex: none; width: 44px; height: 44px; border-radius: 50%; color: var(--ldc-tarmac); display: grid; place-items: center; font-size: 12px; container-type: inline-size;
-    background: radial-gradient(closest-side, var(--ldc-chalk) 78.8%, var(--ldc-tarmac) 0 86.9%, var(--ldc-green) 0 93.6%, var(--ldc-chalk) 0 98.5%, transparent 100%); }
-  .roundel > span { font-size: 18cqw; letter-spacing: 0; white-space: nowrap; }
-  .roundel .stop { display: inline-block; width: .22em; height: .22em; margin-left: .05em; background: var(--ldc-redline); }
+  .roundel { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--ldc-chalk); color: var(--ldc-tarmac);
+    border: 3px solid var(--ldc-tarmac); box-shadow: 0 0 0 2px var(--ldc-chalk); display: grid; place-items: center; font-size: 12px; }
+  .roundel.logo { background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 2 96 96'><circle cx='50' cy='50' r='46.5' fill='%230E2A1C'/><circle cx='50' cy='50' r='40' fill='%23EDE9DF'/><circle cx='50' cy='50' r='46.5' fill='none' stroke='%23EDE9DF' stroke-width='3'/><circle cx='50' cy='50' r='40' fill='none' stroke='%231B1916' stroke-width='4'/><g transform='translate(25.8469 56.5428) scale(0.016113 -0.016113)'><path d='M85 0L85 688L288 688L288 164L730 164L730 0L85 0Z' fill='%231B1916' transform='translate(0 0)'/><path d='M85 0L85 688L469 688Q596 688 687.5 648Q779 608 828.5 531Q878 454 878 344Q878 233 828.5 156.5Q779 80 687.5 40Q596 0 469 0L85 0ZM288 151L457 151Q552 151 610.5 199Q669 247 669 333L669 356Q669 441 610.5 489Q552 537 457 537L288 537L288 151Z' fill='%231B1916' transform='translate(754 0)'/><path d='M487 -12Q270 -12 162.5 79Q55 170 55 344Q55 515 165.5 607.5Q276 700 488 700Q606 700 696 664.5Q786 629 836.5 564.5Q887 500 887 412L689 412Q689 476 632.5 512.5Q576 549 485 549Q377 549 320.5 495.5Q264 442 264 357L264 332Q264 247 320.5 193Q377 139 482 139Q581 139 637.5 174Q694 209 694 272L888 272Q888 187 839 123Q790 59 700.5 23.5Q611 -12 487 -12Z' fill='%231B1916' transform='translate(1687 0)'/><path d='M66 0L66 183L284 183L284 0L66 0Z' fill='%23C1121F' transform='translate(2629 0)'/></g></svg>") center / contain no-repeat; border: 0; box-shadow: none; color: transparent; overflow: hidden; } /* the master file from the LDC Design System (roundel-avatar.svg) */
   /* owner: one bar across the top (v2): hole, distance, wind, aim, icons; translucent so the sky shows */
   .hud { background: rgba(27,25,22,.82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   #hole { top: 20px; left: 14px; right: 14px; display: flex; align-items: center; gap: 14px; padding: 10px 12px; }
@@ -193,7 +191,7 @@
 <div class="stripe" style="top:0"><i></i><i></i><i></i></div>
 <div class="stripe" style="bottom:0"><i></i><i></i><i></i></div>
 <div id="hole" class="panel hud">
-  <a class="roundel display" href="/" aria-label="Long Drive Club home" style="text-decoration:none"><span>LDC<i class="stop"></i></span></a>
+  <a class="roundel logo display" href="/" aria-label="Long Drive Club home" style="text-decoration:none">LDC</a>
   <span id="holeNo" class="hn display"></span>
   <div class="t"><div id="holeName" class="name display"></div><div class="eyebrow"><span id="holePar"></span> · <span id="strokes">0</span></div></div>
   <span class="sp"></span>
@@ -206,7 +204,7 @@
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Ambiance">
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="roundel display"><span>LDC<i class="stop"></i></span></div>
+  <div class="roundel logo display">LDC</div>
   <h2 class="display">Long Drive Club</h2>
   <div class="eyebrow">Choose your ambiance</div>
   <div id="skies"></div>
@@ -234,7 +232,7 @@
 <div id="scrim"></div>
 <div id="sc" class="panel" role="dialog" aria-label="Scorecard">
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="scHead"><div class="roundel display"><span>LDC<i class="stop"></i></span></div><div><div class="eyebrow">Long Drive Club</div><h2 class="display">Scorecard</h2><div class="eyebrow" id="scDate"></div></div></div>
+  <div class="scHead"><div class="roundel logo display">LDC</div><div><div class="eyebrow">Long Drive Club</div><h2 class="display">Scorecard</h2><div class="eyebrow" id="scDate"></div></div></div>
   <div class="scCols"><div>
   <div class="scWrap"><table id="scFront"></table></div>
   <div class="scWrap"><table id="scBack"></table></div>
@@ -1343,14 +1341,9 @@ const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[
 // flag, ball, aim line, trail
 const flag = new THREE.Group();
 flag.add(new THREE.Mesh(new THREE.CylinderGeometry(.0095, .0095, 2.5, 8), new THREE.MeshLambertMaterial({ color: '#eee' }))); // a real 3/4 in stick; any thicker hides the 4.25 in cup
-// the LDC roundel for canvas textures, in the master logo's proportions (r = outer edge): matches the CSS .roundel
-const drawRoundel = (g, x, y, r) => {
-  for (const [f, c] of [[1, '#EDE9DF'], [.936, '#0E2A1C'], [.869, '#1B1916'], [.788, '#EDE9DF']]) { g.beginPath(); g.arc(x, y, r * f, 0, 6.283); g.fillStyle = c; g.fill(); }
-  const px = r * .36; g.font = `800 ${px}px Archivo`; g.fontStretch = 'expanded'; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
-  const w = g.measureText('LDC').width, s = px * .22, gap = px * .05, x0 = x - (w + gap + s) / 2, base = y + px * .36;
-  g.fillStyle = '#1B1916'; g.fillText('LDC', x0, base);
-  g.fillStyle = '#C1121F'; g.fillRect(x0 + w + gap, base - s, s, s);
-};
+// the LDC roundel for canvas textures: the same master file as the CSS .roundel.logo, r = outer edge
+const ROUNDEL = new Image(); ROUNDEL.src = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 2 96 96"><circle cx="50" cy="50" r="46.5" fill="#0E2A1C"/><circle cx="50" cy="50" r="40" fill="#EDE9DF"/><circle cx="50" cy="50" r="46.5" fill="none" stroke="#EDE9DF" stroke-width="3"/><circle cx="50" cy="50" r="40" fill="none" stroke="#1B1916" stroke-width="4"/><g transform="translate(25.8469 56.5428) scale(0.016113 -0.016113)"><path d="M85 0L85 688L288 688L288 164L730 164L730 0L85 0Z" fill="#1B1916" transform="translate(0 0)"/><path d="M85 0L85 688L469 688Q596 688 687.5 648Q779 608 828.5 531Q878 454 878 344Q878 233 828.5 156.5Q779 80 687.5 40Q596 0 469 0L85 0ZM288 151L457 151Q552 151 610.5 199Q669 247 669 333L669 356Q669 441 610.5 489Q552 537 457 537L288 537L288 151Z" fill="#1B1916" transform="translate(754 0)"/><path d="M487 -12Q270 -12 162.5 79Q55 170 55 344Q55 515 165.5 607.5Q276 700 488 700Q606 700 696 664.5Q786 629 836.5 564.5Q887 500 887 412L689 412Q689 476 632.5 512.5Q576 549 485 549Q377 549 320.5 495.5Q264 442 264 357L264 332Q264 247 320.5 193Q377 139 482 139Q581 139 637.5 174Q694 209 694 272L888 272Q888 187 839 123Q790 59 700.5 23.5Q611 -12 487 -12Z" fill="#1B1916" transform="translate(1687 0)"/><path d="M66 0L66 183L284 183L284 0L66 0Z" fill="#C1121F" transform="translate(2629 0)"/></g></svg>`);
+const drawRoundel = (g, x, y, r) => { if (ROUNDEL.complete && ROUNDEL.naturalWidth) g.drawImage(ROUNDEL, x - r, y - r, 2 * r, 2 * r); };
 // Redline flag carrying the LDC roundel
 const flagTex = new THREE.CanvasTexture(document.createElement('canvas'));
 const drawFlag = () => {
@@ -1359,7 +1352,7 @@ const drawFlag = () => {
   drawRoundel(g, 128, 80, 62);
   flagTex.needsUpdate = true;
 };
-drawFlag(); document.fonts.load('800 22px Archivo').then(() => { drawFlag(); flagTexBack.needsUpdate = true; }); // redraw once the web font is in
+drawFlag(); ROUNDEL.decode().then(() => { drawFlag(); flagTexBack.needsUpdate = true; drawBallLogo(); }).catch(() => {}); // redraw once the web font is in
 // cloth hinged on the pole (geometry starts at x=0) so it swings round the pole, not its own middle
 const clothGeo = new THREE.PlaneGeometry(.8, .5, 16, 1).translate(.4, 0, 0), clothX = Float32Array.from(clothGeo.attributes.position.array);
 const flagTexBack = flagTex.clone(); flagTexBack.wrapS = THREE.RepeatWrapping; flagTexBack.repeat.x = -1; flagTexBack.offset.x = 1;
@@ -1393,7 +1386,7 @@ const drawBallLogo = () => {
   }
   ballTex.needsUpdate = true;
 };
-drawBallLogo(); document.fonts.load('800 12px Archivo').then(drawBallLogo);
+drawBallLogo();
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4, map: ballTex }));
 ballMesh.castShadow = true; scene.add(ballMesh);
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
