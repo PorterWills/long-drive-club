@@ -269,6 +269,20 @@ the matching default in the `CONFIG` block at the top of `dashboard.js`. So
 `APPS_SCRIPT_URL` (in `CONFIG`) is the same deployment the entry form uses;
 update both if you ever redeploy to a new URL.
 
+## The golf game
+
+`game-mode/` is the browser golf game (live at `/game-mode/`, tab title
+*National Course*; `/gamer/` redirects there). Its own
+`game-mode/README.md` covers how it works and the owner's decisions.
+
+The home page promotes it with a full-width band (`#game`) between
+"What this is" and "The first drive": the fairway photo
+`assets/fairway-game.jpg` with the copy centred on it (*No Invitation
+Needed* / *Play 18 holes of the most famous course in the world.* /
+*Start playing for free*). The words were agreed with the owner line
+by line, so don't change them without asking. Never name Augusta
+National or the Masters anywhere on the site.
+
 ## Imagery
 
 The home page hero is a carousel; its image list is `IMAGES` in
