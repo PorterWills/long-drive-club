@@ -800,6 +800,7 @@ function simulate(start, shot, wind, opts = {}) {
   let landing = null, apex = p.y, hang = 0, outcome = 'rest';
   // owner: holed too easily. Drops below 2.4 m/s; catch radius 5.8 cm growing to 6.8 cm as the ball slows (was 6.6–7.4 below 3 m/s), so firm edge-of-cup putts lip out
   const CUP_SPEED = 2.4, cupR = s => 0.058 + 0.01 * (1 - Math.min(1, s / CUP_SPEED));
+  const CUP_LIP = 0.054 + BALL.r * .6; let lipped = false; // a fast ball meets the cup when its edge reaches the rim
   const finish = o => ({ pts, hits, final: p, landing: landing || p, apex: apex - start.y, hang, outcome: o, material: materialAt(p.x, p.z) });
 
   if (!opts.rolling) {
@@ -846,16 +847,30 @@ function simulate(start, shot, wind, opts = {}) {
     const car = hitCar(v(np.x, np.y, np.z), vel);
     if (car) { vel = v(car.vel.x, 0, car.vel.z); continue; }
     if (outOfBounds(np.x, np.z)) { p = np; return finish('ob'); }
-    if (pin && len(vel) < CUP_SPEED) { // swept check: closest approach to the cup along this step's path
+    if (pin) { // swept check: closest approach to the cup along this step's path
       const sx = np.x - p.x, sz = np.z - p.z, ss = sx * sx + sz * sz;
       const k = ss > 1e-12 ? clamp(-((p.x - pin.x) * sx + (p.z - pin.z) * sz) / ss, 0, 1) : 0;
-      const d = Math.hypot(p.x + sx * k - pin.x, p.z + sz * k - pin.z);
-      if (d < cupR(len(vel))) { p = v(pin.x, heightAt(pin.x, pin.z), pin.z); pts.push({ ...p }); return finish('holed'); }
+      const cx = p.x + sx * k, cz = p.z + sz * k, d = Math.hypot(cx - pin.x, cz - pin.z);
+      if (!lipped && s < CUP_SPEED && d < cupR(s)) { p = v(pin.x, heightAt(pin.x, pin.z), pin.z); pts.push({ ...p }); return finish('holed'); }
+      const kr = ss > 1e-12 ? -((p.x - pin.x) * sx + (p.z - pin.z) * sz) / ss : -1, side = ss > 1e-12 ? (sx * (pin.z - p.z) - sz * (pin.x - p.x)) / Math.sqrt(ss) : 1; // side: the pin's offset from the ball's line
+      if (s >= CUP_SPEED && kr >= 0 && kr <= 1 && Math.abs(side) < CUP_LIP && !lipped) { // owner: fast putts rolled straight over the hole. Too fast to drop: as it crosses the cup it meets the stick or the lip
+        lipped = true;
+        const off = side / CUP_LIP; // -1..1 across the cup
+        if (Math.abs(off) < .35) { // dead on: hits the flagstick and the back of the cup, most of its pace gone; drops unless it was struck very hard
+          const ns = s * .4;
+          if (ns < CUP_SPEED) { p = v(pin.x, heightAt(pin.x, pin.z), pin.z); pts.push({ ...p }); return finish('holed'); }
+          vel = mul(vel, .4 * (1 - .3 * Math.random()));
+        } else { // catches the lip: whipped round it and off line, the more so the closer it ran to the edge
+          const turn = -Math.sign(off) * (.25 + .5 * (Math.abs(off) - .35) / .65) * (.85 + .3 * Math.random()), c = Math.cos(turn), sn = Math.sin(turn);
+          vel = mul(v(vel.x * c - vel.z * sn, 0, vel.x * sn + vel.z * c), .6);
+        }
+        p = v(cx, heightAt(cx, cz) + BALL.r, cz); pts.push({ ...p }); continue;
+      }
     }
     p = np; pts.push({ ...p });
   }
   // owner: a ball that dies over the cup sat on the lip. The stop checks above end the roll before the cup check runs, so check where it stopped
-  if (pin && Math.hypot(p.x - pin.x, p.z - pin.z) < cupR(0)) { p = v(pin.x, heightAt(pin.x, pin.z), pin.z); pts.push({ ...p }); return finish('holed'); }
+  if (pin && !lipped && Math.hypot(p.x - pin.x, p.z - pin.z) < cupR(0)) { p = v(pin.x, heightAt(pin.x, pin.z), pin.z); pts.push({ ...p }); return finish('holed'); }
   return finish('rest');
 }
 
@@ -866,6 +881,7 @@ const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 // ---------- self-check (open with ?test) ----------
 if (location.search.includes('test')) {
+  const fallLine = () => { const n = normalAt(HOLE.pin[0], HOLE.pin[1]), a = Math.atan2(n.x, n.z); return [a, a + Math.PI]; }; // putt directions straight down and straight up the slope at the pin
   const tee = v(0, 50, 0), calm = v(0, 0, 0), dr = CLUBS[0];
   const flatHeight = heightAt; // physics checks run high above terrain, landing on the real course is fine
   const [lz, lx] = HOLE.fairway.line[1], along = Math.abs(Math.atan2(lx, lz)) > .3 ? Math.atan2(lx, lz) : 0; // sharp dogleg off the tee (13): fire down the first leg, clear of the chute's trees
@@ -888,18 +904,33 @@ if (location.search.includes('test')) {
     })(),
     ['ball comes to rest', ['rest', 'ob', 'water'].includes(r0.outcome), r0.outcome],
     (() => { const pin = v(HOLE.pin[0], 0, HOLE.pin[1]); const st = v(pin.x, heightAt(pin.x, pin.z - 10) + BALL.r, pin.z - 10); const pw = puttPower(st, pin); const r = simulate(st, strike(CLUBS[7], pw, 0, 'green', Math.random), calm, { rolling: true, pin }); const d = flat(r.final, pin), rolled = flat(r.final, st); return ['putter preset rolls ~the distance (break is the player\'s job)', r.outcome === 'holed' || Math.abs(rolled - 10.4) < 2,`${r.outcome} ${d.toFixed(2)}m pw=${pw.toFixed(2)} rolled=${flat(r.final, st).toFixed(2)}`]; })(),
-    (() => { // 3 ft putt hit firmly (2.2 m/s) dead at the cup must drop, from four directions
+    (() => { // 3 ft putt hit firmly (2.2 m/s) dead at the cup must drop, uphill and downhill (across a steep slope it breaks, as it should: the player aims off)
       const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
-      for (const ang of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      for (const ang of fallLine()) {
         const st = v(pin.x - Math.sin(ang) * 0.9, 0, pin.z - Math.cos(ang) * 0.9); st.y = heightAt(st.x, st.z) + BALL.r;
         const s = strike(CLUBS[7], 2.2 / CLUBS[7].speed, ang, 'green', Math.random);
         const rr = simulate(st, s, calm, { rolling: true, pin }); res.push(rr.outcome + (rr.outcome === 'holed' ? '' : ` min ${Math.min(...rr.pts.map(q => Math.hypot(q.x - pin.x, q.z - pin.z))).toFixed(3)} end ${flat(rr.final, pin).toFixed(2)}`));
       }
       return ['firm short putts at the cup drop', res.every(o => o === 'holed'), res.join(',')];
     })(),
-    (() => { // a putt weighted to die at the cup drops, from four directions (it used to stop on the lip)
+    (() => { // a hard putt (4 m/s) straight at the pin hits the stick and drops, from four directions
       const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
       for (const ang of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const st = v(pin.x - Math.sin(ang) * 0.6, 0, pin.z - Math.cos(ang) * 0.6); st.y = heightAt(st.x, st.z) + BALL.r;
+        res.push(simulate(st, strike(CLUBS[7], 4 / CLUBS[7].speed, ang, 'green', Math.random), calm, { rolling: true, pin }).outcome);
+      }
+      return ['hard putts into the stick drop', res.every(o => o === 'holed'), res.join(',')];
+    })(),
+    (() => { // a hard putt (4 m/s) clipping the edge of the cup is knocked off its line, not rolled straight over
+      const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), st = v(pin.x + 0.045, 0, pin.z - 0.6); st.y = heightAt(st.x, st.z) + BALL.r;
+      const r = simulate(st, strike(CLUBS[7], 4 / CLUBS[7].speed, 0, 'green', Math.random), calm, { rolling: true, pin });
+      const calmR = simulate(st, strike(CLUBS[7], 4 / CLUBS[7].speed, 0, 'green', Math.random), calm, { rolling: true }); // same putt with no cup
+      const moved = flat(r.final, calmR.final);
+      return ['fast edge putt lips out', r.outcome !== 'holed' && moved > 0.25, `${r.outcome}, ends ${moved.toFixed(1)} m from its no-cup line`];
+    })(),
+    (() => { // a putt weighted to die at the cup drops, uphill and downhill (it used to stop on the lip)
+      const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
+      for (const ang of fallLine()) {
         const st = v(pin.x - Math.sin(ang) * 0.5, 0, pin.z - Math.cos(ang) * 0.5); st.y = heightAt(st.x, st.z) + BALL.r;
         res.push(simulate(st, strike(CLUBS[7], puttPower(st, pin), ang, 'green', Math.random), calm, { rolling: true, pin }).outcome);
       }
