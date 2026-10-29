@@ -251,7 +251,7 @@ const HOLES = [{
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [112, -8], [197, 2], [265, -8], [333, -29], [408, -56]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-56, 405], r: 15 },
+  green: { at: [-56, 405], r: 15, fx: [['ff', .35], ['tier', 6, .3]] },
   bunkers: [{ at: [-23, 232], r: 5 }, { at: [-26, 248], r: 5.5 }, { at: [-37, 393], r: 3.6 }, { at: [-39, 401], r: 3.4 }],
   water: [],
   trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
@@ -272,7 +272,7 @@ const HOLES = [{
   wind: { mph: 14, toward_deg: 95 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 17, line: [[0, 0], [120, -5], [221, -3], [288, -7], [356, 25], [423, 56], [473, 93], [507, 160]] },
   elevation: [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]],      // downhill all the way
-  green: { at: [165, 507], r: 12 },
+  green: { at: [165, 507], r: 12, fx: [['bowl', -3, -4, 4, -.15]] },
   bunkers: [{ at: [-11, 318], r: 4.5 }, { at: [-15, 311], r: 4.5 }, { at: [149, 516], r: 4 }, { at: [148, 507], r: 4 }, { at: [161, 489], r: 4 }],
   water: [],
   trees: [[1, 157, 436, 21, 22], [-1, 15, 477, 21, 22]],
@@ -288,7 +288,7 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 330 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 20, line: [[0, 0], [58, -14], [114, 12], [170, 29], [237, 33], [293, 20], [320, 8.5]] },
   elevation: [[0, 2], [150, 1], [250, 3], [330, 5], [380, 5.5]],
-  green: { at: [8.5, 320], r: 12 },
+  green: { at: [8.5, 320], r: 12, fx: [['ff', .45]] },
   bunkers: [{ at: [43, 237], r: 4 }, { at: [40, 222], r: 4.5 }, { at: [35, 217], r: 4 }, { at: [46, 212], r: 3.5 }, { at: [36, 206], r: 3.5 },
     { at: [31, 320], r: 3.5 }, { at: [32, 313], r: 3.5 }],
   water: [],
@@ -304,7 +304,7 @@ const HOLES = [{
   wind: { mph: 12, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 20, line: [[0, 0], [68, 10], [120, 1.4], [171, -2], [219.4, -4.6]] },
   elevation: [[0, 4], [120, 2], [220, 1], [270, 1.5]],
-  green: { at: [-4.6, 219.4], r: 13 },
+  green: { at: [-4.6, 219.4], r: 13, fx: [['tier', -4, .3]] },
   bunkers: [{ at: [17, 214], r: 4 }, { at: [17, 221], r: 4 }, { at: [-9, 206], r: 4 }, { at: [-15, 211], r: 4 }],
   water: [],
   trees: [[1, 73, 240, 26, 20], [-1, -18, 262, 23, 22]],
@@ -319,7 +319,7 @@ const HOLES = [{
   wind: { mph: 14, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 22, line: [[0, 0], [84, -7], [180, -20], [276, -26], [355, -14], [403, 15], [450.8, 40.5]] },
   elevation: [[0, 2], [200, 0], [350, 5], [460, 8], [520, 8.5]],
-  green: { at: [40.5, 450.8], r: 11 },
+  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .35], ['tier', 5, .3]] },
   bunkers: [{ at: [56, 462], r: 4 }, { at: [-7, 285], r: 4.5 }, { at: [-11, 264], r: 4.5 }],
   water: [],
   trees: [[1, 78, 282, 30, 20], [-1, -37, 492, 40, 25]],
@@ -334,7 +334,7 @@ const HOLES = [{
   wind: { mph: 5, toward_deg: 20 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 12, line: [[0, 0], [54, 0.6], [89, 4.7], [125, 7.6], [164.6, 0.6]] },
   elevation: [[0, 10], [100, 3], [170, 0], [210, 0.5]],
-  green: { at: [0.6, 164.6], r: 13 },
+  green: { at: [0.6, 164.6], r: 13, fx: [['tier', 5, .4, -60]] },
   bunkers: [{ at: [15.9, 148.2], r: 4 }, { at: [8.8, 145.8], r: 4 }, { at: [4.1, 136.4], r: 4 }],
   water: [],
   trees: [[1, 0, 89, 11, 16], [1, 95, 185, 25, 16], [-1, 0, 50, 10, 14], [-1, 108, 190, 21, 16]],
@@ -349,7 +349,7 @@ const HOLES = [{
   wind: { mph: 8, toward_deg: 120 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 12, line: [[0, 0], [133, -5.3], [213, 0], [293, -2.7], [360, -5.3], [411.4, -10.6]] },
   elevation: [[0, 2], [250, 0], [400, 5], [460, 6]],
-  green: { at: [-10.6, 411.4], r: 10 },
+  green: { at: [-10.6, 411.4], r: 10, fx: [['ff', .3]] },
   bunkers: [{ at: [2.7, 422], r: 3.5 }, { at: [-14.6, 424.7], r: 3.5 }, { at: [3.2, 402], r: 3.5 }, { at: [-10.6, 398], r: 3.5 }, { at: [-26.6, 399.5], r: 3.5 }],
   water: [],
   trees: [[1, 5, 146, 18, 16], [1, 234, 373, 10, 14], [-1, 96, 293, 21, 16], [-1, 351, 394, 16, 14]],
@@ -364,7 +364,7 @@ const HOLES = [{
   wind: { mph: 16, toward_deg: 280 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [107.5, 11.6], [207, 5], [306, 5], [405, -14.9], [472, -14.9], [521.1, -9.9]] },
   elevation: [[0, 1], [150, 1.5], [300, 6], [450, 11], [520, 13], [580, 13.5]],
-  green: { at: [-9.9, 521.1], r: 10 },
+  green: { at: [-9.9, 521.1], r: 10, fx: [['tilt', -90, .03]] },
   bunkers: [{ at: [-8.3, 263], r: 4 }, { at: [-9.9, 250], r: 4 }],
   water: [],
   trees: [[1, 213, 517, 22, 30], [-1, 276, 445, 18, 25], [-1, 461, 564, 26, 20], [-1, 48, 124, 26, 10]],
@@ -379,7 +379,7 @@ const HOLES = [{
   wind: { mph: 11, toward_deg: 45 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 14, line: [[0, 0], [100, -15.8], [205, -28.9], [284, -23.7], [350, -5.3], [389, 28.9], [418, 46]] },
   elevation: [[0, 6], [200, 2], [300, -1], [380, 4], [440, 6]],
-  green: { at: [46, 418], r: 11 },
+  green: { at: [46, 418], r: 11, fx: [['ff', .6]] },
   bunkers: [{ at: [57.1, 406], r: 4 }, { at: [43.4, 401], r: 4 }],
   water: [],
   trees: [[1, 79, 329, 10, 15], [-1, 174, 352, 16, 20]],
@@ -394,7 +394,7 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [104.7, -9.4], [212.1, -14.8], [292.7, 1.3], [357.1, 28.2], [405.4, 49.7], [445.7, 79.2]] },
   elevation: [[0, 20], [200, 8], [350, 0], [460, 1]],
-  green: { at: [79.2, 445.7], r: 12 },
+  green: { at: [79.2, 445.7], r: 12, fx: [['tier', -5, .35]] },
   bunkers: [{ at: [47, 386.6], r: 6 }, { at: [37.6, 365], r: 6 }, { at: [60.4, 440.3], r: 4 }, { at: [59, 433], r: 3.5 }],
   water: [],
   trees: [[1, 40, 440, 30, 18], [-1, 160, 420, 38, 18]],
@@ -409,7 +409,8 @@ const HOLES = [{
   wind: { mph: 12, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 18, line: [[0, 0], [113, 3.2], [226, 6.5], [307, 3.2], [388, -6.5], [475.3, -14.5]] },
   elevation: [[0, 12], [250, 6], [450, 0], [520, 0]],
-  green: { at: [-14.5, 475.3], r: 13 },
+  green: { at: [-14.5, 475.3], r: 13, fx: [['tilt', -90, .025]] },
+  shaved: true, swirl: true,
   bunkers: [{ at: [-27.5, 494.6], r: 3.5 }, { at: [-21, 242.5], r: 3 }],
   water: [{ at: [3.2, 468.8], r: 9, drop: [-28, 440] }, { at: [3.2, 452.6], r: 9, drop: [-28, 440] },
     { at: [25.9, 491], r: 8, drop: [-28, 440] }, { at: [0, 517], r: 7, drop: [-28, 440] }, { at: [45, 462], r: 7, drop: [-28, 440] }],
@@ -425,7 +426,8 @@ const HOLES = [{
   wind: { mph: 8, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 14, line: [[0, 0], [141.7, 0.6]] },
   elevation: [[0, 2], [100, 0], [150, 1], [190, 3]],
-  green: { at: [0.6, 141.7], r: 9 },
+  green: { at: [0.6, 141.7], r: 9, fx: [['ff', .3]] },
+  shaved: true, swirl: true,
   bunkers: [{ at: [-6, 134], r: 2.5 }, { at: [3.2, 153.2], r: 3 }, { at: [-1.9, 157], r: 3 }],
   water: creek([[27.5, 89.4], [18.5, 98.3], [9.6, 106], [0.6, 112.4], [-8.3, 118.8], [-17.2, 126.4], [-26.2, 135.4], [-35.1, 145.6], [-44, 155.8]], 7, [-5, 92])
     .concat([{ at: [9.6, 117.5], r: 5, drop: [-5, 92] }]),
@@ -441,7 +443,8 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 60 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 18, line: [[0, 0], [52.1, -45.6], [133.5, -100.9], [214.9, -159.5], [312.6, -172.5], [394, -146.5], [459.1, -100.9], [494.9, -58.6]] },
   elevation: [[0, 4], [200, 0], [350, 1], [480, 2], [530, 3]],
-  green: { at: [-58.6, 494.9], r: 11 },
+  green: { at: [-58.6, 494.9], r: 11, fx: [['tier', 4, .35]] },
+  shaved: true, swirl: true,
   bunkers: [{ at: [-35.8, 514.4], r: 4 }, { at: [-35.8, 490], r: 4 }, { at: [-48.8, 524], r: 4 }],
   water: creek([[-55.4, 117.2], [-81.4, 110.7], [-107.5, 104.2]], 7, [-95, 140])
     .concat(creek([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6]], 3, [-170, 300])) // drive zone: drop back on the fairway, not past the green-side creek
@@ -458,7 +461,7 @@ const HOLES = [{
   wind: { mph: 7, toward_deg: 220 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [88, -12.4], [187.2, -12.4], [261.5, -5], [335.9, 9.9], [401.6, 24.8]] },
   elevation: [[0, 3], [200, 0], [330, 2], [400, 6], [440, 6.5]],
-  green: { at: [24.8, 401.6], r: 14 },
+  green: { at: [24.8, 401.6], r: 14, fx: [['ff', .6], ['bowl', 4, 5, 4, .25]] },
   bunkers: [],
   water: [],
   trees: [[1, 60, 350, 22, 18], [-1, 150, 370, 28, 18]],
@@ -473,7 +476,8 @@ const HOLES = [{
   wind: { mph: 14, toward_deg: 10 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 18, line: [[0, 0], [107.2, 0], [233.3, 3.2], [359.4, 9.5], [438.3, 9.5], [502.9, 6.3]] },
   elevation: [[0, 8], [250, 10], [400, 4], [500, 0], [560, 0]],
-  green: { at: [6.3, 502.9], r: 11 },
+  green: { at: [6.3, 502.9], r: 11, fx: [['ff', .4]] },
+  shaved: true,
   bunkers: [{ at: [-15.8, 493.4], r: 3.5 }],
   water: [{ at: [9.5, 474.5], r: 7, drop: [25, 455] }, { at: [-6.3, 468.2], r: 7, drop: [25, 455] }, { at: [22.1, 482.4], r: 5, drop: [25, 455] },
     { at: [34.7, 545.5], r: 10, drop: [5, 525] }, { at: [9.5, 551.8], r: 7, drop: [5, 525] }],
@@ -491,7 +495,8 @@ const HOLES = [{
   wind: { mph: 6, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 14, line: [[0, 0], [155.2, -8.4]] },
   elevation: [[0, 4], [60, 0], [150, 1], [190, 2]],
-  green: { at: [-8.4, 155.2], r: 11 },
+  green: { at: [-8.4, 155.2], r: 11, fx: [['tilt', -90, .03], ['bowl', -1, 5, 5, -.12]] },
+  shaved: true,
   bunkers: [{ at: [7.2, 159.4], r: 3.5 }, { at: [-20.4, 174.4], r: 5 }, { at: [-20.4, 140.7], r: 3.5 }],
   water: [[8.4, 146.8, 8], [3.6, 128.7, 11], [-1.2, 113.1, 12], [1.2, 95, 12], [2.4, 77, 12], [2.4, 59, 12], [1.2, 48, 9]].map(([x, z, r]) => ({ at: [x, z], r, drop: [-25, 100] })),
   trees: [[1, 0, 90, 35, 12]],
@@ -506,7 +511,7 @@ const HOLES = [{
   wind: { mph: 9, toward_deg: 140 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 16, line: [[0, 0], [82.4, -7.3], [179.2, -17], [276.1, -19.4], [348.8, -17], [402, -14.5]] },
   elevation: [[0, 2], [200, 0], [350, 4], [420, 6]],
-  green: { at: [-14.5, 402], r: 9 },
+  green: { at: [-14.5, 402], r: 9, fx: [['tier', 4, .25]] },
   bunkers: [{ at: [0, 391], r: 3 }, { at: [-19.4, 387.5], r: 3 }],
   water: [],
   trees: [[1, 0, 460, 45, 12], [-1, 0, 460, 45, 12]],
@@ -522,7 +527,7 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 15, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
   elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
-  green: { at: [-91.8, 415.1], r: 10 },
+  green: { at: [-91.8, 415.1], r: 10, fx: [['tier', -4, .35]] },
   bunkers: [{ at: [-71.8, 399], r: 4 }, { at: [-102.4, 403], r: 4 }, { at: [-5.3, 312.7], r: 5 }, { at: [2.7, 294], r: 4 }],
   water: [],
   trees: [],
@@ -570,6 +575,25 @@ const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
 const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0, 1].map(() => {
   const a = r() * 6.283, d = r() * g.r * .55; return { x: g.at[0] + Math.cos(a) * d, z: g.at[1] + Math.sin(a) * d, h: (r() - .4) * .4, s2: (g.r * (.3 + r() * .15)) ** 2 }; }); })();
 
+// green shapes per hole (green.fx), in the green's own frame: along = metres towards the back, side = metres to the player's left.
+// ['ff', h] false front (green body raised h above its front apron), ['tier', off, h, deg] a step h high, off metres from the centre,
+// ['tilt', deg, grade] a lean (rising towards deg; 0 = back, 90 = left, -90 = right), ['bowl', along, side, r, h] a hollow (h < 0) or hump
+const GFX = (() => {
+  const g = HOLE.green, [cx, cz] = g.at, r = g.r, ax = cx - centreX(cz - 40), n = Math.hypot(ax, 40), bx = ax / n, bz = 40 / n;
+  const dir = a => { const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180); return [bx * c + bz * s, bz * c - bx * s]; };
+  const sm = (a, b, t) => { t = clamp((t - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const near = (x, z) => sm(1.7, 1, greenD(x, z));
+  return (g.fx || []).map(([k, ...p]) => {
+    if (k === 'ff') return (x, z) => { const dx = x - cx, dz = z - cz, al = (dx * bx + dz * bz) / r, sd = Math.abs(dx * bz - dz * bx) / r;
+      return p[0] * sm(-1.05, -.55, al) * sm(1.35, .9, sd) * sm(1.6, 1, al); };
+    if (k === 'tier') { const [off, h, a = 0] = p, [ux, uz] = dir(a); return (x, z) => h * sm(-1.2, 1.2, (x - cx) * ux + (z - cz) * uz - off) * near(x, z); }
+    if (k === 'tilt') { const [a, gr] = p, [ux, uz] = dir(a); return (x, z) => gr * ((x - cx) * ux + (z - cz) * uz) * near(x, z); }
+    const [al, sd, rr, h] = p, mx = cx + bx * al + bz * sd, mz = cz + bz * al - bx * sd; // bowl
+    return (x, z) => h * Math.exp(-((x - mx) ** 2 + (z - mz) ** 2) / (rr * rr));
+  });
+})();
+const shavedBank = (x, z) => HOLE.shaved && waterD(x, z) < 5; // short grass running into the water, so a ball that lands wrong rolls in
+
 function materialAt(x, z) {
   if (waterD(x, z) < 0) return 'water';
   if (bunkerD(x, z) < 1) return 'sand';
@@ -579,6 +603,7 @@ function turfAt(x, z) { // the grass under everything; the terrain shader lays s
   const g = greenD(x, z);
   if (g < 1) return 'green';
   if (g < 1 + 2 / HOLE.green.r) return 'fringe';
+  if (shavedBank(x, z)) return 'fairway';
   if (Math.abs(x - HOLE.tee[0]) < 6 && Math.abs(z - HOLE.tee[1]) < 9) return 'fairway';
   const off = Math.abs(x - centreX(z));
   if (z > HOLE.tee[1] && z <= 30 && off < HOLE.fairway.half_width * .7) return 'firstcut'; // mown walk-off between tee and fairway
@@ -598,6 +623,7 @@ function heightAt(x, z) {
   const [gx, gz] = HOLE.green.at, g = Math.hypot(x - gx, z - gz), core = Math.exp(-(g * g) / 400);
   h += 0.7 * core + (z - gz) * 0.03 * core + (x - gx) * 0.008 * core;   // raised green, strong back-to-front slope
   for (const m of MOUNDS) h += m.h * Math.exp(-((x - m.x) ** 2 + (z - m.z) ** 2) / m.s2);
+  for (const f of GFX) h += f(x, z);
   const bd = bunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
   const fwBunker = Math.hypot(x - HOLE.green.at[0], z - HOLE.green.at[1]) > 40 ? .35 : 1; // fairway bunkers are shallow, playable traps; greenside ones stay deep
   h += (bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0) * fwBunker; // flat floor, steep face, grass lip
@@ -726,7 +752,7 @@ function simulate(start, shot, wind, opts = {}) {
 
   if (!opts.rolling) {
     for (let i = 0; i < 20 * 120; i++) {
-      let [np, nv] = rk4(p, vel, spin, wind);
+      let [np, nv] = rk4(p, vel, spin, HOLE.swirl ? swirlAt(wind, t) : wind);
       const car = hitCar(np, nv); if (car) { np = car.p; nv = car.vel; spin = mul(spin, .3); }
       if (inCanopy(np)) { nv = v(nv.x * 0.9, nv.y > 0 ? nv.y * 0.9 : nv.y, nv.z * 0.9); spin = mul(spin, 0.9); } // branches soak up forward speed; a falling ball keeps falling (it used to float down)
       apex = Math.max(apex, np.y); t += DT;
@@ -779,6 +805,8 @@ function simulate(start, shot, wind, opts = {}) {
   return finish('rest');
 }
 
+// swirling wind (11-13): the hole's wind turns up to about 50 degrees either way and gusts during the flight, the same every time
+const swirlAt = (w, t) => { const a = .9 * Math.sin(1.7 * t + .6), k = 1 + .35 * Math.sin(2.3 * t + 1.9), c = Math.cos(a), s = Math.sin(a); return v((w.x * c - w.z * s) * k, 0, (w.x * s + w.z * c) * k); };
 const windVec = (mph, deg) => { const r = deg * Math.PI / 180; return v(Math.sin(r) * mph * MPH, 0, Math.cos(r) * mph * MPH); };
 const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
@@ -924,7 +952,7 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
     pos.setXYZ(i, x, heightAt(x, z), z);
     c.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[m]);
     let rg = m === 'rough' || outOfBounds(x, z) ? 1 : m === 'firstcut' ? .35 : 0;
-    if ((m === 'fairway' || m === 'firstcut' || m === 'rough') && z > HOLE.tee[1] && z < FW_END + 6 && !outOfBounds(x, z)) { // cuts step down softly: fairway, first cut, rough
+    if ((m === 'fairway' || m === 'firstcut' || m === 'rough') && !shavedBank(x, z) && z > HOLE.tee[1] && z < FW_END + 6 && !outOfBounds(x, z)) { // cuts step down softly: fairway, first cut, rough
       const off = Math.abs(x - centreX(z)), hw = z <= 30 ? HOLE.fairway.half_width * .7 : HOLE.fairway.half_width, fwOn = z > 30 && z < FW_END;
       const a = fwOn ? clamp((off - hw + 1) / 2, 0, 1) : 1, b = clamp((off - hw - (fwOn ? 2 : -1)) / 3, 0, 1) * (z > FW_END ? 1 : 1);
       c.copy(FW).lerp(FC, a).lerp(RO, b); rg = a * .35 + b * .65;
@@ -1338,7 +1366,7 @@ function refresh() {
   const onGreen = lie === 'green'; // golf standard: yards until you're on the putting surface, then feet
   $('dist').textContent = onGreen ? Math.round(d / 0.3048) : Math.round(d / YD);
   $('distUnit').textContent = onGreen ? 'ft to pin' : 'yd to pin';
-  $('windMph').textContent = HOLE.wind.mph;
+  $('windMph').textContent = HOLE.wind.mph; if (HOLE.swirl) $('windMph').nextElementSibling.textContent = 'mph · swirling';
   // arrow shows where the wind blows relative to the current aim (up = with you). World +x is screen-left from behind the ball.
   $('wind').style.transform = `rotate(${-90 - (HOLE.wind.toward_deg * Math.PI / 180 - state.aim) * 180 / Math.PI}deg)`;
   const off = (state.autoAim - state.aim) * 180 / Math.PI;
