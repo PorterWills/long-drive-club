@@ -2,14 +2,33 @@
 
 A browser golf game for the Long Drive Club website. It plays like golfslate.com (whose mechanics were reverse engineered with REA on 28 Oct 2026). Cars are parked on the course, and it's branded with the LDC Design System.
 
-**Status (29 Oct 2026):** 18 holes, live at **longdriveclub.com/game-mode/** (tab title *National Course*) and promoted from the home page. The detailed notes below were written at five holes, a round scorecard with practice mode, and shaped greens and bunkers. All five holes are signed off. The mechanics are signed off by the owner ("playing pretty much like Golf Slate").
-- Hole 1 **Tee Tree**: par 4, 445 yd, stroke index 9 (modelled on Augusta's 1st)
-- Hole 2 **Red Catbranch**: par 5, 585 yd, stroke index 17 (modelled on Augusta's 2nd)
-- Hole 3 **Wilting Mango**: par 4, 350 yd, stroke index 14 (aerial scale 0.224 m/px)
-- Hole 4 **Blossoming Shrimp Pear**: par 3, 240 yd, stroke index 3 (aerial scale 0.172 m/px, from the back tee)
-- Hole 5 **Violet**: par 4, 495 yd, stroke index 5 (aerial scale 0.319 m/px, from the back tee)
-- **Round and practice:** with no `?hole`, the game opens the round's next unplayed hole. Scores are kept in the browser (`localStorage` key `ldc.round`) until the leaderboard exists. Any other hole (`?hole=N`, or picked from the **Holes** panel) is **practice** and never counts. The **Holes** button opens the card: par, yards, SI, round scores, the running total, *Back to round* and *New round*. A round hole can't be replayed (no Play again button); the result card's button goes to the next round hole, or to the scorecard after the last hole. Confirmations sit inside the card, not in `confirm()`, which some embedded browsers block (it silently answers no).
-- **Next:** start screen (9 or 18), leaderboard, website embed.
+**Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *National Course*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
+
+| Hole | Name | Par | Yards | SI |
+|---|---|---|---|---|
+| 1 | Tee Tree | 4 | 445 | 9 |
+| 2 | Red Catbranch | 5 | 585 | 17 |
+| 3 | Wilting Mango | 4 | 350 | 14 |
+| 4 | Blossoming Shrimp Pear | 3 | 240 | 3 |
+| 5 | Violet | 4 | 495 | 5 |
+| 6 | Saturn | 3 | 180 | 13 |
+| 7 | Pompei | 4 | 450 | 10 |
+| 8 | Blue Steele | 5 | 570 | 15 |
+| 9 | Texan Tangerine | 4 | 460 | 12 |
+| 10 | Jamelia | 4 | 495 | 6 |
+| 11 | Grey Catree | 4 | 520 | 1 |
+| 12 | Silver Cymbal | 3 | 155 | 4 |
+| 13 | Bulgaria | 5 | 545 | 18 |
+| 14 | Shenzhen Silk | 4 | 440 | 8 |
+| 15 | Icepick | 5 | 550 | 16 |
+| 16 | Greenpetal | 3 | 170 | 11 |
+| 17 | Mamdani | 4 | 440 | 9 |
+| 18 | Polly | 4 | 465 | 7 |
+
+Holes 1 and 2 are modelled on Augusta's 1st and 2nd. Hole 3–5 aerial scales: 0.224, 0.172 (back tee) and 0.319 m/px (back tee).
+
+- **Round and practice:** with no `?hole`, the game opens the round's next unplayed hole. Scores are kept in the browser (`localStorage` key `ldc.round`). Any other hole (`?hole=N`, or picked from the **Holes** card) is **practice** and never counts. The Holes card shows par, yards, SI, round scores, the running total, *Back to round* and *New round*. A round hole can't be replayed; after the last hole the scorecard opens. Confirmations sit inside the card, not in `confirm()`, which some embedded browsers block (it silently answers no).
+- **Leaderboard:** after a full round, *Submit score* sends a name and score to the LDC Google Sheet through an Apps Script web app (`LB_URL` in `index.html`; the script, `leaderboard.gs`, isn't in this repo). The global 18-hole board sits beside the scorecard. An empty `LB_URL` hides the leaderboard buttons.
 
 ### Log
 - **29 Oct 2026 (session 4, website and polish):** moved the game from `/gamer/` to `/game-mode/` (`/gamer/` is now a redirect page that keeps `?hole` etc.), tab title *National Course*, and the LDC roundel links to the home page. Added the home page band (see the site README). Replaced the two top panels with **one translucent bar** (HUD v2). On phones the mini map hides behind a **Map** button. Wind is colour-coded, and holes 8 and 15 were made windier so red shows. The bars slide off during ball flight. The putt line is capped at 10 ft. *How to play* gained a close button. All the owner's calls are under *Decisions*.
@@ -126,11 +145,11 @@ Lessons from hole 2:
 ---
 
 ## Next steps (agreed direction)
-1. **9 and 18 holes:** `HOLES`, the Holes panel and the round scorecard exist. Still to do: holes 6–9, then a start screen to choose 9 or 18 ("Play a round" or "Practise a hole"). Ship 9 first. Holes are designed from aerials, as above.
-2. **Leaderboard:** name and score per round, 9 and 18 ranked separately. A small hosted database (e.g. Supabase). Send the seed and each shot's inputs so the server can rerun the round and reject faked scores. The owner wants **brand fun, not lead capture**.
+1. **Done:** all 18 holes, the scorecard and a global 18-hole leaderboard (Google Sheet). The owner wants **brand fun, not lead capture**.
+2. **Leaderboard hardening (open):** scores are trusted as sent. To reject faked scores, send the seed and each shot's inputs so the server can rerun the round.
 3. **Live page (29 Oct 2026):** the game is live at **longdriveclub.com/game-mode/** (was `/gamer/`, which now redirects). It lives in the `game-mode/` folder of github.com/PorterWills/long-drive-club, served by GitHub Pages from `main`, and that folder is now the copy that's edited. Keep the `noindex` line. **Never upload to the repo root**: on 28 Oct an upload there replaced the home page for about 15 minutes before it was reverted.
-3. **Website embed:** the site runs on Squarespace or Wix. Host the game statically (Netlify, Vercel or Cloudflare Pages) and embed it with an iframe code block.
 4. **Polish still open:**
+   - stroke index: holes 1 and 17 are both SI 9 and nothing is SI 2 (the owner to confirm the right order)
    - hiding the slope arrows nearest the low putting camera, if they distract
    - a golfer character (currently just the ball; the old ring marker was removed at the owner's request)
    - better car placement (the owner says "fine for now")
