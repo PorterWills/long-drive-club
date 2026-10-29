@@ -78,9 +78,9 @@
   #holesBtn, #helpBtn { margin-top: 8px; padding: 6px 10px; }
   #helpBtn { background: transparent; color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: italic 400 15px 'Source Serif 4', serif; line-height: 1; width: 28px; cursor: pointer; } #helpBtn:hover { background: var(--ldc-green-up); }
   #mapMini { display: block; height: 140px; margin: 10px 0 0 auto; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
-  #mapPop { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 8; padding: 12px; text-align: center; } #mapPop.open { display: block; }
-  #mapBig { display: block; height: calc(100vh - 110px); max-width: calc(100vw - 50px); }
-  #mapClose { margin-top: 10px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 10px 24px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
+  #mapPop { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 8; padding: 0; } #mapPop.open { display: block; }
+  #mapBig { display: block; height: calc(100vh - 60px); max-width: calc(100vw - 30px); }
+  #mapClose { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #mapClose:hover { background: var(--ldc-green-up); }
   #help { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(420px, calc(100% - 28px)); max-height: calc(100% - 30px); overflow: auto; padding: 0 0 20px; z-index: 8; }
   #help.open { display: block; } #help .stripe { position: static; height: 8px; margin-bottom: 18px; } #help h2 { margin: 0 20px 10px; font-size: 22px; }
   #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
@@ -226,7 +226,7 @@
   <div id="stats"></div>
   <canvas id="mapMini" role="button" tabindex="0" aria-label="Course map"></canvas>
 </div>
-<div id="mapPop" class="panel" role="dialog" aria-label="Course map"><canvas id="mapBig"></canvas><button id="mapClose">Close</button></div>
+<div id="mapPop" class="panel" role="dialog" aria-label="Course map"><canvas id="mapBig"></canvas><button id="mapClose" aria-label="Close map">×</button></div>
 <div id="toast" class="display"></div>
 <div id="done" class="panel">
   <div class="stripe"><i></i><i></i><i></i></div>
@@ -1724,17 +1724,18 @@ $('skies').innerHTML = Object.entries(SKIES).map(([k, c]) => `<button data-sky="
 $('skies').onclick = e => { const k = e.target.closest('button')?.dataset.sky; if (k && k !== LIGHT.name) { store(SKY_KEY, k); try { sessionStorage.setItem('ldc.ambiance', '1'); } catch {} const u = new URL(location.href); u.searchParams.delete('sky'); location.replace(u); } }; // drop a ?sky preview so the pick wins
 // course map: the hole drawn top-down from the same ground the ball plays on, pin and ball marked, rings every 50 yd to the pin
 function drawMap() {
+  if (!drawMap.ready) return void (drawMap.t ??= setTimeout(() => { drawMap.ready = true; drawMap(); }, 400)); // build after the course is on screen, so loading isn't held up
   const b = drawMap.base ??= (() => {
-    const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]), M = 2;
+    const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]), M = 1; // owner: was pixelated at 2 m a pixel
     const x0 = Math.min(...xs) - 50, x1 = Math.max(...xs) + 50, z0 = HOLE.tee[1] - 20, z1 = GZ + 30;
     const c = document.createElement('canvas'); c.width = Math.ceil((x1 - x0) / M); c.height = Math.ceil((z1 - z0) / M);
     const g = c.getContext('2d'), img = g.createImageData(c.width, c.height), col = new THREE.Color();
     for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) { // +x is the player's left, so the map runs right to left
       const x = x1 - (i + .5) * M, z = z1 - (j + .5) * M, k = (j * c.width + i) * 4;
-      col.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[materialAt(x, z)]);
+      col.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[materialAt(x, z)]).multiplyScalar(1.45); // owner: too dark; lifted, not the 3D colours
       img.data[k] = col.r * 255; img.data[k + 1] = col.g * 255; img.data[k + 2] = col.b * 255; img.data[k + 3] = 255;
     }
-    g.putImageData(img, 0, 0); g.fillStyle = '#1f3a24';
+    g.putImageData(img, 0, 0); g.fillStyle = 'rgba(24,52,30,.85)';
     for (const t of TREES) { g.beginPath(); g.arc((x1 - t.x) / M, (z1 - t.z) / M, 2.4 * t.s / M, 0, 6.283); g.fill(); }
     return { c, x1, z1, M };
   })();
@@ -1742,22 +1743,26 @@ function drawMap() {
   for (const cv of big ? [$('mapMini'), $('mapBig')] : [$('mapMini')]) {
     const h = cv.clientHeight, w = h * b.c.width / b.c.height; cv.style.width = w + 'px'; cv.width = w * dpr; cv.height = h * dpr;
     const g = cv.getContext('2d'), k = cv.height / b.c.height / b.M, P = (x, z) => [(b.x1 - x) * k, (b.z1 - z) * k], [px, pz] = P(PIN.x, PIN.z), [bx, bz] = P(state.ball.x, state.ball.z);
-    g.drawImage(b.c, 0, 0, cv.width, cv.height);
-    const lab = cv === $('mapBig'), fs = 11 * dpr; g.font = `800 ${fs}px Archivo`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.imageSmoothingQuality = 'high'; g.drawImage(b.c, 0, 0, cv.width, cv.height);
+    const lab = cv === $('mapBig'), fs = 10 * dpr; g.font = `600 ${fs}px Archivo`; g.letterSpacing = `${.12 * fs}px`; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (let yd = 50; yd * YD < flat(state.ball, PIN) + 60; yd += 50) {
-      g.beginPath(); g.arc(px, pz, yd * YD * k, 0, 6.283); g.strokeStyle = 'rgba(237,233,223,.45)'; g.lineWidth = Math.max(1, dpr * (yd % 100 ? .6 : 1.2)); g.stroke();
+      g.beginPath(); g.arc(px, pz, yd * YD * k, 0, 6.283); g.strokeStyle = `rgba(237,233,223,${yd % 100 ? .1 : .22})`; g.lineWidth = dpr * .8; g.stroke(); // owner: rings were too dominant
       if (!lab || yd % 100 || Math.abs(yd * YD - flat(state.ball, PIN)) < 15) continue; // labels every 100 yd, where the ring crosses the fairway's centreline
       let z = PIN.z; while (z > HOLE.tee[1] && Math.hypot(centreX(z) - PIN.x, z - PIN.z) < yd * YD) z--;
-      const [lx, lz] = P(centreX(z), z); g.fillStyle = '#1B1916'; g.fillRect(lx - 2.2 * fs, lz - .8 * fs, 4.4 * fs, 1.6 * fs); g.fillStyle = '#EDE9DF'; g.fillText(`${yd} YD`, lx, lz);
+      if (z <= HOLE.tee[1]) continue; // ring is behind the tee
+      const [lx, lz] = P(centreX(z), z); const tw = g.measureText(`${yd} YD`).width + 1.4 * fs; g.fillStyle = 'rgba(27,25,22,.82)'; g.beginPath(); g.roundRect(lx - tw / 2, lz - .85 * fs, tw, 1.7 * fs, 2 * dpr); g.fill(); g.fillStyle = '#EDE9DF'; g.fillText(`${yd} YD`, lx, lz + .05 * fs);
     }
-    g.beginPath(); g.moveTo(bx, bz); g.lineTo(px, pz); g.strokeStyle = '#EDE9DF'; g.lineWidth = dpr; g.setLineDash([3 * dpr, 3 * dpr]); g.stroke(); g.setLineDash([]);
-    g.fillStyle = '#C1121F'; g.beginPath(); g.arc(px, pz, 3.5 * dpr, 0, 6.283); g.fill();
-    g.fillStyle = '#EDE9DF'; g.beginPath(); g.arc(bx, bz, 3 * dpr, 0, 6.283); g.fill();
+    g.beginPath(); g.moveTo(bx, bz); g.lineTo(px, pz); g.strokeStyle = 'rgba(237,233,223,.7)'; g.lineWidth = dpr; g.setLineDash([2 * dpr, 4 * dpr]); g.lineCap = 'round'; g.stroke(); g.setLineDash([]);
+    // pin: a Redline pennant on a chalk stick; ball: a chalk dot with a tarmac ring
+    g.strokeStyle = '#EDE9DF'; g.lineWidth = 1.2 * dpr; g.beginPath(); g.moveTo(px, pz); g.lineTo(px, pz - 12 * dpr); g.stroke();
+    g.fillStyle = '#C1121F'; g.beginPath(); g.moveTo(px, pz - 12 * dpr); g.lineTo(px + 8 * dpr, pz - 9 * dpr); g.lineTo(px, pz - 6 * dpr); g.fill();
+    g.fillStyle = '#EDE9DF'; g.strokeStyle = '#1B1916'; g.lineWidth = 1.2 * dpr; g.beginPath(); g.arc(bx, bz, 3.5 * dpr, 0, 6.283); g.fill(); g.stroke();
   }
 }
 const showMap = on => { $('mapPop').classList.toggle('open', on); $('scrim').style.display = on ? 'block' : 'none'; if (on) drawMap(); };
 $('mapMini').onclick = () => showMap(true); $('mapMini').onkeydown = e => (e.key === 'Enter' || e.key === ' ') && showMap(true);
 $('mapClose').onclick = () => showMap(false);
+$('scrim').addEventListener('click', () => $('mapPop').classList.contains('open') && showMap(false)); // owner: tap anywhere off the map to close it
 // owner: simple instructions for a first-time player, and behind the i button any time after
 const showHelp = on => { $('help').classList.toggle('open', on); if (!on) try { localStorage.setItem('ldc.help', '1'); } catch {} };
 $('helpBtn').onclick = () => showHelp(true); $('helpClose').onclick = () => showHelp(false);
