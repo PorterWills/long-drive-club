@@ -1595,8 +1595,10 @@ if (location.search.includes('test')) { window.__test.push(['short chips have ro
 function setClub(i, keepAim) { // keepAim: the player changed club mid-shot, so leave their aim alone
   state.club = i; $('club').innerHTML = `${clubIcon(CLUBS[i])}<span>${CLUBS[i].name}</span>${CLUBS[i].putter ? '' : `<span class="stock">${Math.round(carryAt(i, 1, 'fairway'))} yd</span>`}<span class="more" aria-hidden="true">▴</span>`; $('club').setAttribute('aria-label', `Club: ${CLUBS[i].name}. Change club`);
   state.autoAim = autoAim(); if (!keepAim) state.aim = state.autoAim;
-  // owner's rules: full shots start at 100%, but within 50 yd of the pin at the power that carries to it; the putter starts at the flat distance to the pin (slope is the player's to read)
-  state.power = CLUBS[i].putter ? clamp(Math.sqrt(2 * G * SURF.green.roll * flat(state.ball, PIN)) / CLUBS[i].speed, 0.01, 1) : flat(state.ball, PIN) / YD <= 50 ? chipPower(i, flat(state.ball, PIN) / YD, materialAt(state.ball.x, state.ball.z)) : 1;
+  // owner's rules: full shots start at 100%; within 50 yd at a neutral 50% (owner, 29 Oct: presetting the carry to the pin made
+  // chips free); the putter starts at a rough strength, 70–130% of the flat distance, seeded per stroke, so pace is the player's job
+  const rough = .7 + .6 * rng(state.seed + state.strokes * 104729)();
+  state.power = CLUBS[i].putter ? clamp(Math.sqrt(2 * G * SURF.green.roll * flat(state.ball, PIN) * rough) / CLUBS[i].speed, 0.01, 1) : flat(state.ball, PIN) / YD <= 50 ? .5 : 1;
   refresh();
 }
 function refresh() {

@@ -116,7 +116,7 @@ Lessons from hole 2:
 - **Aim readout:** "At pin aim", or e.g. "2.4° L aim". Always shown (owner's call).
 - **Wind display:** the speed, "mph" and arrow are coloured by strength: **under 10 mph chalk, 10–18 amber (`#E8A33D`), 19+ red (`#F0444E`)**. No ring around the arrow (owner: it added nothing).
 - **Power:** **no penalty for full power from the tee, fairway or fringe.** Only rough and sand add seeded wobble.
-- **Power (changed 28 Oct 2026):** the game suggests the club; **full shots always start at 100%**; the **putter starts at the flat distance to the pin** (5 ft away → bar reads 5 FT), with no allowance for slope. The player judges the power, the wind and the break.
+- **Power (changed 29 Oct 2026):** the game suggests the club; **full shots always start at 100%**; **within 50 yd the bar starts at 50%** (it used to preset the carry to the pin, which made chips free); the **putter starts at a rough strength**, 70–130% of the flat distance, seeded per stroke (it used to start at the exact distance, which holed flat putts with no input). The player judges the power, the wind and the break. Owner's next lever if it's still too easy: club choice (`suggestClub` picks the club that just reaches the pin).
 - **Distance units:** golf standard: yards to the pin, feet only once the ball is on the green.
 - **Cup:** drops a ball moving under 3 m/s, with a 6.6–7.4 cm catch radius, checked along the ball's path (Golf Slate's rule).
 - **Trees:** trunks block shots, and canopies (shaped like the drawn cone or ball) soak up 10% of the ball's speed every 1/120 s, so a few metres of branches knocks a drive down.
