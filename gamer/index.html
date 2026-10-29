@@ -62,7 +62,7 @@
   #swing:hover:not(:disabled) { background: var(--ldc-green-up); }
   #swing:disabled { background: var(--ldc-tarmac-up); color: var(--ldc-chalk-dim); border-color: var(--hairline); cursor: default; }
   #power { position: relative; height: 46px; border: 1px solid var(--hairline); border-radius: 3px; background: var(--ldc-tarmac); cursor: ew-resize; overflow: hidden; }
-  #powerFill { position: absolute; inset: 0; background: linear-gradient(90deg, #1E7A45 0%, #1E7A45 30%, var(--ldc-chalk) 45%, var(--ldc-chalk) 70%, var(--ldc-redline) 90%); border-right: 4px solid var(--ldc-tarmac); } /* owner: tricolore, green low, white regular, red full */
+  #powerFill { position: absolute; inset: 0; background: linear-gradient(90deg, var(--ldc-green) 0 78.65%, var(--ldc-chalk) 78.65% 94.38%, var(--ldc-redline) 94.38%); border-right: 4px solid var(--ldc-redline); } /* owner: the livery stripe as the bar (green 7 : chalk 1.4 : redline .5, hard edges, same as .stripe), revealed as power rises */
   #powerText { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); padding: 4px 10px; background: var(--ldc-tarmac); border-radius: 3px; white-space: nowrap; font-size: 16px; } /* a plate keeps it readable over the white */
   #hint { text-align: center; margin-top: 8px; color: var(--ldc-chalk); text-shadow: none; }
   #toast { position: fixed; top: 36%; left: 50%; transform: translate(-50%,-50%); background: var(--ldc-tarmac); border: 1px solid var(--hairline); border-top: 4px solid var(--ldc-redline);
