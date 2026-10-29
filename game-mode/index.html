@@ -37,7 +37,7 @@
   #hole { top: 20px; left: 14px; right: 14px; display: flex; align-items: center; gap: 14px; padding: 10px 12px; }
   #hole.prac { box-shadow: inset 0 3px 0 var(--ldc-redline); } /* practice: a redline along the top */
   #hole .hn { font-size: 40px; line-height: .9; }
-  #hole .t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  #hole .t { display: flex; flex-direction: column; gap: 4px; min-width: 0; } #hole .t .eyebrow { white-space: nowrap; }
   #hole .name { font-size: 13px; }
   #hole .eyebrow { font-size: 10px; letter-spacing: .24em; }
   #hole .sp { flex: 1; }
@@ -98,6 +98,7 @@
   #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
   #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   #helpClose:hover { background: var(--ldc-green-up); }
+  #helpX { position: absolute; top: 18px; right: 14px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #helpX:hover { background: var(--ldc-green-up); }
   #holesBtn:hover, #mapBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
   #start { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(460px, calc(100% - 28px)); padding: 0 0 20px; z-index: 7; text-align: center; }
   #start.open { display: block; } #start .stripe { position: static; height: 8px; margin-bottom: 20px; }
@@ -203,6 +204,7 @@
   <button id="play">Done</button>
 </div>
 <div id="help" class="panel" role="dialog" aria-label="How to play">
+  <button id="helpX" aria-label="Close">×</button>
   <div class="stripe"><i></i><i></i><i></i></div>
   <h2 class="display">How to play</h2>
   <dl>
@@ -1816,7 +1818,7 @@ $('mapClose').onclick = () => showMap(false); $('mapBtn').onclick = () => showMa
 $('scrim').addEventListener('click', () => $('mapPop').classList.contains('open') && showMap(false)); // owner: tap anywhere off the map to close it
 // owner: simple instructions for a first-time player, and behind the i button any time after
 const showHelp = on => { $('help').classList.toggle('open', on); if (!on) try { localStorage.setItem('ldc.help', '1'); } catch {} };
-$('helpBtn').onclick = () => showHelp(true); $('helpClose').onclick = () => showHelp(false);
+$('helpBtn').onclick = () => { $('helpClose').textContent = 'Back to game'; showHelp(true); }; $('helpClose').onclick = $('helpX').onclick = () => showHelp(false); // owner: an x to close, and the button says where it goes
 try { if (!localStorage.getItem('ldc.help')) showHelp(true); } catch { showHelp(true); }
 // owner: on a phone the map opens by itself on the first hole of a visit, then waits behind the Map button
 const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('help').classList.contains('open') || $('start').classList.contains('open')) return;
@@ -1851,7 +1853,8 @@ $('cardRows').onclick = e => {
   r.insertAdjacentHTML('beforeend', '<span class="go">Practise ›</span>');
 };
 addEventListener('keydown', e => {
-  if ($('start').classList.contains('open') || $('help').classList.contains('open')) return;
+  if ($('help').classList.contains('open')) { if (e.key === 'Escape') showHelp(false); return; }
+  if ($('start').classList.contains('open')) return;
   if ($('mapPop').classList.contains('open')) { if (e.key === 'Escape') showMap(false); return; }
   if (state.phase === 'done' && e.key === 'Enter') return reset();
   if (bag.classList.contains('open')) { if (e.key === 'Escape') { openBag(false); $('club').focus(); } return; } // keys belong to the popup while it's open
