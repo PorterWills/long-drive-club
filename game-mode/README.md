@@ -4,26 +4,28 @@ A browser golf game for the Long Drive Club website. It plays like golfslate.com
 
 **Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *National Course*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
 
+Stroke index follows the owner's official card (29 Oct 2026).
+
 | Hole | Name | Par | Yards | SI |
 |---|---|---|---|---|
 | 1 | Tee Tree | 4 | 445 | 9 |
-| 2 | Red Catbranch | 5 | 585 | 17 |
-| 3 | Wilting Mango | 4 | 350 | 14 |
-| 4 | Blossoming Shrimp Pear | 3 | 240 | 3 |
+| 2 | Red Catbranch | 5 | 585 | 1 |
+| 3 | Wilting Mango | 4 | 350 | 13 |
+| 4 | Blossoming Shrimp Pear | 3 | 240 | 15 |
 | 5 | Violet | 4 | 495 | 5 |
-| 6 | Saturn | 3 | 180 | 13 |
-| 7 | Pompei | 4 | 450 | 10 |
-| 8 | Blue Steele | 5 | 570 | 15 |
-| 9 | Texan Tangerine | 4 | 460 | 12 |
+| 6 | Saturn | 3 | 180 | 17 |
+| 7 | Pompei | 4 | 450 | 11 |
+| 8 | Blue Steele | 5 | 570 | 3 |
+| 9 | Texan Tangerine | 4 | 460 | 7 |
 | 10 | Jamelia | 4 | 495 | 6 |
-| 11 | Grey Catree | 4 | 520 | 1 |
-| 12 | Silver Cymbal | 3 | 155 | 4 |
-| 13 | Bulgaria | 5 | 545 | 18 |
-| 14 | Shenzhen Silk | 4 | 440 | 8 |
-| 15 | Icepick | 5 | 550 | 16 |
-| 16 | Greenpetal | 3 | 170 | 11 |
-| 17 | Mamdani | 4 | 440 | 9 |
-| 18 | Polly | 4 | 465 | 7 |
+| 11 | Grey Catree | 4 | 520 | 8 |
+| 12 | Silver Cymbal | 3 | 155 | 16 |
+| 13 | Bulgaria | 5 | 545 | 4 |
+| 14 | Shenzhen Silk | 4 | 440 | 12 |
+| 15 | Icepick | 5 | 550 | 2 |
+| 16 | Greenpetal | 3 | 170 | 18 |
+| 17 | Mamdani | 4 | 440 | 14 |
+| 18 | Polly | 4 | 465 | 10 |
 
 Holes 1 and 2 are modelled on Augusta's 1st and 2nd. Hole 3–5 aerial scales: 0.224, 0.172 (back tee) and 0.319 m/px (back tee).
 
@@ -149,7 +151,7 @@ Lessons from hole 2:
 2. **Leaderboard hardening (open):** scores are trusted as sent. To reject faked scores, send the seed and each shot's inputs so the server can rerun the round.
 3. **Live page (29 Oct 2026):** the game is live at **longdriveclub.com/game-mode/** (was `/gamer/`, which now redirects). It lives in the `game-mode/` folder of github.com/PorterWills/long-drive-club, served by GitHub Pages from `main`, and that folder is now the copy that's edited. Keep the `noindex` line. **Never upload to the repo root**: on 28 Oct an upload there replaced the home page for about 15 minutes before it was reverted.
 4. **Polish still open:**
-   - stroke index: holes 1 and 17 are both SI 9 and nothing is SI 2 (the owner to confirm the right order)
+   - yards: five holes measure differently from the official card (1: 445 vs 455, 2: 585 vs 575, 11: 520 vs 505, 13: 545 vs 510, 15: 550 vs 530). The game measures tee to pin, so matching means moving tees or greens
    - hiding the slope arrows nearest the low putting camera, if they distract
    - a golfer character (currently just the ball; the old ring marker was removed at the owner's request)
    - better car placement (the owner says "fine for now")
