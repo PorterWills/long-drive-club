@@ -50,7 +50,10 @@
   #hole .ib svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   #side { right: 14px; width: 260px; padding: 8px; }
   #side #stats { margin: 0 0 8px; padding: 0 0 8px; border-top: 0; border-bottom: 1px solid var(--hairline); }
-  #wind { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 2px solid var(--ldc-chalk); border-radius: 50%; color: var(--ldc-chalk); transition: transform .2s; font-size: 13px; line-height: 1; align-self: center; } /* owner: wind matters, so a bold dial not a small glyph */
+  #wind { display: inline-block; transition: transform .2s; font-size: 20px; line-height: 1; align-self: center; }
+  #hole .wcell.calm .num, #hole .wcell.calm .eyebrow, #hole .wcell.calm #wind { color: var(--ldc-chalk); }
+  #hole .wcell.breeze .num, #hole .wcell.breeze .eyebrow, #hole .wcell.breeze #wind { color: #E8A33D; }
+  #hole .wcell.strong .num, #hole .wcell.strong .eyebrow, #hole .wcell.strong #wind { color: #F0444E; } /* owner: wind by colour: under 10 mph chalk, 10 to 18 amber, 19 and up red */
   #hole .wcell .num { font-size: 22px; } #hole .wcell { align-items: center; }
   #hole, #side, #controls { transition: transform .45s cubic-bezier(.22,.61,.36,1), opacity .35s ease; } body.flying #hole, body.flying #side { transform: translateY(calc(-100% - 30px)); opacity: 0; pointer-events: none; } body.flying #controls { transform: translate(-50%, calc(100% + 30px)); opacity: 0; pointer-events: none; } /* owner: the bar slides away (phone and desktop) while the ball flies, back as it settles */
   @media (prefers-reduced-motion: reduce) { #hole, #side, #controls { transition: opacity .2s; } body.flying #hole, body.flying #side { transform: none; } body.flying #controls { transform: translateX(-50%); } }
@@ -1491,7 +1494,7 @@ function refresh() {
   const onGreen = lie === 'green'; // golf standard: yards until you're on the putting surface, then feet
   $('dist').textContent = onGreen ? Math.round(d / 0.3048) : Math.round(d / YD);
   $('distUnit').textContent = onGreen ? 'ft' : 'yd';
-  $('windMph').textContent = HOLE.wind.mph; if (HOLE.swirl) $('windMph').nextElementSibling.textContent = 'mph · swirling';
+  $('windMph').textContent = HOLE.wind.mph; $('windMph').parentElement.classList.add(HOLE.wind.mph < 10 ? 'calm' : HOLE.wind.mph < 19 ? 'breeze' : 'strong'); if (HOLE.swirl) $('windMph').nextElementSibling.textContent = 'mph · swirling';
   // arrow shows where the wind blows relative to the current aim (up = with you). World +x is screen-left from behind the ball.
   $('wind').style.transform = `rotate(${-90 - (HOLE.wind.toward_deg * Math.PI / 180 - state.aim) * 180 / Math.PI}deg)`;
   const off = (state.autoAim - state.aim) * 180 / Math.PI;
