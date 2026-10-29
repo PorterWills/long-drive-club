@@ -1803,6 +1803,10 @@ try { if (!localStorage.getItem('ldc.help')) showHelp(true); } catch { showHelp(
 // owner: on a phone the map opens by itself on the first hole of a visit, then waits behind the Map button
 const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('help').classList.contains('open') || $('start').classList.contains('open')) return;
   try { if (sessionStorage.getItem('ldc.map')) return; sessionStorage.setItem('ldc.map', '1'); } catch {} showMap(true); };
+// owner: on a phone the two top boxes are always the same height, whichever is taller sets it
+const evenPanels = () => { const ps = [$('hole'), $('info')]; ps.forEach(p => p.style.minHeight = '');
+  if (matchMedia('(max-width: 520px)').matches) { const h = Math.max(...ps.map(p => p.offsetHeight)); ps.forEach(p => p.style.minHeight = h + 'px'); } };
+new ResizeObserver(evenPanels).observe($('hole')); new ResizeObserver(evenPanels).observe($('info')); addEventListener('resize', evenPanels);
 $('helpClose').addEventListener('click', firstMap); $('play').addEventListener('click', firstMap); setTimeout(firstMap, 0);
 $('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
