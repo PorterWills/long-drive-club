@@ -74,10 +74,11 @@
   #done .voice, #water .voice { font-size: 18px; margin: 12px 28px 8px; color: var(--ldc-chalk); }
   #done button, #water button { margin-top: 16px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 26px; border-radius: 3px; font: 600 14px var(--font); cursor: pointer; }
   #done button:hover, #water button:hover { background: var(--ldc-green-up); }
-  #holesBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
-  #holesBtn, #helpBtn { margin-top: 8px; padding: 6px 10px; min-width: 72px; }
+  #holesBtn, #mapBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
+  #holesBtn, #helpBtn, #mapBtn { margin-top: 8px; padding: 6px 10px; min-width: 72px; }
   #helpBtn { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; } /* owner: same size as Holes */ #helpBtn:hover { background: var(--ldc-green-up); }
   #mapMini { display: block; width: 0; min-width: 100%; height: 140px; margin: 10px 0 0; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
+  #mapBtn { display: none; } @media (max-width: 520px) { #mapMini { display: none; } #mapBtn { display: inline-block; } } /* owner: on a phone the map hides behind a button, open to find the flag, shut to hit */
   #mapPop { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 8; padding: 0; } #mapPop.open { display: block; }
   #mapBig { display: block; }
   #mapClose { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #mapClose:hover { background: var(--ldc-green-up); }
@@ -86,7 +87,7 @@
   #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
   #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   #helpClose:hover { background: var(--ldc-green-up); }
-  #holesBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
+  #holesBtn:hover, #mapBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
   #start { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(460px, calc(100% - 28px)); padding: 0 0 20px; z-index: 7; text-align: center; }
   #start.open { display: block; } #start .stripe { position: static; height: 8px; margin-bottom: 20px; }
   #start .roundel { width: 64px; height: 64px; margin: 0 auto 12px; font-size: 22px; }
@@ -222,6 +223,7 @@
   <div id="aimRead" class="eyebrow">At pin aim</div>
   <div id="stats"></div>
   <canvas id="mapMini" role="button" tabindex="0" aria-label="Course map"></canvas>
+  <button id="mapBtn" aria-haspopup="dialog">Map</button>
 </div>
 <div id="mapPop" class="panel" role="dialog" aria-label="Course map"><canvas id="mapBig"></canvas><button id="mapClose" aria-label="Close map">×</button></div>
 <div id="toast" class="display"></div>
@@ -1595,6 +1597,7 @@ $('soundBtn').onclick = () => { SND.on = !SND.on; try { localStorage.setItem(SND
 
 function swing() {
   if (state.phase !== 'aim') return;
+  showMap(false);
   const c = CLUBS[state.club], lie = materialAt(state.ball.x, state.ball.z);
   state.strokes++;
   const s = strike(c, state.power, state.aim, lie, rng(state.seed + state.strokes * 7919));
@@ -1756,7 +1759,8 @@ function drawMap() {
   const b = drawMap.base ??= (() => {
     const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]), M = 1; // owner: was pixelated at 2 m a pixel
     let x0 = Math.min(...xs) - 50, x1 = Math.max(...xs) + 50; const z0 = HOLE.tee[1] - 20, z1 = GZ + 30;
-    const pad = Math.max(0, (z1 - z0) * $('mapMini').clientWidth / $('mapMini').clientHeight - (x1 - x0)) / 2; x0 -= pad; x1 += pad; // owner: fill the panel, not half of it
+    const mm = $('mapMini'), ar = mm.clientHeight ? mm.clientWidth / mm.clientHeight : (innerWidth - 30) / (innerHeight - 60); // phone: no mini map, so fill the big one
+    const pad = Math.max(0, (z1 - z0) * ar - (x1 - x0)) / 2; x0 -= pad; x1 += pad; // owner: fill the panel, not half of it
     const c = document.createElement('canvas'); c.width = Math.ceil((x1 - x0) / M); c.height = Math.ceil((z1 - z0) / M);
     const g = c.getContext('2d'), img = g.createImageData(c.width, c.height), col = new THREE.Color();
     for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) { // +x is the player's left, so the map runs right to left
@@ -1790,12 +1794,16 @@ function drawMap() {
 }
 const showMap = on => { $('mapPop').classList.toggle('open', on); $('scrim').style.display = on ? 'block' : 'none'; if (on) drawMap(); };
 $('mapMini').onclick = () => showMap(true); $('mapMini').onkeydown = e => (e.key === 'Enter' || e.key === ' ') && showMap(true);
-$('mapClose').onclick = () => showMap(false);
+$('mapClose').onclick = () => showMap(false); $('mapBtn').onclick = () => showMap(true);
 $('scrim').addEventListener('click', () => $('mapPop').classList.contains('open') && showMap(false)); // owner: tap anywhere off the map to close it
 // owner: simple instructions for a first-time player, and behind the i button any time after
 const showHelp = on => { $('help').classList.toggle('open', on); if (!on) try { localStorage.setItem('ldc.help', '1'); } catch {} };
 $('helpBtn').onclick = () => showHelp(true); $('helpClose').onclick = () => showHelp(false);
 try { if (!localStorage.getItem('ldc.help')) showHelp(true); } catch { showHelp(true); }
+// owner: on a phone the map opens by itself on the first hole of a visit, then waits behind the Map button
+const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('help').classList.contains('open') || $('start').classList.contains('open')) return;
+  try { if (sessionStorage.getItem('ldc.map')) return; sessionStorage.setItem('ldc.map', '1'); } catch {} showMap(true); };
+$('helpClose').addEventListener('click', firstMap); $('play').addEventListener('click', firstMap); setTimeout(firstMap, 0);
 $('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
 try { if (sessionStorage.getItem('ldc.ambiance')) $('start').classList.add('open'); } catch {} // stay open across the relight reload
