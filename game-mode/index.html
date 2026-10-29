@@ -340,13 +340,16 @@ const HOLES = [{
   // Re-traced from the owner's reference illustration (29 Oct 2026): scale 0.254 m/px (407 m over ~1,600 px).
   // A tight chute: wide off the tee, pinched to ~20 m between the trees where the fairway bunker sits, then
   // bending right to a green guarded front-left by sand and wrapped by trees right and behind.
-  tee: [0, 0], pin: [-41, 404.7],                // 445 yd tee to pin
+  tee: [0, 0], pin: [-36, 405.3],               // 445 yd tee to pin; tucked front-left over the bunker
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405, -42]] }, // [z, x] centreline
+  fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405.5, -42]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-42, 405], r: 13, fx: [['ff', .35], ['tier', 6, .3]] },
-  // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd; greenside pair front-left
-  bunkers: [{ at: [-16.5, 284.5], r: 5 }, { at: [-18.5, 270.5], r: 5.5 }, { at: [-26, 401], r: 3.8 }, { at: [-29, 389], r: 3.8 }],
+  green: { at: [-42, 405.5], r: 13, fx: [['ff', .35], ['tier', 6, .3]] },
+  // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd. Greenside: one big
+  // bean (~25 m long) traced from the owner's top-down of the green (0.067 m/px), from the green's left middle down
+  // to its front-left corner, so the tucked pin has to be carried over sand
+  bunkers: [{ at: [-16.5, 284.5], r: 5 }, { at: [-18.5, 270.5], r: 5.5 },
+    { at: [-25.2, 402.8], r: 3.4 }, { at: [-27.3, 397.5], r: 3.7 }, { at: [-29.9, 392.1], r: 4.7 }, { at: [-32.6, 386.7], r: 4.7 }, { at: [-29.3, 384.1], r: 3.4 }],
   water: [],
   trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
     [1, 159, 225, 30, 22], [1, 225, 300, 15, 25], [1, 300, 362, 12, 25],   // left: wide, then the pinch
