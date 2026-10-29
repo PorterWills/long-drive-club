@@ -247,6 +247,26 @@ const creek = (pts, r, drop) => pts.slice(1).flatMap(([x, z], i) => {
   const [px, pz] = pts[i], n = Math.max(1, Math.ceil(Math.hypot(x - px, z - pz) / r));
   return Array.from({ length: n + (i === pts.length - 2) }, (_, k) => ({ at: [px + (x - px) * k / n, pz + (z - pz) * k / n], r, drop }));
 });
+// a pond as one shoreline: [x, z] points traced round it, smoothed into a closed curve (owner: ponds of circles never look real)
+const pond = (pts, drop) => {
+  const n = pts.length, shore = [];
+  for (let i = 0; i < n; i++) { // closed Catmull-Rom, 10 samples a segment
+    const [a, b, c, d] = [-1, 0, 1, 2].map(k => pts[(i + k + n) % n]);
+    for (let k = 0, t = 0; k < 10; t = ++k / 10) shore.push([0, 1].map(j => .5 * (2 * b[j] + (c[j] - a[j]) * t + (2 * a[j] - 5 * b[j] + 4 * c[j] - d[j]) * t * t + (3 * b[j] - a[j] - 3 * c[j] + d[j]) * t * t * t)));
+  }
+  return { at: [0, 1].map(j => shore.reduce((s, p) => s + p[j], 0) / shore.length), shore, drop };
+};
+// signed distance to a closed outline: < 0 inside
+const shoreD = (shore, x, z) => {
+  let d = 1e9, inside = false;
+  for (let i = 0, j = shore.length - 1; i < shore.length; j = i++) {
+    const [ax, az] = shore[j], [bx, bz] = shore[i], ex = bx - ax, ez = bz - az;
+    const t = clamp(((x - ax) * ex + (z - az) * ez) / (ex * ex + ez * ez || 1), 0, 1);
+    d = Math.min(d, Math.hypot(x - ax - ex * t, z - az - ez * t));
+    if ((az > z) !== (bz > z) && x < ax + (z - az) * ex / ez) inside = !inside;
+  }
+  return inside ? -d : d;
+};
 const HOLES = [{
   name: 'Tee Tree', par: 4, si: 9,
   tee: [0, 0], pin: [-55, 403],                  // 445 yd tee to pin
@@ -501,7 +521,8 @@ const HOLES = [{
   green: { at: [-8.4, 155.2], r: 11, fx: [['tilt', -90, .03], ['bowl', -1, 5, 5, -.12]] },
   shaved: true,
   bunkers: [{ at: [7.2, 159.4], r: 3.5 }, { at: [-20.4, 174.4], r: 5 }, { at: [-20.4, 140.7], r: 3.5 }],
-  water: [[8.4, 146.8, 8], [3.6, 128.7, 11], [-1.2, 113.1, 12], [1.2, 95, 12], [2.4, 77, 12], [2.4, 59, 12], [1.2, 48, 9]].map(([x, z, r]) => ({ at: [x, z], r, drop: [-25, 100] })),
+  // owner (with Augusta 16 from the tee): one broad pond, a straight gallery bank on the left, the right shore running diagonally up to tuck in front-left of the green
+  water: [pond([[-14, 32], [6, 26], [26, 30], [32, 55], [30, 90], [27, 120], [20, 143], [10, 151], [3, 146], [-2, 128], [-8, 100], [-14, 70], [-18, 48]], [-25, 100])],
   trees: [[1, 0, 90, 35, 12]],
   treeClusters: [{ at: [24, 173], r: 10 }, { at: [-14.4, 185], r: 8 }, { at: [-33.7, 155], r: 8 }, { at: [-47, 119], r: 12 }, { at: [-27.7, 77], r: 8 }],
   cars: [
@@ -570,7 +591,7 @@ const blobD = (c, x, z, seed, k = 1) => {
 };
 // water: the circles melt into one smooth shoreline (smooth minimum), so ponds and creeks have no scalloped edges. Metres, < 0 is wet
 const smin = (a, b, k) => { const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
-const waterD = (x, z) => HOLE.water.reduce((d, w) => smin(d, Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99);
+const waterD = (x, z) => HOLE.water.reduce((d, w) => smin(d, w.shore ? shoreD(w.shore, x, z) : Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99);
 const bunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
 const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
 // per-hole green contours: two seeded soft mounds or hollows on top of the shared back-to-front slope
