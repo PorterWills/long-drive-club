@@ -555,13 +555,15 @@ const lerpPts = (pts, z) => {
   return pts[pts.length - 1][1];
 };
 const centreX = z => lerpPts(HOLE.fairway.line, z);
-const inCircle = (x, z, c) => Math.hypot(x - c.at[0], z - c.at[1]) < c.r;
 const FW_END = HOLE.green.at[1] - HOLE.green.r - 4;
 // organic outlines: distance from the centre over a wobbly radius, so < 1 is inside. k scales the wobble (greens wobble less)
 const blobD = (c, x, z, seed, k = 1) => {
   const dx = x - c.at[0], dz = z - c.at[1], a = Math.atan2(dz, dx);
   return Math.hypot(dx, dz) / (c.r * (1 + k * (.16 * Math.sin(3 * a + seed) + .09 * Math.sin(5 * a + seed * 1.7) + .05 * Math.sin(7 * a + seed * 2.3))));
 };
+// water: the circles melt into one smooth shoreline (smooth minimum), so ponds and creeks have no scalloped edges. Metres, < 0 is wet
+const smin = (a, b, k) => { const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
+const waterD = (x, z) => HOLE.water.reduce((d, w) => smin(d, Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99);
 const bunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
 const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
 // per-hole green contours: two seeded soft mounds or hollows on top of the shared back-to-front slope
@@ -569,8 +571,11 @@ const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0,
   const a = r() * 6.283, d = r() * g.r * .55; return { x: g.at[0] + Math.cos(a) * d, z: g.at[1] + Math.sin(a) * d, h: (r() - .4) * .4, s2: (g.r * (.3 + r() * .15)) ** 2 }; }); })();
 
 function materialAt(x, z) {
-  if (HOLE.water.some(w => inCircle(x, z, w))) return 'water';
+  if (waterD(x, z) < 0) return 'water';
   if (bunkerD(x, z) < 1) return 'sand';
+  return turfAt(x, z);
+}
+function turfAt(x, z) { // the grass under everything; the terrain shader lays sand and water over it with pixel-sharp edges
   const g = greenD(x, z);
   if (g < 1) return 'green';
   if (g < 1 + 2 / HOLE.green.r) return 'fringe';
@@ -596,7 +601,7 @@ function heightAt(x, z) {
   const bd = bunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
   const fwBunker = Math.hypot(x - HOLE.green.at[0], z - HOLE.green.at[1]) > 40 ? .35 : 1; // fairway bunkers are shallow, playable traps; greenside ones stay deep
   h += (bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0) * fwBunker; // flat floor, steep face, grass lip
-  for (const w of HOLE.water) { const d = Math.hypot(x - w.at[0], z - w.at[1]); if (d < w.r + 4) h -= 0.8 * clamp(1 - (d - w.r) / 4, 0, 1); }
+  const wd = waterD(x, z); if (wd < 4) h -= 0.8 * clamp(1 - wd / 4, 0, 1);
   h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
 }
@@ -899,11 +904,12 @@ sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun, sun.target);
 
 const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', sand: '#d9cfb4', water: '#3d5f6e' }; // muted to sit with Racing Green
-const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29');
+const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#e4dcc4'), WATER = new THREE.Color('#41687a'), WATER_DEEP = new THREE.Color('#2a4a5a');
+const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; // linear-space colour for shader code
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
   const geo = new THREE.PlaneGeometry(W, D, seg[0], seg[1]); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, col = [], rough = [], c = new THREE.Color();
+  const pos = geo.attributes.position, col = [], rough = [], haz = [], c = new THREE.Color();
   const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color('#6e4a2f');
   const wob = (x, z) => Math.sin(x * .37 + z * .11) * .9 + Math.sin(z * .23 - x * .19) * .7; // ragged bed edges, metres
   const strawAt = (x, z) => { // pine straw under the tree lines and clusters, 0..1
@@ -914,10 +920,10 @@ const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29');
   };
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + X0 + W / 2, z = pos.getZ(i) + D / 2 - 40;
-    const m = materialAt(x, z);
-    pos.setXYZ(i, x, m === 'water' ? heightAt(x, z) - 0.05 : heightAt(x, z), z);
+    const m = turfAt(x, z);
+    pos.setXYZ(i, x, heightAt(x, z), z);
     c.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[m]);
-    let rg = m === 'rough' || outOfBounds(x, z) ? 1 : m === 'firstcut' ? .35 : m === 'sand' ? .25 : 0;
+    let rg = m === 'rough' || outOfBounds(x, z) ? 1 : m === 'firstcut' ? .35 : 0;
     if ((m === 'fairway' || m === 'firstcut' || m === 'rough') && z > HOLE.tee[1] && z < FW_END + 6 && !outOfBounds(x, z)) { // cuts step down softly: fairway, first cut, rough
       const off = Math.abs(x - centreX(z)), hw = z <= 30 ? HOLE.fairway.half_width * .7 : HOLE.fairway.half_width, fwOn = z > 30 && z < FW_END;
       const a = fwOn ? clamp((off - hw + 1) / 2, 0, 1) : 1, b = clamp((off - hw - (fwOn ? 2 : -1)) / 3, 0, 1) * (z > FW_END ? 1 : 1);
@@ -927,36 +933,40 @@ const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29');
     const st = m === 'rough' || outOfBounds(x, z) ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, st * .85); rg = Math.max(rg, st); }
     if (m === 'fairway' && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
     if (tp > .9 && Math.floor((x - HOLE.tee[0] + 4) / 1.6) % 2) c.offsetHSL(0, 0, 0.025); // tee pad: crisp stripes
-    if (m === 'sand') { const bd = bunkerD(x, z);
-      if (bd > .7) c.lerp(SAND_FACE, (bd - .7) / .3 * .7);                              // shaded face
-      else if (Math.floor((x + z) * 1.2) % 2) c.offsetHSL(0, 0, -0.015); }              // rake lines on the floor
-    else if (bunkerD(x, z) < 1.12) c.lerp(LIP, .6);                                     // dark grass lip
     if (m === 'green') { if ((Math.floor(x / 3) + Math.floor(z / 3)) % 2) c.offsetHSL(0, 0, 0.022); // cross-mown checker
       const gd = greenD(x, z); if (gd > .93) c.lerp(LIP, (gd - .93) / .07 * .35); }     // collar where green meets fringe
-    col.push(c.r, c.g, c.b); rough.push(rg);
+    col.push(c.r, c.g, c.b); rough.push(rg); haz.push(bunkerD(x, z), waterD(x, z));
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.setAttribute('rough', new THREE.Float32BufferAttribute(rough, 1));
+  geo.setAttribute('haz', new THREE.Float32BufferAttribute(haz, 2)); // bunker and water distances, interpolated per pixel so their edges are smooth curves, not grid steps
   geo.computeVertexNormals();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   mat.onBeforeCompile = sh => { // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough; varying float vR; varying vec2 vXZ;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vXZ = position.xz;');
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough; attribute vec2 haz; varying float vR; varying vec2 vXZ, vH;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vXZ = position.xz; vH = haz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying float vR; varying vec2 vXZ;
+      varying float vR; varying vec2 vXZ, vH;
       float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
         return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + 1.), f.x), f.y); }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
       float n = vn(vXZ * 4.) * .35 + vn(vXZ * .9) * .35 + vn(vXZ * .18) * .3;
-      diffuseColor.rgb *= mix(.93 + .14 * n, .66 + .62 * n, vR);`);
+      diffuseColor.rgb *= mix(.93 + .14 * n, .66 + .62 * n, vR);
+      float bd = vH.x, wd = vH.y, ba = fwidth(bd), wa = fwidth(wd);
+      diffuseColor.rgb = mix(diffuseColor.rgb, ${glsl(LIP)}, .55 * smoothstep(1.14, 1., bd));        // thin dark grass lip round each bunker
+      vec3 sand = mix(${glsl(SAND)}, ${glsl(SAND_FACE)}, smoothstep(.72, 1., bd) * .75);            // bright floor, shaded face
+      sand *= 1. - .03 * step(.5, fract((vXZ.x + vXZ.y) * .9)) * step(bd, .72) - .03 * (vn(vXZ * 6.) - .5);  // rake lines, grain
+      diffuseColor.rgb = mix(diffuseColor.rgb, sand, 1. - smoothstep(1. - ba, 1. + ba, bd));       // crisp edge
+      diffuseColor.rgb *= 1. - .22 * smoothstep(.9, 0., wd);                                        // damp bank at the water's edge
+      vec3 wc = mix(${glsl(WATER)}, ${glsl(WATER_DEEP)}, smoothstep(0., -5., wd));
+      #ifdef USE_FOG
+      wc = mix(wc, fogColor, .35 * smoothstep(12., 140., vFogDepth));                               // sky sheen further off
+      #endif
+      diffuseColor.rgb = mix(diffuseColor.rgb, wc, 1. - smoothstep(-wa, wa, wd));`);
   };
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true; scene.add(mesh);
-  for (const w of HOLE.water) {
-    const water = new THREE.Mesh(new THREE.CircleGeometry(w.r + 1.5, 48), new THREE.MeshLambertMaterial({ color: COLOURS.water, transparent: true, opacity: .9 }));
-    water.rotation.x = -Math.PI / 2; water.position.set(w.at[0], heightAt(w.at[0], w.at[1] + w.r) - 0.35, w.at[1]); scene.add(water);
-  }
 }
 // see-through trees: anything within a few metres of the camera, or of the line from the camera to the ball,
 // dissolves in a fine dither (no sorting, so it stays cheap). Stops the view going black when the ball lies under a tree.
