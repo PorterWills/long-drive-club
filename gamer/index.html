@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Game Mode</title>
 <link rel="icon" href="/assets/favicon.svg?v=4" type="image/svg+xml">
 <link rel="icon" href="/assets/favicon.ico?v=4" sizes="any">
@@ -75,13 +75,13 @@
   #done button, #water button { margin-top: 16px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 26px; border-radius: 3px; font: 600 14px var(--font); cursor: pointer; }
   #done button:hover, #water button:hover { background: var(--ldc-green-up); }
   #holesBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
-  #holesBtn, #helpBtn { margin-top: 8px; padding: 6px 10px; }
-  #helpBtn { background: transparent; color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: italic 400 15px 'Source Serif 4', serif; line-height: 1; width: 28px; cursor: pointer; } #helpBtn:hover { background: var(--ldc-green-up); }
-  #mapMini { display: block; height: 140px; margin: 10px 0 0 auto; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
+  #holesBtn, #helpBtn { margin-top: 8px; padding: 6px 10px; min-width: 72px; }
+  #helpBtn { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; } /* owner: same size as Holes */ #helpBtn:hover { background: var(--ldc-green-up); }
+  #mapMini { display: block; width: 0; min-width: 100%; height: 140px; margin: 10px 0 0; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
   #mapPop { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 8; padding: 0; } #mapPop.open { display: block; }
-  #mapBig { display: block; height: calc(100vh - 60px); max-width: calc(100vw - 30px); }
+  #mapBig { display: block; }
   #mapClose { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #mapClose:hover { background: var(--ldc-green-up); }
-  #help { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(420px, calc(100% - 28px)); max-height: calc(100% - 30px); overflow: auto; padding: 0 0 20px; z-index: 8; }
+  #help { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(480px, calc(100% - 28px)); box-sizing: border-box; max-height: calc(100% - 30px); overflow: auto; padding: 0 0 20px; z-index: 8; }
   #help.open { display: block; } #help .stripe { position: static; height: 8px; margin-bottom: 18px; } #help h2 { margin: 0 20px 10px; font-size: 22px; }
   #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
   #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
@@ -170,7 +170,7 @@
 <div class="stripe" style="bottom:0"><i></i><i></i><i></i></div>
 <div id="hole" class="panel">
   <div class="roundel display">LDC</div>
-  <div><div class="name display">Long Drive Club</div><div class="eyebrow"><span id="holeLabel"></span> · <span id="strokes">0</span></div><button id="holesBtn">Holes</button> <button id="helpBtn" aria-label="How to play">i</button></div>
+  <div><div class="name display">Long Drive Club</div><div class="eyebrow"><span id="holeLabel"></span> · <span id="strokes">0</span></div><button id="holesBtn">Holes</button> <button id="helpBtn" aria-label="How to play">Info</button></div>
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Ambiance">
   <div class="stripe"><i></i><i></i><i></i></div>
@@ -184,12 +184,9 @@
   <div class="stripe"><i></i><i></i><i></i></div>
   <h2 class="display">How to play</h2>
   <dl>
-    <dt class="eyebrow">Aim</dt><dd>Drag across the course, or use the left and right arrow keys.</dd>
-    <dt class="eyebrow">Club</dt><dd>You start with a club for the distance. Tap it to change.</dd>
-    <dt class="eyebrow">Power</dt><dd>Drag along the bar. It shows how far the ball will carry.</dd>
-    <dt class="eyebrow">Swing</dt><dd>Tap Swing, or press Space.</dd>
-    <dt class="eyebrow">Read</dt><dd>Wind sits top right. On the green, the arrows run downhill.</dd>
-    <dt class="eyebrow">Holes</dt><dd>Your scores, the scorecard, practice and sound.</dd>
+    <dt class="eyebrow">Aim</dt><dd>Drag the course. The club's already chosen.</dd>
+    <dt class="eyebrow">Swing</dt><dd>Set the power, then swing.</dd>
+    <dt class="eyebrow">Read</dt><dd>Wind is top right. Green arrows run downhill.</dd>
   </dl>
   <button id="helpClose">Play</button>
 </div>
@@ -712,13 +709,13 @@ const LIE = { // how the lie changes the strike
   fringe: { speed: .99, spin: .96, launch: .2, spread: 1.1 }, firstcut: { speed: .95, spin: .82, launch: .8, spread: 1.5 },
   rough: { speed: .86, spin: .62, launch: 1.6, spread: 2.4 }, sand: { speed: .6, spin: .55, launch: 4, spread: 3.4 },
 };
-const CLUBS = [
-  { id: 'dr', name: 'Driver',  speed: 74.9, launch: 10.9, spin: 2700 },
-  { id: '3w', name: '3 Wood',  speed: 68.1, launch: 9.2,  spin: 3650 },
-  { id: '5i', name: '5 Iron',  speed: 57.8, launch: 12.1, spin: 5300 },
-  { id: '7i', name: '7 Iron',  speed: 53.6, launch: 16.3, spin: 7100 },
-  { id: '9i', name: '9 Iron',  speed: 48.1, launch: 20.4, spin: 8650 },
-  { id: 'pw', name: 'Wedge',   speed: 45.5, launch: 24,   spin: 9300 },
+const CLUBS = [ // ball speed (m/s) and spin: PGA Tour averages (owner, 29 Oct 2026); tour launch angles. Carries land within 3% of the tour's
+  { id: 'dr', name: 'Driver',  speed: 79,   launch: 12,   spin: 2545 }, // owner: drives felt short; about 286 yd carry
+  { id: '3w', name: '3 Wood',  speed: 72.4, launch: 9.2,  spin: 3663 }, // 249
+  { id: '5i', name: '5 Iron',  speed: 60.4, launch: 12.1, spin: 5280 }, // 199
+  { id: '7i', name: '7 Iron',  speed: 55.0, launch: 16.3, spin: 7124 }, // 176
+  { id: '9i', name: '9 Iron',  speed: 50.1, launch: 20.4, spin: 8793 }, // 152
+  { id: 'pw', name: 'Wedge',   speed: 46.5, launch: 24,   spin: 9316 }, // 142
   { id: 'sw', name: 'Sand Wedge', speed: 37.4, launch: 30, spin: 10500 },
   { id: 'pt', name: 'Putter',  speed: 9,    launch: 1,    spin: 0, putter: true },
 ];
@@ -786,7 +783,7 @@ function strike(club, power, aim, lie, rand) {
     speedMul = 1 + (rand() * 2 - 1) * 0.02 * risk;
   }
   const speed = club.speed * pm * (putt ? 1 : L.speed) * speedMul;
-  const launch = (club.launch + (putt ? 0 : L.launch)) * Math.PI / 180;
+  const launch = (club.launch + (putt ? 0 : lie === 'sand' && club.id === 'sw' ? 20 : L.launch)) * Math.PI / 180; // owner: hard to get out of bunkers. The sand wedge splashes out high, about 50°
   const rpm = club.spin * pm * (putt ? 1 : L.spin);
   const a = aim + aimErr, dir = v(Math.sin(a), 0, Math.cos(a));
   const vel = v(dir.x * Math.cos(launch) * speed, Math.sin(launch) * speed, dir.z * Math.cos(launch) * speed);
@@ -1758,7 +1755,8 @@ function drawMap() {
   if (!drawMap.ready) return void (drawMap.t ??= setTimeout(() => { drawMap.ready = true; drawMap(); }, 400)); // build after the course is on screen, so loading isn't held up
   const b = drawMap.base ??= (() => {
     const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]), M = 1; // owner: was pixelated at 2 m a pixel
-    const x0 = Math.min(...xs) - 50, x1 = Math.max(...xs) + 50, z0 = HOLE.tee[1] - 20, z1 = GZ + 30;
+    let x0 = Math.min(...xs) - 50, x1 = Math.max(...xs) + 50; const z0 = HOLE.tee[1] - 20, z1 = GZ + 30;
+    const pad = Math.max(0, (z1 - z0) * $('mapMini').clientWidth / $('mapMini').clientHeight - (x1 - x0)) / 2; x0 -= pad; x1 += pad; // owner: fill the panel, not half of it
     const c = document.createElement('canvas'); c.width = Math.ceil((x1 - x0) / M); c.height = Math.ceil((z1 - z0) / M);
     const g = c.getContext('2d'), img = g.createImageData(c.width, c.height), col = new THREE.Color();
     for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) { // +x is the player's left, so the map runs right to left
@@ -1772,7 +1770,7 @@ function drawMap() {
   })();
   const big = $('mapPop').classList.contains('open'), dpr = devicePixelRatio || 1;
   for (const cv of big ? [$('mapMini'), $('mapBig')] : [$('mapMini')]) {
-    const h = cv.clientHeight, w = h * b.c.width / b.c.height; cv.style.width = w + 'px'; cv.width = w * dpr; cv.height = h * dpr;
+    const ar = b.c.width / b.c.height, h = cv === $('mapMini') ? cv.clientHeight : Math.min(innerHeight - 60, (innerWidth - 30) / ar), w = h * ar; cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * dpr; cv.height = h * dpr;
     const g = cv.getContext('2d'), k = cv.height / b.c.height / b.M, P = (x, z) => [(b.x1 - x) * k, (b.z1 - z) * k], [px, pz] = P(PIN.x, PIN.z), [bx, bz] = P(state.ball.x, state.ball.z);
     g.imageSmoothingQuality = 'high'; g.drawImage(b.c, 0, 0, cv.width, cv.height);
     const lab = cv === $('mapBig'), fs = 10 * dpr; g.font = `600 ${fs}px Archivo`; g.letterSpacing = `${.12 * fs}px`; g.textAlign = 'center'; g.textBaseline = 'middle';
