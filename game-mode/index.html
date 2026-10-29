@@ -32,16 +32,27 @@
   .panel { position: fixed; background: var(--ldc-tarmac); border: 1px solid var(--hairline); padding: 10px 14px; }
   .roundel { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--ldc-chalk); color: var(--ldc-tarmac);
     border: 3px solid var(--ldc-tarmac); box-shadow: 0 0 0 2px var(--ldc-chalk); display: grid; place-items: center; font-size: 12px; }
-  #hole { top: 22px; left: 14px; display: flex; gap: 14px; align-items: center; max-width: calc(100% - 270px); }
+  /* owner: one bar across the top (v2): hole, distance, wind, aim, icons; translucent so the sky shows */
+  .hud { background: rgba(27,25,22,.82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  #hole { top: 20px; left: 14px; right: 14px; display: flex; align-items: center; gap: 14px; padding: 10px 12px; }
+  #hole.prac { box-shadow: inset 0 3px 0 var(--ldc-redline); } /* practice: a redline along the top */
+  #hole .hn { font-size: 40px; line-height: .9; }
+  #hole .t { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   #hole .name { font-size: 13px; }
-  #hole .eyebrow { margin-top: 4px; letter-spacing: .24em; }
-  #info { top: 22px; right: 14px; text-align: right; min-width: 150px; }
-  #info .num { font-size: 26px; }
-  #info .row2 { margin-top: 6px; display: flex; justify-content: flex-end; align-items: baseline; gap: 6px; }
-  #info .row2 .num { font-size: 18px; }
+  #hole .eyebrow { font-size: 10px; letter-spacing: .24em; }
+  #hole .sp { flex: 1; }
+  #hole .cell { display: flex; align-items: baseline; gap: 6px; padding-left: 14px; border-left: 1px solid var(--hairline); white-space: nowrap; }
+  #hole .num { font-size: 28px; line-height: 1; } #hole .row2 .num { font-size: 17px; }
+  #hole .row2 { display: flex; align-items: center; gap: 14px; }
+  #hole .ibs { display: flex; gap: 6px; padding-left: 14px; border-left: 1px solid var(--hairline); }
+  #hole .ib { width: 34px; height: 34px; min-width: 0; margin: 0; padding: 0; display: grid; place-items: center; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; cursor: pointer; }
+  #hole .ib:hover { background: var(--ldc-green-up); }
+  #hole .ib svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  #side { right: 14px; width: 260px; padding: 8px; }
+  #side #stats { margin: 0 0 8px; padding: 0 0 8px; border-top: 0; border-bottom: 1px solid var(--hairline); }
   #wind { display: inline-block; transition: transform .2s; font-size: 14px; }
-  #aimRead { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline); color: var(--ldc-chalk); }
-  #stats { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline); cursor: pointer; text-align: left; } /* lives in #info: one line, tap for the rest */
+  #aimRead { color: var(--ldc-chalk); }
+  #stats { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline); cursor: pointer; text-align: left; } /* lives under the bar: one line, tap for the rest */
   #stats .sum { color: var(--ldc-chalk); text-align: right; } #stats:not(.open) .r { display: none; } #stats.open .sum { margin-bottom: 4px; }
   #stats div.r { display: flex; justify-content: space-between; gap: 16px; font-size: 12px; line-height: 1.7; }
   #stats div.r span:first-child { color: var(--ldc-chalk-dim); }
@@ -77,8 +88,8 @@
   #holesBtn, #mapBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
   #holesBtn, #helpBtn, #mapBtn { margin-top: 8px; padding: 6px 10px; min-width: 72px; }
   #helpBtn { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; } /* owner: same size as Holes */ #helpBtn:hover { background: var(--ldc-green-up); }
-  #mapMini { display: block; width: 0; min-width: 100%; height: 140px; margin: 10px 0 0; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
-  #mapBtn { display: none; } @media (max-width: 520px) { #mapMini { display: none; } #mapBtn { display: inline-block; } } /* owner: on a phone the map hides behind a button, open to find the flag, shut to hit */
+  #mapMini { display: block; width: 0; min-width: 100%; height: 160px; margin: 0; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
+  @media (min-width: 521px) { #hole #mapBtn { display: none; } } @media (max-width: 520px) { #mapMini { display: none; } #side:not(.has) { display: none; } } /* owner: on a phone the map hides behind a button, open to find the flag, shut to hit */
   #mapPop { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 8; padding: 0; } #mapPop.open { display: block; }
   #mapBig { display: block; }
   #mapClose { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #mapClose:hover { background: var(--ldc-green-up); }
@@ -159,9 +170,11 @@
   #cardAsk .cardBtns { padding: 10px 0 0; }
   .cardBtns #askNo, .cardBtns #newRound, .cardBtns #lightBtn, .cardBtns #scBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
   button:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 2px; }
-  @media (max-width: 520px) { #hole .name { font-size: 11px; } .roundel { width: 38px; height: 38px; font-size: 11px; } #info .num { font-size: 22px; }
-    #hole { left: 8px; gap: 8px; padding: 8px 10px; max-width: calc(100% - 176px); } #hole .eyebrow { letter-spacing: .12em; }
-    #info { right: 8px; min-width: 0; padding: 8px 10px; } #info .eyebrow { letter-spacing: .16em; }
+  @media (max-width: 520px) { .roundel { width: 38px; height: 38px; font-size: 11px; }
+    #hole { left: 8px; right: 8px; flex-wrap: wrap; gap: 10px 12px; padding: 8px 10px; } #hole .hn { font-size: 34px; } #hole .name { font-size: 12px; } #hole .eyebrow { letter-spacing: .16em; }
+    #hole .num { font-size: 24px; } #hole .cell { padding-left: 0; border-left: 0; } #hole .toPin { display: none; }
+    #hole .row2 { flex-basis: 100%; gap: 12px; padding-top: 8px; border-top: 1px solid var(--hairline); } #hole .ibs { margin-left: auto; padding-left: 0; border-left: 0; }
+    #side { right: 8px; width: auto; max-width: calc(100% - 16px); padding: 8px 10px; } #side #stats { margin: 0; padding: 0; border-bottom: 0; }
  }
   @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
 </style>
@@ -169,9 +182,17 @@
 <body>
 <div class="stripe" style="top:0"><i></i><i></i><i></i></div>
 <div class="stripe" style="bottom:0"><i></i><i></i><i></i></div>
-<div id="hole" class="panel">
+<div id="hole" class="panel hud">
   <a class="roundel display" href="/" aria-label="Long Drive Club home" style="text-decoration:none">LDC</a>
-  <div><div class="name display">Long Drive Club</div><div class="eyebrow"><span id="holeLabel"></span> · <span id="strokes">0</span></div><button id="holesBtn">Holes</button> <button id="helpBtn" aria-label="How to play">Info</button></div>
+  <span id="holeNo" class="hn display"></span>
+  <div class="t"><div id="holeName" class="name display"></div><div class="eyebrow"><span id="holePar"></span> · <span id="strokes">0</span></div></div>
+  <span class="sp"></span>
+  <div class="cell"><span id="dist" class="num display">0</span><span class="eyebrow"><span id="distUnit">yd</span><span class="toPin"> to pin</span></span></div>
+  <div class="row2">
+    <div class="cell"><span id="windMph" class="num display">0</span><span class="eyebrow">mph</span><span id="wind">➤</span></div>
+    <div id="aimRead" class="eyebrow cell">At pin aim</div>
+    <div class="ibs"><button id="holesBtn" class="ib" aria-label="Holes"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M3 8h14M3 12.5h14M8 3v14"/></svg></button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
+  </div>
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Ambiance">
   <div class="stripe"><i></i><i></i><i></i></div>
@@ -217,13 +238,9 @@
   <p id="scMsg" class="voice" hidden></p>
   <div class="scBtns"><button id="scSubmit">Submit score</button><button id="scAgain">Go round again</button><a id="scHome" href="https://longdriveclub.com/">Back to Long Drive Club</a><button id="scClose">Back to round</button></div>
 </div>
-<div id="info" class="panel">
-  <div><span id="dist" class="num display">0</span> <span class="eyebrow" id="distUnit">yd to pin</span></div>
-  <div class="row2"><span id="windMph" class="num display">0</span><span class="eyebrow">mph</span><span id="wind">➤</span></div>
-  <div id="aimRead" class="eyebrow">At pin aim</div>
+<div id="side" class="panel hud">
   <div id="stats"></div>
   <canvas id="mapMini" role="button" tabindex="0" aria-label="Course map"></canvas>
-  <button id="mapBtn" aria-haspopup="dialog">Map</button>
 </div>
 <div id="mapPop" class="panel" role="dialog" aria-label="Course map"><canvas id="mapBig"></canvas><button id="mapClose" aria-label="Close map">×</button></div>
 <div id="toast" class="display"></div>
@@ -599,7 +616,8 @@ const askedHole = parseInt(new URLSearchParams(location.search).get('hole'));
 const HOLE_NO = clamp(askedHole || roundHole(), 1, HOLES.length), HOLE = HOLES[HOLE_NO - 1];
 const PRACTICE = roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
 if (HOLE.par === 3) HOLE.cars[HOLE.cars.findIndex(c => c.at[1] < 0)] = { at: [HOLE.tee[0] + 12, HOLE.tee[1] + 8], heading: 124, colour: '#EDE9DF', kind: 'hyper', display: true } // 124°: square side-on to the tee camera; // hole-in-one prize car
-document.getElementById('holeLabel').textContent = `${PRACTICE ? 'Practice · ' : ''}Hole ${HOLE_NO} · ${HOLE.name} · Par ${HOLE.par}`;
+document.getElementById('holeNo').textContent = HOLE_NO; document.getElementById('holeName').textContent = HOLE.name;
+document.getElementById('holePar').textContent = `Par ${HOLE.par}`; document.getElementById('hole').classList.toggle('prac', PRACTICE);
 // smooth (cosine) interpolation through [z, value] points
 const lerpPts = (pts, z) => {
   if (z <= pts[0][0]) return pts[0][1];
@@ -1467,7 +1485,7 @@ function refresh() {
   const d = flat(b, PIN);
   const onGreen = lie === 'green'; // golf standard: yards until you're on the putting surface, then feet
   $('dist').textContent = onGreen ? Math.round(d / 0.3048) : Math.round(d / YD);
-  $('distUnit').textContent = onGreen ? 'ft to pin' : 'yd to pin';
+  $('distUnit').textContent = onGreen ? 'ft' : 'yd';
   $('windMph').textContent = HOLE.wind.mph; if (HOLE.swirl) $('windMph').nextElementSibling.textContent = 'mph · swirling';
   // arrow shows where the wind blows relative to the current aim (up = with you). World +x is screen-left from behind the ball.
   $('wind').style.transform = `rotate(${-90 - (HOLE.wind.toward_deg * Math.PI / 180 - state.aim) * 180 / Math.PI}deg)`;
@@ -1503,7 +1521,7 @@ function showStats(s, r, putt) {
        ['Launch', `${s.launchDeg.toFixed(1)}°`], ['Apex', `${Math.round(r.apex / YD)} yd`], ['Hang', `${r.hang.toFixed(1)} s`], ['Spin', `${Math.round(s.rpm)} rpm`]];
   const sum = putt ? `${rows[0][1]} roll<br>${rows[2][1]} left` : `${rows[0][1]} carry<br>${rows[2][1]} total`;
   $('stats').innerHTML = `<div class="sum eyebrow">${sum} +</div>` + rows.map(([k, val]) => `<div class="r"><span>${k}</span><span>${val}</span></div>`).join('');
-  $('stats').classList.remove('open'); $('stats').style.display = 'block';
+  $('stats').classList.remove('open'); $('stats').style.display = 'block'; $('side').classList.add('has');
 }
 $('stats').onclick = () => $('stats').classList.toggle('open');
 
@@ -1653,7 +1671,7 @@ function reset() {
   state.dropT0 = null;
   state.ball = v(HOLE.tee[0], heightAt(...HOLE.tee) + BALL.r, HOLE.tee[1]);
   state.strokes = 0; state.phase = 'aim'; state.seed = (Math.random() * 1e9) | 0;
-  $('done').style.display = 'none'; $('stats').style.display = 'none';
+  $('done').style.display = 'none'; $('stats').style.display = 'none'; $('side').classList.remove('has');
   trail.geometry.setFromPoints([]);
   setClub(suggestClub(flat(state.ball, PIN) / YD));
 }
@@ -1803,10 +1821,8 @@ try { if (!localStorage.getItem('ldc.help')) showHelp(true); } catch { showHelp(
 // owner: on a phone the map opens by itself on the first hole of a visit, then waits behind the Map button
 const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('help').classList.contains('open') || $('start').classList.contains('open')) return;
   try { if (sessionStorage.getItem('ldc.map')) return; sessionStorage.setItem('ldc.map', '1'); } catch {} showMap(true); };
-// owner: on a phone the two top boxes are always the same height, whichever is taller sets it
-const evenPanels = () => { const ps = [$('hole'), $('info')]; ps.forEach(p => p.style.minHeight = '');
-  if (matchMedia('(max-width: 520px)').matches) { const h = Math.max(...ps.map(p => p.offsetHeight)); ps.forEach(p => p.style.minHeight = h + 'px'); } };
-new ResizeObserver(evenPanels).observe($('hole')); new ResizeObserver(evenPanels).observe($('info')); addEventListener('resize', evenPanels);
+// the side card (shot stats, mini map) tucks under the bar, whatever height the bar is
+new ResizeObserver(() => $('side').style.top = $('hole').getBoundingClientRect().bottom + 8 + 'px').observe($('hole'));
 $('helpClose').addEventListener('click', firstMap); $('play').addEventListener('click', firstMap); setTimeout(firstMap, 0);
 $('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
