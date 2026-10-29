@@ -349,7 +349,7 @@ const HOLES = [{
   // bean (~25 m long) traced from the owner's top-down of the green (0.067 m/px), from the green's left middle down
   // to its front-left corner, so the tucked pin has to be carried over sand
   bunkers: [{ at: [-16.5, 284.5], r: 5 }, { at: [-18.5, 270.5], r: 5.5 },
-    { at: [-25.2, 402.8], r: 3.4 }, { at: [-27.3, 397.5], r: 3.7 }, { at: [-29.9, 392.1], r: 4.7 }, { at: [-32.6, 386.7], r: 4.7 }, { at: [-29.3, 384.1], r: 3.4 }],
+    { at: [-25.2, 402.8], r: 3.4, soft: 1 }, { at: [-27.3, 397.5], r: 3.7, soft: 1 }, { at: [-29.9, 392.1], r: 4.7, soft: 1 }, { at: [-32.6, 386.7], r: 4.7, soft: 1 }, { at: [-29.3, 384.1], r: 3.4, soft: 1 }],
   water: [],
   trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
     [1, 159, 225, 30, 22], [1, 225, 300, 15, 25], [1, 300, 362, 12, 25],   // left: wide, then the pinch
@@ -672,7 +672,10 @@ const blobD = (c, x, z, seed, k = 1) => {
 // water: the circles melt into one smooth shoreline (smooth minimum), so ponds and creeks have no scalloped edges. Metres, < 0 is wet
 const smin = (a, b, k) => { const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
 const waterD = (x, z) => HOLE.water.reduce((d, w) => smin(d, w.shore ? shoreD(w.shore, x, z) : Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99);
-const bunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
+const hardBunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => b.soft ? 9 : blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
+// soft bunkers (owner, hole 1): the circles melt into one smooth outline like water, metres, < 0 is sand
+const softBunkerD = (x, z) => HOLE.bunkers.reduce((d, b) => b.soft ? smin(d, Math.hypot(x - b.at[0], z - b.at[1]) - b.r, 2.5) : d, 99);
+const bunkerD = (x, z) => Math.min(hardBunkerD(x, z), 1 + softBunkerD(x, z) / 4); // < 1 is sand, either kind
 const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
 // per-hole green contours: two seeded soft mounds or hollows on top of the shared back-to-front slope
 const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0, 1].map(() => {
@@ -728,9 +731,11 @@ function heightAt(x, z) {
   h += 0.7 * core + (z - gz) * 0.03 * core + (x - gx) * 0.008 * core;   // raised green, strong back-to-front slope
   for (const m of MOUNDS) h += m.h * Math.exp(-((x - m.x) ** 2 + (z - m.z) ** 2) / m.s2);
   for (const f of GFX) h += f(x, z);
-  const bd = bunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
+  const bd = hardBunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
   const fwBunker = Math.hypot(x - HOLE.green.at[0], z - HOLE.green.at[1]) > 40 ? .35 : 1; // fairway bunkers are shallow, playable traps; greenside ones stay deep
   h += (bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0) * fwBunker; // flat floor, steep face, grass lip
+  const sd = softBunkerD(x, z), u = clamp(-sd / 3, 0, 1);              // soft bunker: a smooth bowl 3 m in from the edge, low rounded lip
+  if (sd < 0) h -= 0.55 * u * u * (3 - 2 * u); else if (sd < 1.5) h += 0.12 * Math.sin(Math.PI * sd / 1.5);
   const wd = waterD(x, z); if (wd < 4) h -= 0.8 * clamp(1 - wd / 4, 0, 1);
   h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
