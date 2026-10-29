@@ -30,8 +30,11 @@
   .stripe i { display: block; } .stripe i:nth-child(1) { flex: 7; background: var(--ldc-green); }
   .stripe i:nth-child(2) { flex: 1.4; background: var(--ldc-chalk); } .stripe i:nth-child(3) { flex: .5; background: var(--ldc-redline); }
   .panel { position: fixed; background: var(--ldc-tarmac); border: 1px solid var(--hairline); padding: 10px 14px; }
-  .roundel { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--ldc-chalk); color: var(--ldc-tarmac);
-    border: 3px solid var(--ldc-tarmac); box-shadow: 0 0 0 2px var(--ldc-chalk); display: grid; place-items: center; font-size: 12px; }
+  /* the LDC roundel, rings in the master logo's proportions: chalk disc, tarmac ring, green gap, thin chalk rim */
+  .roundel { flex: none; width: 44px; height: 44px; border-radius: 50%; color: var(--ldc-tarmac); display: grid; place-items: center; font-size: 12px; container-type: inline-size;
+    background: radial-gradient(closest-side, var(--ldc-chalk) 78.8%, var(--ldc-tarmac) 0 86.9%, var(--ldc-green) 0 93.6%, var(--ldc-chalk) 0 98.5%, transparent 100%); }
+  .roundel > span { font-size: 18cqw; letter-spacing: 0; white-space: nowrap; }
+  .roundel .stop { display: inline-block; width: .22em; height: .22em; margin-left: .05em; background: var(--ldc-redline); }
   /* owner: one bar across the top (v2): hole, distance, wind, aim, icons; translucent so the sky shows */
   .hud { background: rgba(27,25,22,.82); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   #hole { top: 20px; left: 14px; right: 14px; display: flex; align-items: center; gap: 14px; padding: 10px 12px; }
@@ -86,7 +89,7 @@
     padding: 14px 22px; font-size: 22px; pointer-events: none; opacity: 0; transition: opacity .3s ease-out; white-space: nowrap; }
   #done, #water { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; padding: 0 0 22px; width: min(360px, calc(100% - 28px)); overflow: hidden; }
   #done .stripe, #water .stripe { position: static; height: 8px; margin-bottom: 22px; }
-  #done .roundel { width: 76px; height: 76px; margin: 0 auto 14px; font-size: 30px; border-width: 5px; box-shadow: 0 0 0 3px var(--ldc-chalk); }
+  #done .roundel { width: 76px; height: 76px; margin: 0 auto 14px; font-size: 30px; }
   #done h2, #water h2 { margin: 0; padding: 0 24px; font-size: 26px; line-height: 1.15; }
   #done .voice, #water .voice { font-size: 18px; margin: 12px 28px 8px; color: var(--ldc-chalk); }
   #done button, #water button { margin-top: 16px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 26px; border-radius: 3px; font: 600 14px var(--font); cursor: pointer; }
@@ -131,7 +134,7 @@
   #sc .stripe { position: static; height: 8px; }
   #scrim { display: none; position: fixed; inset: 0; z-index: 7; background: rgba(27,25,22,.72); } /* dims the course so the card has the stage */
   .scHead { display: flex; gap: 14px; align-items: center; padding: 16px 16px 10px; }
-  .scHead .roundel { width: 54px; height: 54px; background: var(--ldc-green); color: var(--ldc-chalk); border-color: var(--ldc-green); }
+  .scHead .roundel { width: 54px; height: 54px; }
   .scHead h2 { margin: 2px 0; font-size: 26px; }
   #sc .eyebrow { color: var(--ldc-green); }
   .scWrap { padding: 0 16px; margin-bottom: 10px; overflow-x: auto; }
@@ -190,7 +193,7 @@
 <div class="stripe" style="top:0"><i></i><i></i><i></i></div>
 <div class="stripe" style="bottom:0"><i></i><i></i><i></i></div>
 <div id="hole" class="panel hud">
-  <a class="roundel display" href="/" aria-label="Long Drive Club home" style="text-decoration:none">LDC</a>
+  <a class="roundel display" href="/" aria-label="Long Drive Club home" style="text-decoration:none"><span>LDC<i class="stop"></i></span></a>
   <span id="holeNo" class="hn display"></span>
   <div class="t"><div id="holeName" class="name display"></div><div class="eyebrow"><span id="holePar"></span> · <span id="strokes">0</span></div></div>
   <span class="sp"></span>
@@ -203,7 +206,7 @@
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Ambiance">
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="roundel display">LDC</div>
+  <div class="roundel display"><span>LDC<i class="stop"></i></span></div>
   <h2 class="display">Long Drive Club</h2>
   <div class="eyebrow">Choose your ambiance</div>
   <div id="skies"></div>
@@ -231,7 +234,7 @@
 <div id="scrim"></div>
 <div id="sc" class="panel" role="dialog" aria-label="Scorecard">
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="scHead"><div class="roundel display">LDC</div><div><div class="eyebrow">Long Drive Club</div><h2 class="display">Scorecard</h2><div class="eyebrow" id="scDate"></div></div></div>
+  <div class="scHead"><div class="roundel display"><span>LDC<i class="stop"></i></span></div><div><div class="eyebrow">Long Drive Club</div><h2 class="display">Scorecard</h2><div class="eyebrow" id="scDate"></div></div></div>
   <div class="scCols"><div>
   <div class="scWrap"><table id="scFront"></table></div>
   <div class="scWrap"><table id="scBack"></table></div>
@@ -1328,7 +1331,7 @@ const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[
     if (HOLE.par === 3) { g.fillStyle = '#C1121F'; g.fillRect(14, 244, 484, 62); g.fillStyle = '#EDE9DF'; g.font = '800 26px Archivo'; g.fillText('ACE THIS HOLE', 256, 276); }
     tex.needsUpdate = true;
   };
-  drawSign(); document.fonts.load('800 30px Archivo').then(drawSign);
+  drawSign(); document.fonts.load('800 22px Archivo').then(drawSign);
   const sign = new THREE.Group(), wood = new THREE.MeshLambertMaterial({ color: '#3a2a1e' });
   const face = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1), new THREE.MeshLambertMaterial({ map: tex })); face.position.set(0, 1.5, .035);
   const back = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.1, .06), wood); back.position.y = 1.5;
@@ -1340,17 +1343,23 @@ const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[
 // flag, ball, aim line, trail
 const flag = new THREE.Group();
 flag.add(new THREE.Mesh(new THREE.CylinderGeometry(.0095, .0095, 2.5, 8), new THREE.MeshLambertMaterial({ color: '#eee' }))); // a real 3/4 in stick; any thicker hides the 4.25 in cup
-// Redline flag carrying the LDC roundel (chalk disc, tarmac ring, Archivo Expanded 800)
+// the LDC roundel for canvas textures, in the master logo's proportions (r = outer edge): matches the CSS .roundel
+const drawRoundel = (g, x, y, r) => {
+  for (const [f, c] of [[1, '#EDE9DF'], [.936, '#0E2A1C'], [.869, '#1B1916'], [.788, '#EDE9DF']]) { g.beginPath(); g.arc(x, y, r * f, 0, 6.283); g.fillStyle = c; g.fill(); }
+  const px = r * .36; g.font = `800 ${px}px Archivo`; g.fontStretch = 'expanded'; g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  const w = g.measureText('LDC').width, s = px * .22, gap = px * .05, x0 = x - (w + gap + s) / 2, base = y + px * .36;
+  g.fillStyle = '#1B1916'; g.fillText('LDC', x0, base);
+  g.fillStyle = '#C1121F'; g.fillRect(x0 + w + gap, base - s, s, s);
+};
+// Redline flag carrying the LDC roundel
 const flagTex = new THREE.CanvasTexture(document.createElement('canvas'));
 const drawFlag = () => {
   const cv = flagTex.image; cv.width = 256; cv.height = 160; const g = cv.getContext('2d');
   g.fillStyle = '#C1121F'; g.fillRect(0, 0, 256, 160);
-  g.beginPath(); g.arc(128, 80, 58, 0, 6.283); g.fillStyle = '#EDE9DF'; g.fill();
-  g.beginPath(); g.arc(128, 80, 50, 0, 6.283); g.lineWidth = 8; g.strokeStyle = '#1B1916'; g.stroke();
-  g.fillStyle = '#1B1916'; g.font = '800 30px Archivo'; g.fontStretch = 'expanded'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('LDC', 128, 82);
+  drawRoundel(g, 128, 80, 62);
   flagTex.needsUpdate = true;
 };
-drawFlag(); document.fonts.load('800 30px Archivo').then(() => { drawFlag(); flagTexBack.needsUpdate = true; }); // redraw once the web font is in
+drawFlag(); document.fonts.load('800 22px Archivo').then(() => { drawFlag(); flagTexBack.needsUpdate = true; }); // redraw once the web font is in
 // cloth hinged on the pole (geometry starts at x=0) so it swings round the pole, not its own middle
 const clothGeo = new THREE.PlaneGeometry(.8, .5, 16, 1).translate(.4, 0, 0), clothX = Float32Array.from(clothGeo.attributes.position.array);
 const flagTexBack = flagTex.clone(); flagTexBack.wrapS = THREE.RepeatWrapping; flagTexBack.repeat.x = -1; flagTexBack.offset.x = 1;
@@ -1379,13 +1388,12 @@ const drawBallLogo = () => {
   g.fillStyle = '#fff'; g.fillRect(0, 0, 512, 256);
   for (const x of [128, 384]) {
     g.save(); g.translate(x, 128); g.scale(1.6, 1); // equirectangular map squashes width, so stretch to stay round
-    g.beginPath(); g.arc(0, 0, 30, 0, 6.283); g.lineWidth = 6; g.strokeStyle = '#C1121F'; g.stroke();
-    g.fillStyle = '#1B1916'; g.font = '800 17px Archivo'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('LDC', 0, 1);
+    drawRoundel(g, 0, 0, 34);
     g.restore();
   }
   ballTex.needsUpdate = true;
 };
-drawBallLogo(); document.fonts.load('800 17px Archivo').then(drawBallLogo);
+drawBallLogo(); document.fonts.load('800 12px Archivo').then(drawBallLogo);
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4, map: ballTex }));
 ballMesh.castShadow = true; scene.add(ballMesh);
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
