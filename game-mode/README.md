@@ -136,7 +136,8 @@ Lessons from hole 2:
 - **Side card** under the bar on the right: shot stats (after a shot) and, on desktop, the mini map. On phones it only appears when there are stats.
 - **Map on phones:** hidden behind the Map button, opens nearly full screen. It opens by itself on the first hole of each visit (`sessionStorage` `ldc.map`), and closes on Swing.
 - **Ball flight:** the top bar and side card slide up, and the club, Swing and power controls slide down, both fading out (0.45 s eased). They return as the ball settles (`body.flying`). Reduced motion gets a fade.
-- **Holes card:** × top right (no Close button); *Mood* (was *Ambiance*) opens the dawn/day/dusk picker. The scorecard has its own top-bar button, not a Holes card button.
+- **Holes card (v2, 29 Oct 2026):** *The course*: 18 rows of number, name, par and yards (no SI, no scores), each with a button: **Play** on the round's next hole, **Practise** on the others, *Playing* on the current one. One tap goes. Mood and Sound at the foot, × top right. *New round* lives on the scorecard (two-tap confirm mid-round).
+- **Top-bar buttons:** *Holes* (flag + word) and *Scorecard* (word) are labelled; Info stays an icon.
 - **Club button:** shows the club's **stock yardage** (full power from the fairway, fixed per club; none for the putter), e.g. *DRIVER 286 YD*. The bag grid's yardages still follow the current lie.
 - **Power bar (v2, rev counter):** one solid Redline fill with a Chalk needle at its edge and tick marks (major every 10%, minor every 2%) on a Tarmac track. Readout: **yardage large on the right** (feet for putts), percentage small on the left (owner: yardage matters more). Text can't be selected while dragging.
 - **Phones:** the controls have 32px either side (same height), and the picture is shifted (`camera.setViewOffset`, 12% of the height) so the ball sits lower with grass between it and the controls. Aiming is unaffected.
