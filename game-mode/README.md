@@ -4,7 +4,7 @@ A browser golf game for the Long Drive Club website. It plays like golfslate.com
 
 **Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *National Course*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
 
-Stroke index follows the owner's official card (29 Oct 2026).
+Stroke index follows the owner's official card (29 Oct 2026). Yards are the game's own, measured tee to pin. Five holes differ from the card (1: 445 vs 455, 2: 585 vs 575, 11: 520 vs 505, 13: 545 vs 510, 15: 550 vs 530), and the owner chose to keep them (29 Oct 2026), so don't move tees to match.
 
 | Hole | Name | Par | Yards | SI |
 |---|---|---|---|---|
@@ -151,7 +151,6 @@ Lessons from hole 2:
 2. **Leaderboard hardening (open):** scores are trusted as sent. To reject faked scores, send the seed and each shot's inputs so the server can rerun the round.
 3. **Live page (29 Oct 2026):** the game is live at **longdriveclub.com/game-mode/** (was `/gamer/`, which now redirects). It lives in the `game-mode/` folder of github.com/PorterWills/long-drive-club, served by GitHub Pages from `main`, and that folder is now the copy that's edited. Keep the `noindex` line. **Never upload to the repo root**: on 28 Oct an upload there replaced the home page for about 15 minutes before it was reverted.
 4. **Polish still open:**
-   - yards: five holes measure differently from the official card (1: 445 vs 455, 2: 585 vs 575, 11: 520 vs 505, 13: 545 vs 510, 15: 550 vs 530). The game measures tee to pin, so matching means moving tees or greens
    - hiding the slope arrows nearest the low putting camera, if they distract
    - a golfer character (currently just the ball; the old ring marker was removed at the owner's request)
    - better car placement (the owner says "fine for now")
