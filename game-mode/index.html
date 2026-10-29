@@ -108,6 +108,7 @@
   #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   #helpClose:hover { background: var(--ldc-green-up); }
   #helpX { position: absolute; top: 18px; right: 14px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #helpX:hover { background: var(--ldc-green-up); }
+  #cardClose { position: absolute; top: 18px; right: 14px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #cardClose:hover { background: var(--ldc-green-up); } /* owner: an x, like How to play */
   #holesBtn:hover, #mapBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
   #start { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(460px, calc(100% - 28px)); padding: 0 0 20px; z-index: 7; text-align: center; }
   #start.open { display: block; } #start .stripe { position: static; height: 8px; margin-bottom: 20px; }
@@ -122,7 +123,7 @@
   #play:hover { background: var(--ldc-green-up); }
   #card { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(520px, calc(100% - 28px)); max-height: calc(100% - 60px); overflow: hidden auto; padding: 0 0 16px; z-index: 6; }
   #card .stripe { position: static; height: 8px; margin-bottom: 0; }
-  #card > .cardBtns { padding-top: 12px; }
+  #card > .cardBtns { padding-top: 12px; padding-right: 60px; }
   .hrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 44px 34px 56px; gap: 6px; align-items: center; width: 100%; padding: 7px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
   .hrow span:nth-child(n+3) { text-align: right; font-feature-settings: "tnum" 1; }
   .hrow.head { cursor: default; padding-top: 6px; padding-bottom: 6px; }
@@ -207,14 +208,14 @@
   <div class="row2">
     <div class="cell wcell"><span id="windMph" class="num display">0</span><span class="eyebrow">mph</span><span id="wind">➤</span></div>
     <div id="aimRead" class="eyebrow cell">At pin aim</div>
-    <div class="ibs"><button id="holesBtn" class="ib" aria-label="Holes"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M3 8h14M3 12.5h14M8 3v14"/></svg></button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
+    <div class="ibs"><button id="holesBtn" class="ib" aria-label="Holes"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M3 8h14M3 12.5h14M8 3v14"/></svg></button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="scBtn" class="ib" aria-label="Scorecard"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h10v15H5z"/><path d="M8 6.5h4M8 10h4M8 13.5h4"/></svg></button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
   </div>
 </div>
-<div id="start" class="panel" role="dialog" aria-label="Ambiance">
+<div id="start" class="panel" role="dialog" aria-label="Mood">
   <div class="stripe"><i></i><i></i><i></i></div>
   <div class="roundel logo display">LDC</div>
   <h2 class="display">Long Drive Club</h2>
-  <div class="eyebrow">Choose your ambiance</div>
+  <div class="eyebrow">Choose your mood</div>
   <div id="skies"></div>
   <button id="play">Done</button>
 </div>
@@ -230,8 +231,9 @@
   <button id="helpClose">Play</button>
 </div>
 <div id="card" class="panel" role="dialog" aria-label="Holes">
+  <button id="cardClose" aria-label="Close">×</button>
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="cardBtns"><button id="resume">Back to round</button><button id="scBtn">Scorecard</button><button id="newRound">New round</button><button id="lightBtn">Ambiance</button><button id="soundBtn">Sound on</button><button id="cardClose">Close</button></div>
+  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="lightBtn">Mood</button><button id="soundBtn">Sound on</button></div>
   <div id="cardAsk" hidden><span id="askText"></span><div class="cardBtns"><button id="askYes">Yes</button><button id="askNo">Cancel</button></div></div>
   <div id="cardTotal" class="eyebrow"></div>
   <div class="hrow head eyebrow"><span>No</span><span>Hole</span><span>Par</span><span>Yd</span><span>SI</span><span>Score</span></div>
@@ -1017,7 +1019,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-// ambiance: day by default; the player can switch to dawn or dusk from Holes → Ambiance (kept in this browser). Looks only; play is unchanged.
+// ambiance: day by default; the player can switch to dawn or dusk from Holes → Mood (kept in this browser). Looks only; play is unchanged.
 // The sun's compass direction still changes daily (UTC). ?sky=dawn | day | dusk previews one.
 const SKIES = {
   dawn: { zenith: '#6d8db5', mid: '#f0b9a4', horizon: '#ffe2b8', sun: '#ffd9a8', cloudLit: '#ffe4cc', cloudShade: '#9c8aa0', el: 14 },
