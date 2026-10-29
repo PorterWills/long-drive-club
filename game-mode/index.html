@@ -367,22 +367,36 @@ const HOLES = [{
     { at: [-22, -17], heading: -40, colour: '#163826', kind: 'hyper' },
   ],
 }, {
-  // Traced from an aerial of a long downhill par 5: 585 yd, straight down a tree-lined chute, then a hard dogleg
-  // left round a stand of trees to a green guarded right and front. Scale 0.337 m/px (535 m over ~1,590 px).
+  // Re-traced from the owner's illustration (0.473 m/px, 535 m over ~1,130 px): an S. The drive goes out right,
+  // between a stand of trees on the left and a long band on the right, to a fairway bunker on the right edge; the
+  // second turns back left round the inside trees to a green with deep bunkers either side of a narrow throat.
+  // Green complex from the owner's top-down (0.035 m/px): the throat between the two front bunkers is ~9 m wide.
   name: 'Red Catbranch', par: 5, si: 1,
-  tee: [0, 0], pin: [164, 509.2],              // 585 yd tee to pin
+  tee: [0, 0], pin: [-18.9, 534.6],            // 585 yd tee to pin
   wind: { mph: 14, toward_deg: 95 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 17, line: [[0, 0], [120, -5], [221, -3], [288, -7], [356, 25], [423, 56], [473, 93], [507, 160]] },
+  fairway: { half_width: 17, line: [[0, 0], [76, -3.8], [170, -84], [289, -108], [383, -103], [454, -61], [502, -32], [532, -19]] },
   elevation: [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]],      // downhill all the way
-  green: { at: [165, 507], r: 12, fx: [['bowl', -3, -4, 4, -.15]] },
-  bunkers: [{ at: [-11, 318], r: 4.5 }, { at: [-15, 311], r: 4.5 }, { at: [149, 516], r: 4 }, { at: [148, 507], r: 4 }, { at: [161, 489], r: 4 }],
+  green: { at: [-19, 532], r: 10.5, fx: [['bowl', -3, -4, 4, -.15]] },
+  // fairway bunker (owner, from a photo): one big smooth peanut ~30 m long on the right of the landing area, its far end
+  // reaching in towards the middle. Owner: it must catch drives, so it sits at full-driver carry (~250 m, 275 yd)
+  bunkers: [{ at: [-99.5, 236.5], r: 6, soft: 1 }, { at: [-103.5, 231], r: 5, soft: 1 }, { at: [-107.5, 225.5], r: 5.5, soft: 1 }, { at: [-112.5, 219.5], r: 6.5, soft: 1 },
+    // left greenside: a peanut running up the left front (the 1946 bunker)
+    { at: [-5.4, 527.1], r: 3, soft: 1 }, { at: [-7.1, 524.3], r: 3.2, soft: 1 }, { at: [-10.6, 521.2], r: 3, soft: 1 },
+    // right greenside: the big one, with a finger reaching up the right side
+    { at: [-30, 522], r: 4.2, soft: 1 }, { at: [-26, 519.5], r: 3, soft: 1 }, { at: [-33, 525.4], r: 3, soft: 1 }, { at: [-30.9, 528.5], r: 1.9, soft: 1 }],
   water: [],
-  trees: [[1, 157, 436, 21, 22], [-1, 15, 477, 21, 22]],
-  treeClusters: [{ at: [80, 490], r: 12 }, { at: [133, 561], r: 14 }, { at: [27, 99], r: 8 }, { at: [35, 47], r: 6 }],
+  trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
+    [1, 123, 215, 14, 40], [1, 215, 330, 30, 40], [1, 330, 420, 40, 40], [1, 420, 464, 28, 30],   // the inside of the dogleg
+    [-1, 0, 118, 30, 30], [-1, 118, 200, 16, 30], [-1, 200, 300, 30, 30], [-1, 300, 397, 40, 30], // the right-hand band
+  ],
+  treeClusters: [
+    { at: [24, 0], r: 14 }, { at: [45, 10], r: 12 }, { at: [25, 57], r: 6 }, { at: [-13, 61], r: 7 }, { at: [43, 38], r: 7 }, // round the tee
+    { at: [-141, 430], r: 16 }, { at: [-103, 482], r: 8 }, { at: [-150, 530], r: 10 }, { at: [-89, 577], r: 14 }, { at: [25, 596], r: 6 },
+  ],
   cars: [
     { at: [-9, -14], heading: -20, colour: '#C1121F', kind: 'hyper' },
     { at: [8, -15], heading: 15, colour: '#262320', kind: 'gt' },
-    { at: [195, 500], heading: -80, colour: '#EDE9DF', kind: 'gt' },
+    { at: [10, 548], heading: -80, colour: '#EDE9DF', kind: 'gt' },
   ],
 }, {
   name: 'Wilting Mango', par: 4, si: 13,
