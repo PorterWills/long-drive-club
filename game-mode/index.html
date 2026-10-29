@@ -79,7 +79,7 @@
   #swing { width: 140px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
   #swing:hover:not(:disabled) { background: var(--ldc-green-up); }
   #swing:disabled { background: var(--ldc-tarmac-up); color: var(--ldc-chalk-dim); border-color: var(--hairline); cursor: default; }
-  #power { position: relative; height: 46px; border: 1px solid var(--hairline); border-radius: 3px; background: var(--ldc-tarmac); cursor: ew-resize; overflow: hidden; }
+  #power { position: relative; height: 46px; user-select: none; -webkit-user-select: none; touch-action: none; border: 1px solid var(--hairline); border-radius: 3px; background: var(--ldc-tarmac); cursor: ew-resize; overflow: hidden; }
   #powerFill { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; background: var(--ldc-redline); box-shadow: inset -3px 0 0 var(--ldc-chalk); } /* owner (V2): one solid redline like a rev counter; the chalk edge is the needle */
   #power::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(244,240,230,.35) calc(10% - 1px) 10%) bottom / 100% 9px no-repeat, repeating-linear-gradient(90deg, transparent 0 calc(2% - 1px), rgba(244,240,230,.18) calc(2% - 1px) 2%) bottom / 100% 5px no-repeat; } /* rev-counter ticks: major every 10%, minor every 2% */
   #powerText { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 16px; z-index: 1; }
