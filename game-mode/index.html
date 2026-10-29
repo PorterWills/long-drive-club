@@ -310,6 +310,9 @@ const stream = (pts, hw, drop) => {
 };
 // signed distance to a closed outline: < 0 inside
 const shoreD = (shore, x, z) => {
+  const b = shore.box ??= shore.reduce((b, [px, pz]) => [Math.min(b[0], px), Math.min(b[1], pz), Math.max(b[2], px), Math.max(b[3], pz)], [1e9, 1e9, -1e9, -1e9]);
+  const far = Math.hypot(Math.max(b[0] - x, 0, x - b[2]), Math.max(b[1] - z, 0, z - b[3]));
+  if (far > 10) return far; // well clear of the water: every caller saturates by 5 m, so skip the per-segment walk (it dominated load time)
   let d = 1e9, inside = false;
   for (let i = 0, j = shore.length - 1; i < shore.length; j = i++) {
     const [ax, az] = shore[j], [bx, bz] = shore[i], ex = bx - ax, ez = bz - az;
