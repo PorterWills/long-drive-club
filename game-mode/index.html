@@ -124,13 +124,16 @@
   #play:hover { background: var(--ldc-green-up); }
   #card { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(520px, calc(100% - 28px)); max-height: calc(100% - 60px); overflow: hidden auto; padding: 0 0 16px; z-index: 6; }
   #card .stripe { position: static; height: 8px; margin-bottom: 0; }
-  #card > .cardBtns { padding-top: 12px; padding-right: 60px; }
-  .hrow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 36px 44px 34px 56px; gap: 6px; align-items: center; width: 100%; padding: 7px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
-  .hrow span:nth-child(n+3) { text-align: right; font-feature-settings: "tnum" 1; }
-  .hrow.head { cursor: default; padding-top: 6px; padding-bottom: 6px; }
-  button.hrow:hover { background: var(--ldc-tarmac-up); }
-  .hrow.here { background: var(--ldc-green); box-shadow: inset 4px 0 0 var(--ldc-redline); }
-  #cardTotal { padding: 12px 16px 8px; color: var(--ldc-chalk); }
+  /* owner (v2): the course as a plain list of 18 holes, par and yards, each with its own Play button; Mood and Sound at the foot */
+  #card .cHead { padding: 18px 64px 14px 16px; border-bottom: 1px solid var(--hairline); } #card h2 { margin: 4px 0 6px; font-size: 22px; }
+  .hrow { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 8px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
+  .hrow .no { font-size: 20px; font-feature-settings: "tnum" 1; } .hrow .nm { display: grid; gap: 3px; min-width: 0; } .hrow .nm b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hrow .nm .eyebrow { color: var(--ldc-chalk-dim); font-feature-settings: "tnum" 1; }
+  .hrow .cta { min-width: 92px; padding: 9px 12px; text-align: center; background: var(--ldc-tarmac-up); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; }
+  .hrow.next .cta { background: var(--ldc-green); } button.hrow:hover { background: var(--ldc-tarmac-up); } button.hrow:hover .cta { background: var(--ldc-green-up); }
+  .hrow.here { background: var(--ldc-green); box-shadow: inset 4px 0 0 var(--ldc-redline); } .hrow.here .cta { background: none; border-color: transparent; color: var(--ldc-chalk-dim); }
+  #card .cFoot { display: flex; gap: 6px; padding: 14px 16px 0; } #card .cFoot button { flex: 1; background: var(--ldc-tarmac-up); }
+  #hole .ib.lbl { width: auto; display: flex; gap: 7px; padding: 0 10px; font: 600 11px var(--font); letter-spacing: .16em; text-transform: uppercase; } /* owner: Holes and Scorecard say what they are */
   /* the round's scorecard: printed card stock (Chalk) with Racing Green ink */
   #sc { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(960px, calc(100% - 20px)); max-height: calc(100% - 30px); overflow: hidden auto; z-index: 8; background: var(--ldc-chalk); color: var(--ldc-green); padding: 0 0 18px; }
   #sc .stripe { position: static; height: 8px; }
@@ -175,12 +178,8 @@
   .scBtns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px 0; }
   .scBtns button, .scBtns a, #scForm button { text-decoration: none; display: inline-block; background: var(--ldc-green); color: var(--ldc-chalk); border: 0; border-radius: 3px; padding: 12px 20px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
   .scBtns button:hover, .scBtns a:hover { background: var(--ldc-green-up); }
-  .hrow.pick { background: var(--ldc-green-up); box-shadow: inset 4px 0 0 var(--ldc-chalk); }
-  .hrow .go { grid-column: 3 / -1; text-align: right; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; }
   .cardBtns { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
-  #cardAsk { margin: 12px 16px 0; padding: 12px 0 0; border-top: 4px solid var(--ldc-redline); }
-  #cardAsk .cardBtns { padding: 10px 0 0; }
-  .cardBtns #askNo, .cardBtns #newRound, .cardBtns #lightBtn, .cardBtns #scBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
+  .cardBtns #lightBtn, .cardBtns #scBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
   button:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 2px; }
   @media (max-width: 520px) { .roundel { width: 38px; height: 38px; font-size: 11px; }
     #hole { left: 8px; right: 8px; flex-wrap: wrap; gap: 10px 12px; padding: 8px 10px; } #hole .hn { font-size: 34px; } #hole .name { font-size: 12px; } #hole .eyebrow { letter-spacing: .16em; }
@@ -210,7 +209,7 @@
   <div class="row2">
     <div class="cell wcell"><span id="windMph" class="num display">0</span><span class="eyebrow">mph</span><span id="wind">➤</span></div>
     <div id="aimRead" class="eyebrow cell">At pin aim</div>
-    <div class="ibs"><button id="holesBtn" class="ib" aria-label="Holes"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14" rx="1"/><path d="M3 8h14M3 12.5h14M8 3v14"/></svg></button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="scBtn" class="ib" aria-label="Scorecard"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 2.5h10v15H5z"/><path d="M8 6.5h4M8 10h4M8 13.5h4"/></svg></button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
+    <div class="ibs"><button id="holesBtn" class="ib lbl"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 17.5V2.5l9 3.5-9 3.5"/></svg>Holes</button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="scBtn" class="ib lbl">Scorecard</button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
   </div>
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Mood">
@@ -235,11 +234,9 @@
 <div id="card" class="panel" role="dialog" aria-label="Holes">
   <button id="cardClose" aria-label="Close">×</button>
   <div class="stripe"><i></i><i></i><i></i></div>
-  <div class="cardBtns"><button id="resume">Back to round</button><button id="newRound">New round</button><button id="lightBtn">Mood</button><button id="soundBtn">Sound on</button></div>
-  <div id="cardAsk" hidden><span id="askText"></span><div class="cardBtns"><button id="askYes">Yes</button><button id="askNo">Cancel</button></div></div>
-  <div id="cardTotal" class="eyebrow"></div>
-  <div class="hrow head eyebrow"><span>No</span><span>Hole</span><span>Par</span><span>Yd</span><span>SI</span><span>Score</span></div>
+  <div class="cHead"><div class="eyebrow">Long Drive Club</div><h2 class="display">The course</h2><div class="eyebrow" id="cardSum"></div></div>
   <div id="cardRows"></div>
+  <div class="cardBtns cFoot"><button id="lightBtn">Mood</button><button id="soundBtn">Sound on</button></div>
 </div>
 <div id="scrim"></div>
 <div id="sc" class="panel" role="dialog" aria-label="Scorecard">
@@ -1839,14 +1836,17 @@ function openScorecard() {
   $('done').style.display = 'none'; $('card').style.display = 'none'; $('sc').style.display = 'block'; $('scrim').style.display = 'block';
 }
 $('scClose').onclick = () => { $('sc').style.display = 'none'; $('scrim').style.display = 'none'; };
-$('scAgain').onclick = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
+$('scAgain').onclick = () => { // mid-round it's New round, and asks once on the button itself (confirm() is blocked in some embeds)
+  if (!roundDone() && ROUND.scores.length && !$('scAgain').dataset.sure) { $('scAgain').dataset.sure = 1; return void ($('scAgain').textContent = 'Clear the card? Tap again'); }
+  ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
 // leaderboard: the LDC Google Sheet, through the Apps Script web app in leaderboard.gs. Empty URL = leaderboard buttons hidden.
 const LB_URL = 'https://script.google.com/macros/s/AKfycbyIXTvA2Bjf4p9HkL1tlTkrfsMp8Cnx9lRWRt8Z7_SMdl8lhLhfQlbqlXBtKztoVt1Y/exec';
 const esc = t => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const scMsg = t => { $('scMsg').textContent = t; $('scMsg').hidden = !t; };
 function scButtons() {
   $('scSubmit').hidden = !LB_URL || !!ROUND.submitted || !roundDone();
-  $('scHome').hidden = $('scAgain').hidden = !roundDone(); $('scClose').hidden = roundDone(); // mid-round: look, then back to play
+  $('scHome').hidden = !roundDone(); $('scClose').hidden = roundDone(); // mid-round: look, then back to play
+  $('scAgain').hidden = !roundDone() && !ROUND.scores.length; delete $('scAgain').dataset.sure; $('scAgain').textContent = roundDone() ? 'Go round again' : 'New round';
   ['scAgain', 'scHome'].forEach(id => $(id).classList.toggle('alt', !$('scSubmit').hidden));
 }
 $('scSubmit').onclick = () => { $('scForm').hidden = false; $('scSubmit').hidden = true; scMsg(''); $('scName').focus(); };
@@ -1878,15 +1878,14 @@ function roundTotal() {
   return n ? `${sc} (${toPar(sc - par)}) after ${n}` : 'Not started';
 }
 function openCard() {
+  const yd = h => Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD);
   $('cardRows').innerHTML = HOLES.map((h, i) => {
-    const no = i + 1, sc = ROUND.scores[i], here = no === HOLE_NO;
-    return `<button class="hrow${here ? ' here' : ''}" data-hole="${no}"><span class="display">${no}</span><span>${h.name}</span>` +
-      `<span>${h.par}</span><span>${Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD)}</span><span>${h.si}</span>` +
-      `<span class="display">${sc ?? (no === roundHole() && !roundDone() ? '·' : '')}</span></button>`;
+    const no = i + 1, here = no === HOLE_NO, next = no === roundHole() && !roundDone();
+    return `<button class="hrow${here ? ' here' : ''}${next ? ' next' : ''}" data-hole="${no}"><span class="no display">${no}</span>` +
+      `<span class="nm"><b>${h.name}</b><span class="eyebrow">Par ${h.par} · ${yd(h)} yd</span></span>` +
+      `<span class="cta">${here ? 'Playing' : next ? 'Play' : 'Practise'}</span></button>`;
   }).join('');
-  $('cardTotal').textContent = `Round · ${roundTotal()}`;
-  $('resume').hidden = !PRACTICE || roundDone();
-  $('resume').textContent = `Back to round · Hole ${roundHole()}`;
+  $('cardSum').textContent = `${HOLES.length} holes · Par ${HOLES.reduce((a, h) => a + h.par, 0)} · ${HOLES.reduce((a, h) => a + yd(h), 0).toLocaleString('en-GB')} yd`;
   $('card').style.display = 'block';
 }
 $('holesBtn').onclick = openCard;
@@ -1951,28 +1950,13 @@ $('helpClose').addEventListener('click', firstMap); $('play').addEventListener('
 $('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
 try { if (sessionStorage.getItem('ldc.ambiance')) $('start').classList.add('open'); } catch {} // stay open across the relight reload
-$('cardClose').onclick = () => { $('card').style.display = 'none'; $('cardAsk').hidden = true; };
-// in-card confirm: browser confirm() is blocked in some embeds and silently answers no
-let askYes = null;
-const ask = (text, yes) => { $('askText').textContent = text; askYes = yes; $('cardAsk').hidden = false; };
-$('askYes').onclick = () => askYes();
-$('askNo').onclick = () => { $('cardAsk').hidden = true; };
-$('resume').onclick = () => go();
+$('cardClose').onclick = () => { $('card').style.display = 'none'; };
 $('scBtn').onclick = () => openScorecard();
-const newRound = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
-$('newRound').onclick = () => ROUND.scores.length ? ask('Start a new round? This clears your scorecard.', newRound) : newRound();
-$('cardRows').onclick = e => {
+$('cardRows').onclick = e => { // owner: one tap plays. The round's next hole plays the round; any other hole is practice
   const no = +e.target.closest('.hrow')?.dataset.hole;
   if (!no) return;
   if (no === HOLE_NO) return $('cardClose').onclick();
-  if (no === roundHole() && !roundDone()) return go();
-  // owner: tap a hole to select it, its numbers become a Practise button; tap again to go
-  const row = e.target.closest('.hrow');
-  if (row.classList.contains('pick')) return go(`?hole=${no}&practice`);
-  openCard(); // clears any earlier pick
-  const r = $('cardRows').children[no - 1]; r.classList.add('pick');
-  [...r.children].slice(2).forEach(c => c.remove());
-  r.insertAdjacentHTML('beforeend', '<span class="go">Practise ›</span>');
+  go(no === roundHole() && !roundDone() ? '' : `?hole=${no}&practice`);
 };
 addEventListener('keydown', e => {
   if ($('help').classList.contains('open')) { if (e.key === 'Escape') showHelp(false); return; }
