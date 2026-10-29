@@ -33,6 +33,7 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. Hole 3–5 aerial scales: 0
 - **Leaderboard:** after a full round, *Submit score* sends a name and score to the LDC Google Sheet through an Apps Script web app (`LB_URL` in `index.html`; the script, `leaderboard.gs`, isn't in this repo). The global 18-hole board sits beside the scorecard. An empty `LB_URL` hides the leaderboard buttons.
 
 ### Log
+- **29 Oct 2026 (session 5, controls and menus):** power bar redesigned as a rev counter (solid Redline, ticks, yardage-led readout, no text selection on drag); bottom livery stripe removed; *Ambiance* renamed *Mood*; Scorecard moved to its own top-bar button; Holes card closes with ×; stock yardage on the club button; on phones a lower ball, narrower controls, and wind/aim under the yardage. PRs #116–#121.
 - **29 Oct 2026 (session 4, website and polish):** moved the game from `/gamer/` to `/game-mode/` (`/gamer/` is now a redirect page that keeps `?hole` etc.), tab title *National Course*, and the LDC roundel links to the home page. Added the home page band (see the site README). Replaced the two top panels with **one translucent bar** (HUD v2). On phones the mini map hides behind a **Map** button. Wind is colour-coded, and holes 8 and 15 were made windier so red shows. The bars slide off during ball flight. The putt line is capped at 10 ft. *How to play* gained a close button. All the owner's calls are under *Decisions*.
 - **28 Oct 2026 (session 2):** holes 3–5 built from aerials. Added the Holes panel, the round scorecard and practice mode (owner's rules: play in order by default, practise any hole, practice never counts, leaving a round pauses it). Fixed the card's buttons doing nothing (`confirm()` blocked, unchanged `location.search` not reloading). Shaped every green and bunker: organic outlines, a bunker floor, face and lip with shading and rake lines, two seeded mounds per green, a cross-mown pattern and a collar, and a half-metre terrain grid. All holes pass `?test`, and the page loads in about 1.1 s. Only hole 4's green and bunkers have been looked at up close; the others still need a look in play.
 
@@ -126,11 +127,16 @@ Lessons from hole 2:
 - **Ball and cup:** the ball eases from oversized at 40 m from the pin to **true size** at 20 m, and the cup is drawn true size (4.25 in, 4 in deep). Owner's call: what you see is exactly what drops. Don't draw either bigger again, or balls will visibly cross the hole and not drop. Green arrows are half size on a 3.4 m grid. The flagstick is a real 3/4 in thick, and there's no ring marker under the ball.
 
 **HUD (v2, 29 Oct 2026; phone and desktop)**
-- **One bar across the top:** LDC roundel (links to `/`), big hole number, hole name (always shown), "Par N · N strokes", yards (+ "to pin" on desktop), wind, aim, then icon buttons: Holes (scorecard), Info (how to play), and Map on phones only. Phones wrap it to two rows. The owner wants boxes consistent in height and shape.
+- **One bar across the top:** LDC roundel (links to `/`), big hole number, hole name (always shown), "Par N · N strokes", yards (+ "to pin" on desktop), wind, aim, then icon buttons: Holes, Info (how to play), Scorecard, and Map on phones only. Phones wrap it to two rows: the buttons go left on the second row so wind and aim sit right, under the yardage (owner: desktop already has them together). The owner wants boxes consistent in height and shape.
 - **Practice** is a Redline strip along the top edge of the bar, not the word.
 - **Side card** under the bar on the right: shot stats (after a shot) and, on desktop, the mini map. On phones it only appears when there are stats.
 - **Map on phones:** hidden behind the Map button, opens nearly full screen. It opens by itself on the first hole of each visit (`sessionStorage` `ldc.map`), and closes on Swing.
 - **Ball flight:** the top bar and side card slide up, and the club, Swing and power controls slide down, both fading out (0.45 s eased). They return as the ball settles (`body.flying`). Reduced motion gets a fade.
+- **Holes card:** × top right (no Close button); *Mood* (was *Ambiance*) opens the dawn/day/dusk picker. The scorecard has its own top-bar button, not a Holes card button.
+- **Club button:** shows the club's **stock yardage** (full power from the fairway, fixed per club; none for the putter), e.g. *DRIVER 286 YD*. The bag grid's yardages still follow the current lie.
+- **Power bar (v2, rev counter):** one solid Redline fill with a Chalk needle at its edge and tick marks (major every 10%, minor every 2%) on a Tarmac track. Readout: **yardage large on the right** (feet for putts), percentage small on the left (owner: yardage matters more). Text can't be selected while dragging.
+- **Phones:** the controls have 32px either side (same height), and the picture is shifted (`camera.setViewOffset`, 12% of the height) so the ball sits lower with grass between it and the controls. Aiming is unaffected.
+- **Parked (owner, 29 Oct):** joining yards, wind and aim into one strip, and moving Map under the logo on phones. Both need a desktop design too.
 - **How to play:** × in the corner, Esc closes it, and the button reads *Back to game* when opened from Info (*Play* on the first visit).
 
 **Camera**
@@ -140,7 +146,7 @@ Lessons from hole 2:
 **Brand (LDC Design System)**
 - **Colours:** Racing Green `#0E2A1C`, Tarmac `#1B1916`, Chalk `#EDE9DF`, Redline `#C1121F` (about 3%). Never pure black or pure white.
 - **Type:** Archivo Expanded 800 in caps for names and numbers, 11px tracked eyebrows, Source Serif 4 italic for the club's voice only. Minimum text size 11px.
-- **Surfaces and devices:** Tarmac panels with square corners (3px on controls), no shadows or gradients. **Exception (owner, 29 Oct):** the top bar and side card are 82% Tarmac with a 10px backdrop blur so the sky shows through. Livery stripes top and bottom, the LDC roundel, a Redline stitch on the power bar.
+- **Surfaces and devices:** Tarmac panels with square corners (3px on controls), no shadows or gradients. **Exception (owner, 29 Oct):** the top bar and side card are 82% Tarmac with a 10px backdrop blur so the sky shows through. A livery stripe at the **top only** (owner removed the bottom one, 29 Oct), the LDC roundel, a solid Redline power bar.
 - **Copy:** sentence case, no exclamation marks, a dry line on the result card.
 - **Cars:** GTA-style **look-alikes, never real brands**. On-palette liveries, with one Redline car.
 
