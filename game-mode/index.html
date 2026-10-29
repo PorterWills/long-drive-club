@@ -1505,11 +1505,12 @@ function refresh() {
     : `${Math.round(state.power * 100)}% · ${Math.round(carryAt(state.club, state.power, lie))} YD`;
   $('swing').disabled = state.phase !== 'aim';
   // full shots: straight line, ignores wind (that's the player's job).
-  // putts: the real predicted roll, curving with the slope, shown for the first 30% so the finish is still a read.
+  // putts: the real predicted roll, curving with the slope, shown for the first 30% (10 ft at most) so the finish is still a read.
   let pts = [];
   if (c.putter) {
     const r = simulate(b, strike(c, state.power, state.aim, lie, () => .5), v(0, 0, 0), { rolling: true });
     pts = r.pts.slice(0, Math.max(2, Math.floor(r.pts.length * .3))).filter((_, k) => k % 4 === 0).map(p => new THREE.Vector3(p.x, p.y + .03, p.z));
+    for (let k = 1, run = 0; k < pts.length; k++) if ((run += pts[k].distanceTo(pts[k - 1])) > 10 * 0.3048) { pts.length = Math.max(2, k); break; } // owner: never more than 10 ft, so long putts are a read
   } else {
     const reach = Math.min(14, carryAt(state.club, state.power, lie) * YD); // short pointer like Golf Slate, not the full carry
     for (let s = 0; s <= reach; s += 1) { const x = b.x + Math.sin(state.aim) * s, z = b.z + Math.cos(state.aim) * s; pts.push(new THREE.Vector3(x, heightAt(x, z) + .08, z)); }
