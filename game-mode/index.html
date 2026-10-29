@@ -83,7 +83,7 @@
   #powerFill { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; background: var(--ldc-redline); box-shadow: inset -3px 0 0 var(--ldc-chalk); } /* owner (V2): one solid redline like a rev counter; the chalk edge is the needle */
   #power::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(244,240,230,.35) calc(10% - 1px) 10%) bottom / 100% 9px no-repeat, repeating-linear-gradient(90deg, transparent 0 calc(2% - 1px), rgba(244,240,230,.18) calc(2% - 1px) 2%) bottom / 100% 5px no-repeat; } /* rev-counter ticks: major every 10%, minor every 2% */
   #powerText { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 16px; z-index: 1; }
-  #powerText b { font-size: 24px; font-weight: 800; font-feature-settings: "tnum" 1; } #powerText span { font-feature-settings: "tnum" 1; }
+  #powerText b { font: inherit; font-feature-settings: "tnum" 1; } #powerText span { font-size: 24px; font-weight: 800; font-feature-settings: "tnum" 1; } /* owner: yardage matters more than percentage */
   #hint { text-align: center; margin-top: 8px; color: var(--ldc-chalk); text-shadow: none; }
   #toast { position: fixed; top: 36%; left: 50%; transform: translate(-50%,-50%); background: var(--ldc-tarmac); border: 1px solid var(--hairline); border-top: 4px solid var(--ldc-redline);
     padding: 14px 22px; font-size: 22px; pointer-events: none; opacity: 0; transition: opacity .3s ease-out; white-space: nowrap; }
