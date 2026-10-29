@@ -74,6 +74,7 @@
   #bag button { display: grid; justify-items: center; gap: 2px; background: var(--ldc-tarmac-up); color: var(--ldc-chalk); border: 1px solid var(--hairline); border-radius: 3px; padding: 8px 2px; font: 600 11px var(--font); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; position: relative; }
   #bag button:hover { border-color: var(--hairline-strong); } #bag button svg { width: 40px; height: 40px; }
   #bag button.on { background: var(--ldc-green); border-color: var(--ldc-chalk); }
+  #club .stock { color: var(--ldc-chalk-dim); white-space: nowrap; font-feature-settings: "tnum" 1; } /* owner: the club's stock yardage, full power from the fairway */
   #bag button .yd { color: var(--ldc-chalk-dim); font-feature-settings: "tnum" 1; }
   #bag button.on::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: var(--ldc-redline); } /* the club in hand */
   #swing { width: 140px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
@@ -185,6 +186,7 @@
     #hole { left: 8px; right: 8px; flex-wrap: wrap; gap: 10px 12px; padding: 8px 10px; } #hole .hn { font-size: 34px; } #hole .name { font-size: 12px; } #hole .eyebrow { letter-spacing: .16em; }
     #hole .num { font-size: 24px; } #hole .cell { padding-left: 0; border-left: 0; } #hole .toPin { display: none; }
     #hole .row2 { flex-basis: 100%; gap: 12px; padding-top: 8px; border-top: 1px solid var(--hairline); } #hole .ibs { margin-left: auto; padding-left: 0; border-left: 0; }
+    #controls { width: calc(100% - 64px); } /* owner: more room either side on phones */
     #side { right: 8px; width: auto; max-width: calc(100% - 16px); padding: 8px 10px; } #side #stats { margin: 0; padding: 0; border-bottom: 0; }
  }
   @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
@@ -1494,7 +1496,7 @@ function autoAim() {
 const chipPower = (ci, yd, lie) => { let lo = 0.01, hi = 1; for (let n = 0; n < 20; n++) { const m = (lo + hi) / 2; carryAt(ci, m, lie) < yd ? lo = m : hi = m; } return hi; };
 if (location.search.includes('test')) { window.__test.push(['short chips have room on the bar', chipPower(6, 10, 'fairway') > .1 && chipPower(6, 25, 'fairway') - chipPower(6, 10, 'fairway') > .15, `SW 10 yd ${Math.round(chipPower(6, 10, 'fairway') * 100)}%, 25 yd ${Math.round(chipPower(6, 25, 'fairway') * 100)}%, min carry ${carryAt(6, .01, 'fairway').toFixed(1)} yd`]); console.table(window.__test); document.title = window.__test.every(o => o[1]) ? 'TEST PASS' : 'TEST FAIL'; } // runs here: chipPower and carryAt are defined after the main self-check
 function setClub(i, keepAim) { // keepAim: the player changed club mid-shot, so leave their aim alone
-  state.club = i; $('club').innerHTML = `${clubIcon(CLUBS[i])}<span>${CLUBS[i].name}</span><span class="more" aria-hidden="true">▴</span>`; $('club').setAttribute('aria-label', `Club: ${CLUBS[i].name}. Change club`);
+  state.club = i; $('club').innerHTML = `${clubIcon(CLUBS[i])}<span>${CLUBS[i].name}</span>${CLUBS[i].putter ? '' : `<span class="stock">${Math.round(carryAt(i, 1, 'fairway'))} yd</span>`}<span class="more" aria-hidden="true">▴</span>`; $('club').setAttribute('aria-label', `Club: ${CLUBS[i].name}. Change club`);
   state.autoAim = autoAim(); if (!keepAim) state.aim = state.autoAim;
   // owner's rules: full shots start at 100%, but within 50 yd of the pin at the power that carries to it; the putter starts at the flat distance to the pin (slope is the player's to read)
   state.power = CLUBS[i].putter ? clamp(Math.sqrt(2 * G * SURF.green.roll * flat(state.ball, PIN)) / CLUBS[i].speed, 0.01, 1) : flat(state.ball, PIN) / YD <= 50 ? chipPower(i, flat(state.ball, PIN) / YD, materialAt(state.ball.x, state.ball.z)) : 1;
@@ -1943,6 +1945,8 @@ function frame(now) {
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight;
   // portrait phones: widen the view (up to 80°) so it isn't a narrow slit; landscape/desktop stay at the signed-off 55°
   camera.fov = Math.max(55, Math.min(80, 2 * Math.atan(Math.tan(Math.PI / 6) / camera.aspect) * 180 / Math.PI));
+  // owner: on phones the ball sits lower, with grass between it and the controls (shifts the picture, not the camera)
+  if (innerWidth <= 520) camera.setViewOffset(innerWidth, innerHeight, 0, -innerHeight * .12, innerWidth, innerHeight); else camera.clearViewOffset();
   camera.updateProjectionMatrix(); }
 addEventListener('resize', resize); resize();
 reset();
