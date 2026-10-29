@@ -37,7 +37,7 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. Hole 3–5 aerial scales: 0
 - **28 Oct 2026 (session 2):** holes 3–5 built from aerials. Added the Holes panel, the round scorecard and practice mode (owner's rules: play in order by default, practise any hole, practice never counts, leaving a round pauses it). Fixed the card's buttons doing nothing (`confirm()` blocked, unchanged `location.search` not reloading). Shaped every green and bunker: organic outlines, a bunker floor, face and lip with shading and rake lines, two seeded mounds per green, a cross-mown pattern and a collar, and a half-metre terrain grid. All holes pass `?test`, and the page loads in about 1.1 s. Only hole 4's green and bunkers have been looked at up close; the others still need a look in play.
 
 - Game: [index.html](index.html), one self-contained file (Three.js 0.160 from jsDelivr, fonts from Google Fonts)
-- Original research and plan: [../golf-car-game-blueprint.md](../golf-car-game-blueprint.md). Where it disagrees with this README, **this README wins**.
+- Original research and plan: `golf-car-game-blueprint.md`, kept in the owner's local project folder (not in this repo). Where it disagrees with this README, **this README wins**.
 - Brand source: the "LDC Design System" artifact, https://claude.ai/artifact/P2yhCjwbg5yavpyZ4fdHtL
 
 ---
@@ -55,7 +55,7 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. Hole 3–5 aerial scales: 0
 ## How the file is organised
 | Section in `index.html` | What it holds |
 |---|---|
-| `// vectors` | maths helpers, `rng(seed)`, `dailyWind()` |
+| `// vectors` | maths helpers, `rng(seed)` |
 | `// hole (our own format)` | `HOLE` (the course data), `materialAt`, `heightAt`, `TREES` |
 | `// physics` | ball, surface and lie tables, `CLUBS`, `accel`/`rk4`, collisions (cars and tree trunks), `strike`, `simulate` |
 | `// self-check` | the `?test` checks |
@@ -67,13 +67,13 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. Hole 3–5 aerial scales: 0
 ---
 
 ## Building a new hole
-The game holds a `HOLES` array; `?hole=N` picks one (default 1). To add a hole, append an object. Hole 2 is Red Catbranch (par 5, 585 yd, SI 17). The terrain mesh, `outOfBounds()` and tree lines now size themselves from the hole data. For the start screen and scorecard, see *Next steps*.
+The game holds a `HOLES` array; `?hole=N` picks one (default 1). To add a hole, append an object. All 18 are in place (see the table at the top). The terrain mesh, `outOfBounds()` and tree lines now size themselves from the hole data. For the start screen and scorecard, see *Next steps*.
 
 ```js
 const HOLE = {
   name: 'Tee Tree', par: 4,
   tee: [0, 0], pin: [-55, 403],          // [x, z] metres; +x = player's LEFT, z = tee → green
-  wind: dailyWind(),                      // keep: daily, the same for every player
+  wind: { mph: 6, toward_deg: 200 },      // fixed per hole; 19+ mph shows red in the HUD
   fairway: { half_width: 15, line: [[0,0],[112,-8],[197,2],[265,-8],[333,-29],[408,-56]] }, // [z, x] centreline, smoothly joined
   elevation: [[0,3],[90,1.2],[200,-1],[280,0.5],[345,4],[400,6.5],[460,7.5]],             // [z, height m]
   green: { at: [-56, 405], r: 15 },
