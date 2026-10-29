@@ -75,7 +75,17 @@
   #done button, #water button { margin-top: 16px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 26px; border-radius: 3px; font: 600 14px var(--font); cursor: pointer; }
   #done button:hover, #water button:hover { background: var(--ldc-green-up); }
   #holesBtn, .cardBtns button { background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 8px 12px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
-  #holesBtn { margin-top: 8px; padding: 6px 10px; }
+  #holesBtn, #helpBtn { margin-top: 8px; padding: 6px 10px; }
+  #helpBtn { background: transparent; color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: italic 400 15px 'Source Serif 4', serif; line-height: 1; width: 28px; cursor: pointer; } #helpBtn:hover { background: var(--ldc-green-up); }
+  #mapMini { display: block; height: 140px; margin: 10px 0 0 auto; cursor: zoom-in; } /* owner: a yardage-book view of the hole, tap for the big one */
+  #mapPop { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 8; padding: 12px; text-align: center; } #mapPop.open { display: block; }
+  #mapBig { display: block; height: calc(100vh - 110px); max-width: calc(100vw - 50px); }
+  #mapClose { margin-top: 10px; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; padding: 10px 24px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
+  #help { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(420px, calc(100% - 28px)); max-height: calc(100% - 30px); overflow: auto; padding: 0 0 20px; z-index: 8; }
+  #help.open { display: block; } #help .stripe { position: static; height: 8px; margin-bottom: 18px; } #help h2 { margin: 0 20px 10px; font-size: 22px; }
+  #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
+  #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  #helpClose:hover { background: var(--ldc-green-up); }
   #holesBtn:hover, .cardBtns button:hover { background: var(--ldc-green-up); }
   #start { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(460px, calc(100% - 28px)); padding: 0 0 20px; z-index: 7; text-align: center; }
   #start.open { display: block; } #start .stripe { position: static; height: 8px; margin-bottom: 20px; }
@@ -98,7 +108,7 @@
   .hrow.here { background: var(--ldc-green); box-shadow: inset 4px 0 0 var(--ldc-redline); }
   #cardTotal { padding: 12px 16px 8px; color: var(--ldc-chalk); }
   /* the round's scorecard: printed card stock (Chalk) with Racing Green ink */
-  #sc { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(560px, calc(100% - 20px)); max-height: calc(100% - 30px); overflow: hidden auto; z-index: 8; background: var(--ldc-chalk); color: var(--ldc-green); padding: 0 0 18px; }
+  #sc { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(960px, calc(100% - 20px)); max-height: calc(100% - 30px); overflow: hidden auto; z-index: 8; background: var(--ldc-chalk); color: var(--ldc-green); padding: 0 0 18px; }
   #sc .stripe { position: static; height: 8px; }
   #scrim { display: none; position: fixed; inset: 0; z-index: 7; background: rgba(27,25,22,.72); } /* dims the course so the card has the stage */
   .scHead { display: flex; gap: 14px; align-items: center; padding: 16px 16px 10px; }
@@ -126,8 +136,9 @@
     .scWrap { padding: 0 10px; } #sc table { font-size: 10px; } #sc th, #sc td { padding: 4px 0; min-width: 0; }
     #sc th:first-child, #sc td:first-child { min-width: 0; padding-left: 3px; font-size: 9px; letter-spacing: .04em; }
     #sc tr.me td { font-size: 12px; } .m { min-width: 16px; height: 16px; font-size: 10px; } }
-  #sc.board .scWrap, #sc.board .scTotal, #sc.board .scKey { display: none; }
-  #scBoard { display: none; padding: 0 16px; } #sc.board #scBoard { display: block; }
+  .scCols { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); } /* owner: the leaderboard sits beside the card, no click to see it */
+  @media (max-width: 860px) { .scCols { grid-template-columns: minmax(0, 1fr); } }
+  #scBoard { padding: 16px 16px 0; } #scBoard:empty { display: none; }
   #scBoard ol { list-style: none; margin: 0; padding: 0; } #scBoard li { display: grid; grid-template-columns: 30px 1fr 44px 44px; gap: 6px; padding: 8px 4px; border-bottom: 1px solid rgba(14,42,28,.25); font: 400 14px var(--font); }
   #scBoard li b { font: 800 14px Archivo, var(--font); text-align: right; } #scBoard li span:last-child { text-align: right; }
   #scBoard li.me { background: var(--ldc-green); color: var(--ldc-chalk); }
@@ -135,10 +146,11 @@
   #scForm input { font: 400 16px var(--font); padding: 10px; border: 1px solid var(--ldc-green); border-radius: 3px; background: #F6F3EC; color: var(--ldc-tarmac); }
   #scForm button { justify-self: start; margin-top: 6px; }
   #scMsg { margin: 10px 16px 0; font-size: 17px; color: var(--ldc-green); }
-  #sc button.alt { background: transparent; color: var(--ldc-green); box-shadow: inset 0 0 0 1px var(--ldc-green); }
+  .scBtns [hidden] { display: none; }
+  #sc .alt { background: transparent; color: var(--ldc-green); box-shadow: inset 0 0 0 1px var(--ldc-green); }
   .scBtns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px 0; }
-  .scBtns button, #scForm button { background: var(--ldc-green); color: var(--ldc-chalk); border: 0; border-radius: 3px; padding: 12px 20px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
-  .scBtns button:hover { background: var(--ldc-green-up); }
+  .scBtns button, .scBtns a, #scForm button { text-decoration: none; display: inline-block; background: var(--ldc-green); color: var(--ldc-chalk); border: 0; border-radius: 3px; padding: 12px 20px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
+  .scBtns button:hover, .scBtns a:hover { background: var(--ldc-green-up); }
   .hrow.pick { background: var(--ldc-green-up); box-shadow: inset 4px 0 0 var(--ldc-chalk); }
   .hrow .go { grid-column: 3 / -1; text-align: right; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; }
   .cardBtns { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
@@ -158,7 +170,7 @@
 <div class="stripe" style="bottom:0"><i></i><i></i><i></i></div>
 <div id="hole" class="panel">
   <div class="roundel display">LDC</div>
-  <div><div class="name display">Long Drive Club</div><div class="eyebrow"><span id="holeLabel"></span> · <span id="strokes">0</span></div><button id="holesBtn">Holes</button></div>
+  <div><div class="name display">Long Drive Club</div><div class="eyebrow"><span id="holeLabel"></span> · <span id="strokes">0</span></div><button id="holesBtn">Holes</button> <button id="helpBtn" aria-label="How to play">i</button></div>
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Ambiance">
   <div class="stripe"><i></i><i></i><i></i></div>
@@ -167,6 +179,19 @@
   <div class="eyebrow">Choose your ambiance</div>
   <div id="skies"></div>
   <button id="play">Done</button>
+</div>
+<div id="help" class="panel" role="dialog" aria-label="How to play">
+  <div class="stripe"><i></i><i></i><i></i></div>
+  <h2 class="display">How to play</h2>
+  <dl>
+    <dt class="eyebrow">Aim</dt><dd>Drag across the course, or use the left and right arrow keys.</dd>
+    <dt class="eyebrow">Club</dt><dd>You start with a club for the distance. Tap it to change.</dd>
+    <dt class="eyebrow">Power</dt><dd>Drag along the bar. It shows how far the ball will carry.</dd>
+    <dt class="eyebrow">Swing</dt><dd>Tap Swing, or press Space.</dd>
+    <dt class="eyebrow">Read</dt><dd>Wind sits top right. On the green, the arrows run downhill.</dd>
+    <dt class="eyebrow">Holes</dt><dd>Your scores, the scorecard, practice and sound.</dd>
+  </dl>
+  <button id="helpClose">Play</button>
 </div>
 <div id="card" class="panel" role="dialog" aria-label="Holes">
   <div class="stripe"><i></i><i></i><i></i></div>
@@ -180,25 +205,28 @@
 <div id="sc" class="panel" role="dialog" aria-label="Scorecard">
   <div class="stripe"><i></i><i></i><i></i></div>
   <div class="scHead"><div class="roundel display">LDC</div><div><div class="eyebrow">Long Drive Club</div><h2 class="display">Scorecard</h2><div class="eyebrow" id="scDate"></div></div></div>
+  <div class="scCols"><div>
   <div class="scWrap"><table id="scFront"></table></div>
   <div class="scWrap"><table id="scBack"></table></div>
   <div class="scTotal"><span class="display" id="scScore"></span><span class="voice" id="scPar"></span></div>
   <div class="scKey eyebrow"><i class="m b"></i>Birdie <i class="m e"></i>Eagle <i class="m o"></i>Bogey <i class="m d"></i>Double +</div>
-  <div id="scBoard"></div>
+  </div><div id="scBoard"></div></div>
   <form id="scForm" hidden>
     <label class="eyebrow" for="scName">Name on the board</label><input id="scName" maxlength="24" autocomplete="nickname" required>
-    <label class="eyebrow" for="scEmail">Email (optional, never shown)</label><input id="scEmail" type="email" maxlength="120" autocomplete="email">
+    <label class="eyebrow" for="scEmail">Email</label><input id="scEmail" type="email" maxlength="120" autocomplete="email">
     <button id="scSend">Hand in card</button>
   </form>
   <p id="scMsg" class="voice" hidden></p>
-  <div class="scBtns"><button id="scSubmit">Submit score</button><button id="scView">View leaderboard</button><button id="scSave">Save image</button><button id="scAgain">Go round again</button><button id="scClose">Back to round</button></div>
+  <div class="scBtns"><button id="scSubmit">Submit score</button><button id="scAgain">Go round again</button><a id="scHome" href="https://longdriveclub.com/">Back to Long Drive Club</a><button id="scClose">Back to round</button></div>
 </div>
 <div id="info" class="panel">
   <div><span id="dist" class="num display">0</span> <span class="eyebrow" id="distUnit">yd to pin</span></div>
   <div class="row2"><span id="windMph" class="num display">0</span><span class="eyebrow">mph</span><span id="wind">➤</span></div>
   <div id="aimRead" class="eyebrow">At pin aim</div>
   <div id="stats"></div>
+  <canvas id="mapMini" role="button" tabindex="0" aria-label="Course map"></canvas>
 </div>
+<div id="mapPop" class="panel" role="dialog" aria-label="Course map"><canvas id="mapBig"></canvas><button id="mapClose">Close</button></div>
 <div id="toast" class="display"></div>
 <div id="done" class="panel">
   <div class="stripe"><i></i><i></i><i></i></div>
@@ -1403,6 +1431,7 @@ function setClub(i, keepAim) { // keepAim: the player changed club mid-shot, so 
   refresh();
 }
 function refresh() {
+  drawMap();
   const b = state.ball, lie = materialAt(b.x, b.z), c = CLUBS[state.club];
   $('strokes').textContent = `${state.strokes} stroke${state.strokes === 1 ? '' : 's'}`;
   const d = flat(b, PIN);
@@ -1633,20 +1662,10 @@ function openScorecard() {
   $('scScore').textContent = total;
   $('scPar').textContent = d === 0 ? 'Level par.' : `${Math.abs(d)} ${d < 0 ? 'under' : 'over'} par.`;
   $('scDate').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  $('sc').classList.remove('board'); scButtons();
+  scButtons(); if (LB_URL) showBoard();
   $('done').style.display = 'none'; $('card').style.display = 'none'; $('sc').style.display = 'block'; $('scrim').style.display = 'block';
 }
 $('scClose').onclick = () => { $('sc').style.display = 'none'; $('scrim').style.display = 'none'; };
-$('scSave').onclick = async () => { // the card as a PNG; html-to-image loads only when asked
-  $('scSave').disabled = true;
-  try {
-    const { toPng } = await import('https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/+esm');
-    const sc = $('sc'), skip = el => !(el.id && ['scBoard', 'scForm', 'scMsg'].includes(el.id) || el.classList?.contains('scBtns'));
-    const url = await toPng(sc, { pixelRatio: 2, backgroundColor: '#EDE9DF', filter: skip, style: { position: 'static', transform: 'none', maxHeight: 'none', overflow: 'visible', margin: '0' }, height: sc.scrollHeight - sc.querySelector('.scBtns').offsetHeight - 10 }); // the whole card, not the scrolled view
-    const a = document.createElement('a'); a.href = url; a.download = `ldc-scorecard-${new Date().toISOString().slice(0, 10)}.png`; a.click();
-  } catch { scMsg('The image wouldn\'t save. Take a screenshot instead.'); }
-  $('scSave').disabled = false;
-};
 $('scAgain').onclick = () => { ROUND.scores = []; delete ROUND.submitted; saveRound(); go(); };
 // leaderboard: the LDC Google Sheet, through the Apps Script web app in leaderboard.gs. Empty URL = leaderboard buttons hidden.
 const LB_URL = 'https://script.google.com/macros/s/AKfycbyIXTvA2Bjf4p9HkL1tlTkrfsMp8Cnx9lRWRt8Z7_SMdl8lhLhfQlbqlXBtKztoVt1Y/exec';
@@ -1654,10 +1673,8 @@ const esc = t => String(t).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const scMsg = t => { $('scMsg').textContent = t; $('scMsg').hidden = !t; };
 function scButtons() {
   $('scSubmit').hidden = !LB_URL || !!ROUND.submitted || !roundDone();
-  $('scSave').hidden = $('scAgain').hidden = !roundDone(); $('scClose').hidden = roundDone(); // mid-round: look, then back to play
-  $('scView').hidden = !LB_URL;
-  $('scView').textContent = $('sc').classList.contains('board') ? 'View scorecard' : 'View leaderboard';
-  ['scView', 'scAgain'].forEach(id => $(id).classList.toggle('alt', !$('scSubmit').hidden));
+  $('scHome').hidden = $('scAgain').hidden = !roundDone(); $('scClose').hidden = roundDone(); // mid-round: look, then back to play
+  ['scAgain', 'scHome'].forEach(id => $(id).classList.toggle('alt', !$('scSubmit').hidden));
 }
 $('scSubmit').onclick = () => { $('scForm').hidden = false; $('scSubmit').hidden = true; scMsg(''); $('scName').focus(); };
 $('scForm').onsubmit = async e => {
@@ -1672,7 +1689,6 @@ $('scForm').onsubmit = async e => {
   $('scSend').disabled = false;
 };
 async function showBoard() {
-  $('sc').classList.add('board'); scButtons();
   $('scBoard').innerHTML = '<p class="eyebrow">Loading the board…</p>';
   try {
     const r = await (await fetch(LB_URL)).json();
@@ -1681,7 +1697,6 @@ async function showBoard() {
       : '<li><span></span><span>No cards handed in yet.</span></li>') + '</ol>';
   } catch { $('scBoard').innerHTML = '<p class="voice">The board won\'t load right now.</p>'; }
 }
-$('scView').onclick = () => { if ($('sc').classList.contains('board')) { $('sc').classList.remove('board'); scButtons(); } else showBoard(); };
 if (new URLSearchParams(location.search).has('scorecard')) openScorecard(); // preview the card
 // holes panel: the card, round scores, practice any hole
 const toPar = n => n === 0 ? 'E' : (n > 0 ? `+${n}` : `${n}`);
@@ -1707,6 +1722,46 @@ const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 $('skies').innerHTML = Object.entries(SKIES).map(([k, c]) => `<button data-sky="${k}" class="${k === LIGHT.name ? 'on' : ''}" aria-pressed="${k === LIGHT.name}">`
   + `<span class="sw" aria-hidden="true"><i style="background:${c.zenith}"></i><i style="background:${c.mid}"></i><i style="background:${c.horizon}"></i></span>${k}</button>`).join('');
 $('skies').onclick = e => { const k = e.target.closest('button')?.dataset.sky; if (k && k !== LIGHT.name) { store(SKY_KEY, k); try { sessionStorage.setItem('ldc.ambiance', '1'); } catch {} const u = new URL(location.href); u.searchParams.delete('sky'); location.replace(u); } }; // drop a ?sky preview so the pick wins
+// course map: the hole drawn top-down from the same ground the ball plays on, pin and ball marked, rings every 50 yd to the pin
+function drawMap() {
+  const b = drawMap.base ??= (() => {
+    const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]), M = 2;
+    const x0 = Math.min(...xs) - 50, x1 = Math.max(...xs) + 50, z0 = HOLE.tee[1] - 20, z1 = GZ + 30;
+    const c = document.createElement('canvas'); c.width = Math.ceil((x1 - x0) / M); c.height = Math.ceil((z1 - z0) / M);
+    const g = c.getContext('2d'), img = g.createImageData(c.width, c.height), col = new THREE.Color();
+    for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) { // +x is the player's left, so the map runs right to left
+      const x = x1 - (i + .5) * M, z = z1 - (j + .5) * M, k = (j * c.width + i) * 4;
+      col.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[materialAt(x, z)]);
+      img.data[k] = col.r * 255; img.data[k + 1] = col.g * 255; img.data[k + 2] = col.b * 255; img.data[k + 3] = 255;
+    }
+    g.putImageData(img, 0, 0); g.fillStyle = '#1f3a24';
+    for (const t of TREES) { g.beginPath(); g.arc((x1 - t.x) / M, (z1 - t.z) / M, 2.4 * t.s / M, 0, 6.283); g.fill(); }
+    return { c, x1, z1, M };
+  })();
+  const big = $('mapPop').classList.contains('open'), dpr = devicePixelRatio || 1;
+  for (const cv of big ? [$('mapMini'), $('mapBig')] : [$('mapMini')]) {
+    const h = cv.clientHeight, w = h * b.c.width / b.c.height; cv.style.width = w + 'px'; cv.width = w * dpr; cv.height = h * dpr;
+    const g = cv.getContext('2d'), k = cv.height / b.c.height / b.M, P = (x, z) => [(b.x1 - x) * k, (b.z1 - z) * k], [px, pz] = P(PIN.x, PIN.z), [bx, bz] = P(state.ball.x, state.ball.z);
+    g.drawImage(b.c, 0, 0, cv.width, cv.height);
+    const lab = cv === $('mapBig'), fs = 11 * dpr; g.font = `800 ${fs}px Archivo`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (let yd = 50; yd * YD < flat(state.ball, PIN) + 60; yd += 50) {
+      g.beginPath(); g.arc(px, pz, yd * YD * k, 0, 6.283); g.strokeStyle = 'rgba(237,233,223,.45)'; g.lineWidth = Math.max(1, dpr * (yd % 100 ? .6 : 1.2)); g.stroke();
+      if (!lab || yd % 100 || Math.abs(yd * YD - flat(state.ball, PIN)) < 15) continue; // labels every 100 yd, where the ring crosses the fairway's centreline
+      let z = PIN.z; while (z > HOLE.tee[1] && Math.hypot(centreX(z) - PIN.x, z - PIN.z) < yd * YD) z--;
+      const [lx, lz] = P(centreX(z), z); g.fillStyle = '#1B1916'; g.fillRect(lx - 2.2 * fs, lz - .8 * fs, 4.4 * fs, 1.6 * fs); g.fillStyle = '#EDE9DF'; g.fillText(`${yd} YD`, lx, lz);
+    }
+    g.beginPath(); g.moveTo(bx, bz); g.lineTo(px, pz); g.strokeStyle = '#EDE9DF'; g.lineWidth = dpr; g.setLineDash([3 * dpr, 3 * dpr]); g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#C1121F'; g.beginPath(); g.arc(px, pz, 3.5 * dpr, 0, 6.283); g.fill();
+    g.fillStyle = '#EDE9DF'; g.beginPath(); g.arc(bx, bz, 3 * dpr, 0, 6.283); g.fill();
+  }
+}
+const showMap = on => { $('mapPop').classList.toggle('open', on); $('scrim').style.display = on ? 'block' : 'none'; if (on) drawMap(); };
+$('mapMini').onclick = () => showMap(true); $('mapMini').onkeydown = e => (e.key === 'Enter' || e.key === ' ') && showMap(true);
+$('mapClose').onclick = () => showMap(false);
+// owner: simple instructions for a first-time player, and behind the i button any time after
+const showHelp = on => { $('help').classList.toggle('open', on); if (!on) try { localStorage.setItem('ldc.help', '1'); } catch {} };
+$('helpBtn').onclick = () => showHelp(true); $('helpClose').onclick = () => showHelp(false);
+try { if (!localStorage.getItem('ldc.help')) showHelp(true); } catch { showHelp(true); }
 $('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
 try { if (sessionStorage.getItem('ldc.ambiance')) $('start').classList.add('open'); } catch {} // stay open across the relight reload
@@ -1734,7 +1789,8 @@ $('cardRows').onclick = e => {
   r.insertAdjacentHTML('beforeend', '<span class="go">Practise ›</span>');
 };
 addEventListener('keydown', e => {
-  if ($('start').classList.contains('open')) return;
+  if ($('start').classList.contains('open') || $('help').classList.contains('open')) return;
+  if ($('mapPop').classList.contains('open')) { if (e.key === 'Escape') showMap(false); return; }
   if (state.phase === 'done' && e.key === 'Enter') return reset();
   if (bag.classList.contains('open')) { if (e.key === 'Escape') { openBag(false); $('club').focus(); } return; } // keys belong to the popup while it's open
   if (state.phase !== 'aim') return;
