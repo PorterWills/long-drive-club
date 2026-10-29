@@ -336,24 +336,35 @@ const shoreD = (shore, x, z) => {
   return inside ? -d : d;
 };
 const HOLES = [{
-  name: 'Tee Tree', par: 4, si: 9,
-  tee: [0, 0], pin: [-55, 403],                  // 445 yd tee to pin
+  name: 'Tee Tree', par: 4, si: 9, gallery: true, // roped tee and empty chairs: set up for a tournament
+  // Re-traced from the owner's reference illustration (29 Oct 2026): scale 0.254 m/px (407 m over ~1,600 px).
+  // A tight chute: wide off the tee, pinched to ~20 m between the trees where the fairway bunker sits, then
+  // bending right to a green guarded front-left by sand and wrapped by trees right and behind.
+  tee: [0, 0], pin: [-36, 405.3],               // 445 yd tee to pin; tucked front-left over the bunker
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 15, line: [[0, 0], [112, -8], [197, 2], [265, -8], [333, -29], [408, -56]] }, // [z, x] centreline
+  fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405.5, -42]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-56, 405], r: 15, fx: [['ff', .35], ['tier', 6, .3]] },
-  // owner (with Augusta's yardage map): the fairway bunker sits in the right half of the fairway at about 300 yd, not tucked off it
-  bunkers: [{ at: [-13, 265], r: 5.5 }, { at: [-16, 276], r: 6 }, { at: [-37, 393], r: 3.6 }, { at: [-39, 401], r: 3.4 }],
+  green: { at: [-42, 405.5], r: 13, fx: [['ff', .35], ['tier', 6, .3]] },
+  // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd. Greenside: one big
+  // bean (~25 m long) traced from the owner's top-down of the green (0.067 m/px), from the green's left middle down
+  // to its front-left corner, so the tucked pin has to be carried over sand
+  bunkers: [{ at: [-16.5, 284.5], r: 5 }, { at: [-18.5, 270.5], r: 5.5 },
+    { at: [-25.2, 402.8], r: 3.4, soft: 1 }, { at: [-27.3, 397.5], r: 3.7, soft: 1 }, { at: [-29.9, 392.1], r: 4.7, soft: 1 }, { at: [-32.6, 386.7], r: 4.7, soft: 1 }, { at: [-29.3, 384.1], r: 3.4, soft: 1 }],
   water: [],
   trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
-    [1, 82, 392, 24, 16], [-1, 62, 470, 23, 18],
+    [1, 159, 225, 30, 22], [1, 225, 300, 15, 25], [1, 300, 362, 12, 25],   // left: wide, then the pinch
+    [-1, 146, 240, 27, 25], [-1, 240, 330, 12, 30], [-1, 330, 455, 22, 25], // right: the pinch, then wraps the green
   ],
-  treeClusters: [{ at: [-48, 60], r: 16 }, { at: [-14, 430], r: 14 }, { at: [-62, 452], r: 22 }, { at: [-90, 430], r: 14 }],
-  cars: [ // the arrival: parked behind the tee, one by the clubhouse end of the green
+  treeClusters: [
+    { at: [-34, 47], r: 17 }, { at: [-44, 70], r: 10 },                        // right of the tee
+    { at: [6.4, 416], r: 11 }, { at: [-15, 415], r: 7 }, { at: [-21, 430], r: 6 }, { at: [-10, 399], r: 7 }, // left of the green
+    { at: [-60, 463], r: 20 }, { at: [-27, 461], r: 12 },                     // behind the green
+  ],
+  cars: [ // the arrival: parked behind the tee
     { at: [9, -14], heading: 20, colour: '#C1121F', kind: 'hyper' },   // the one redline car
     { at: [-8, -15], heading: -15, colour: '#EDE9DF', kind: 'gt' },
     { at: [21, -11], heading: 45, colour: '#262320', kind: 'gt' },
-    { at: [-80, 404], heading: 80, colour: '#163826', kind: 'hyper' },
+    { at: [-22, -17], heading: -40, colour: '#163826', kind: 'hyper' },
   ],
 }, {
   // Traced from an aerial of a long downhill par 5: 585 yd, straight down a tree-lined chute, then a hard dogleg
@@ -661,7 +672,10 @@ const blobD = (c, x, z, seed, k = 1) => {
 // water: the circles melt into one smooth shoreline (smooth minimum), so ponds and creeks have no scalloped edges. Metres, < 0 is wet
 const smin = (a, b, k) => { const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
 const waterD = (x, z) => HOLE.water.reduce((d, w) => smin(d, w.shore ? shoreD(w.shore, x, z) : Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99);
-const bunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
+const hardBunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => b.soft ? 9 : blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
+// soft bunkers (owner, hole 1): the circles melt into one smooth outline like water, metres, < 0 is sand
+const softBunkerD = (x, z) => HOLE.bunkers.reduce((d, b) => b.soft ? smin(d, Math.hypot(x - b.at[0], z - b.at[1]) - b.r, 2.5) : d, 99);
+const bunkerD = (x, z) => Math.min(hardBunkerD(x, z), 1 + softBunkerD(x, z) / 4); // < 1 is sand, either kind
 const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
 // per-hole green contours: two seeded soft mounds or hollows on top of the shared back-to-front slope
 const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0, 1].map(() => {
@@ -717,9 +731,11 @@ function heightAt(x, z) {
   h += 0.7 * core + (z - gz) * 0.03 * core + (x - gx) * 0.008 * core;   // raised green, strong back-to-front slope
   for (const m of MOUNDS) h += m.h * Math.exp(-((x - m.x) ** 2 + (z - m.z) ** 2) / m.s2);
   for (const f of GFX) h += f(x, z);
-  const bd = bunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
+  const bd = hardBunkerD(x, z), t = clamp((1 - bd) / .3, 0, 1);
   const fwBunker = Math.hypot(x - HOLE.green.at[0], z - HOLE.green.at[1]) > 40 ? .35 : 1; // fairway bunkers are shallow, playable traps; greenside ones stay deep
   h += (bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0) * fwBunker; // flat floor, steep face, grass lip
+  const sd = softBunkerD(x, z), u = clamp(-sd / 3, 0, 1);              // soft bunker: a smooth bowl 3 m in from the edge, low rounded lip
+  if (sd < 0) h -= 0.55 * u * u * (3 - 2 * u); else if (sd < 1.5) h += 0.12 * Math.sin(Math.PI * sd / 1.5);
   const wd = waterD(x, z); if (wd < 4) h -= 0.8 * clamp(1 - wd / 4, 0, 1);
   h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
@@ -1208,7 +1224,8 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
 {
   const r = rng(4242), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
   const clear = (x, z) => !outOfBounds(x, z) && materialAt(x, z) === 'rough' && teePad(x, z) === 0 && bunkerD(x, z) > 1.3
-    && !HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 4.5) && Math.hypot(x - HOLE.tee[0] + 6, z - HOLE.tee[1] - 4) > 2.5; // keep the sign clear
+    && !HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 4.5) && Math.hypot(x - HOLE.tee[0] + 6, z - HOLE.tee[1] - 4) > 2.5 // keep the sign clear
+    && !(HOLE.gallery && Math.abs(x - HOLE.tee[0]) < 11.5 && z - HOLE.tee[1] > -8.5 && z - HOLE.tee[1] < 14); // and the roped tee and chairs
   const nearView = z => z < HOLE.tee[1] + 45 || Math.abs(z - GZ) < 45; // where the camera spends its time
 
   const shrubs = [];
@@ -1348,6 +1365,56 @@ const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[
   sign.add(face, back);
   for (const s of [-1, 1]) { const post = new THREE.Mesh(new THREE.BoxGeometry(.08, 1.5, .08), wood); post.position.set(.7 * s, .75, -.04); sign.add(post); }
   sign.rotation.y = Math.PI + .5; sign.position.copy(teeAt(-6, 4)); sign.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(sign);
+}
+
+// tournament dressing (owner, hole 1): a roped-off tee, open towards the fairway, and rows of empty folding chairs
+// either side, set out before anyone has arrived. Decoration only (no collisions). Opt in with `gallery: true`
+const GALLERY = HOLE.gallery ? { rope: 7, z0: -7, z1: 11, rows: [8.6, 9.7], c0: -3, c1: 13, step: .72 } : null;
+if (GALLERY) {
+  const { rope, z0, z1 } = GALLERY, POST_H = .95;
+  const posts = [];
+  for (let z = z1; z > z0; z -= 2.6) posts.push([rope, z]);
+  for (let x = rope; x > -rope; x -= 2.8) posts.push([x, z0]);
+  for (let z = z0; z <= z1 + .01; z += 2.6) posts.push([-rope, z]);
+  const pts = posts.map(([x, z]) => teeAt(x, z).setY(teeAt(x, z).y + POST_H));
+  const chalk = new THREE.MeshStandardMaterial({ color: '#EDE9DF', roughness: .6 }), green = new THREE.MeshStandardMaterial({ color: '#0E2A1C', roughness: .7 });
+  const post = new THREE.InstancedMesh(new THREE.CylinderGeometry(.035, .035, POST_H, 8), green, pts.length);
+  const cap = new THREE.InstancedMesh(new THREE.SphereGeometry(.06, 10, 8), chalk, pts.length);
+  const foot = new THREE.InstancedMesh(new THREE.CylinderGeometry(.16, .18, .04, 14), green, pts.length);
+  const m4 = new THREE.Matrix4();
+  pts.forEach((p, i) => {
+    post.setMatrixAt(i, m4.makeTranslation(p.x, p.y - POST_H / 2, p.z)); cap.setMatrixAt(i, m4.makeTranslation(p.x, p.y + .03, p.z));
+    foot.setMatrixAt(i, m4.makeTranslation(p.x, p.y - POST_H + .02, p.z));
+  });
+  const path = new THREE.CurvePath(); // the rope sags between posts
+  for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], b = pts[i], mid = a.clone().lerp(b, .5); mid.y -= .16 * a.distanceTo(b) / 2.6; path.add(new THREE.QuadraticBezierCurve3(a, mid, b)); }
+  const ropeMesh = new THREE.Mesh(new THREE.TubeGeometry(path, pts.length * 10, .018, 6), chalk);
+  for (const m of [post, cap, foot, ropeMesh]) { m.castShadow = true; scene.add(m); }
+
+  // folding chairs: a Racing Green slatted seat and back on a Tarmac frame, facing the tee
+  const r = rng(77), seats = [];
+  for (const side of [1, -1]) for (const x of GALLERY.rows) for (let z = GALLERY.c0; z <= GALLERY.c1; z += GALLERY.step)
+    seats.push({ x: side * x, z, yaw: (side > 0 ? -Math.PI / 2 : Math.PI / 2) + (r() - .5) * .08 });
+  const parts = [ // [geometry, material, local x, y, z, tilt]
+    [new THREE.BoxGeometry(.44, .035, .4), green, 0, .45, 0, 0],                 // seat
+    [new THREE.BoxGeometry(.44, .22, .03), green, 0, .78, -.2, -.1],              // back panel
+    ...[-1, 1].flatMap(s => [
+      [new THREE.BoxGeometry(.022, .92, .022), null, .21 * s, .46, -.2, -.1],    // back legs, run up into the backrest
+      [new THREE.BoxGeometry(.022, .46, .022), null, .21 * s, .23, .18, .12],    // front legs
+    ]),
+  ];
+  const frame = new THREE.MeshStandardMaterial({ color: '#1B1916', roughness: .5, metalness: .4 });
+  const q = new THREE.Quaternion(), e = new THREE.Euler(), one = new THREE.Vector3(1, 1, 1), local = new THREE.Matrix4(), base = new THREE.Matrix4();
+  for (const [geo, mat, lx, ly, lz, tilt] of parts) {
+    const im = new THREE.InstancedMesh(geo, mat || frame, seats.length);
+    seats.forEach((c, i) => {
+      const at = teeAt(c.x, c.z);
+      base.compose(at, q.setFromEuler(e.set(0, c.yaw, 0)), one);
+      local.compose(new THREE.Vector3(lx, ly, lz), q.setFromEuler(e.set(tilt, 0, 0)), one);
+      im.setMatrixAt(i, base.clone().multiply(local));
+    });
+    im.castShadow = true; scene.add(im);
+  }
 }
 
 // flag, ball, aim line, trail
