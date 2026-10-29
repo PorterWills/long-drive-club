@@ -242,11 +242,6 @@ const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Mat
 // Layout traced from an aerial of a famous opening par 4: 445 yd, fairway drifting left then bending right
 // to an elevated green, a fairway bunker right, a bunker front-left of the green, tree lines both sides.
 // World +x is the player's LEFT (screen-left from behind the ball); z runs from tee to green, in metres.
-// a creek as overlapping circles every r metres along [x, z] points, all sharing one drop zone
-const creek = (pts, r, drop) => pts.slice(1).flatMap(([x, z], i) => {
-  const [px, pz] = pts[i], n = Math.max(1, Math.ceil(Math.hypot(x - px, z - pz) / r));
-  return Array.from({ length: n + (i === pts.length - 2) }, (_, k) => ({ at: [px + (x - px) * k / n, pz + (z - pz) * k / n], r, drop }));
-});
 // a pond as one shoreline: [x, z] points traced round it, smoothed into a closed curve (owner: ponds of circles never look real)
 const pond = (pts, drop) => {
   const n = pts.length, shore = [];
@@ -255,6 +250,11 @@ const pond = (pts, drop) => {
     for (let k = 0, t = 0; k < 10; t = ++k / 10) shore.push([0, 1].map(j => .5 * (2 * b[j] + (c[j] - a[j]) * t + (2 * a[j] - 5 * b[j] + 4 * c[j] - d[j]) * t * t + (3 * b[j] - a[j] - 3 * c[j] + d[j]) * t * t * t)));
   }
   return { at: [0, 1].map(j => shore.reduce((s, p) => s + p[j], 0) / shore.length), shore, drop };
+};
+// a creek as one smooth ribbon: [x, z] centreline points, half its width either side
+const stream = (pts, hw, drop) => {
+  const side = pts.map((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz); return [-dz / l * hw, dx / l * hw]; });
+  return pond([...pts.map((p, i) => [p[0] + side[i][0], p[1] + side[i][1]]), ...pts.map((p, i) => [p[0] - side[i][0], p[1] - side[i][1]]).reverse()], drop);
 };
 // signed distance to a closed outline: < 0 inside
 const shoreD = (shore, x, z) => {
@@ -435,8 +435,8 @@ const HOLES = [{
   green: { at: [-14.5, 475.3], r: 13, fx: [['tilt', -90, .025]] },
   shaved: true, swirl: true,
   bunkers: [{ at: [-27.5, 494.6], r: 3.5 }, { at: [-21, 242.5], r: 3 }],
-  water: [{ at: [3.2, 468.8], r: 9, drop: [-28, 440] }, { at: [3.2, 452.6], r: 9, drop: [-28, 440] },
-    { at: [25.9, 491], r: 8, drop: [-28, 440] }, { at: [0, 517], r: 7, drop: [-28, 440] }, { at: [45, 462], r: 7, drop: [-28, 440] }],
+  // traced from the course map: a long pond down the left behind the green, with a lobe tucked in front-left of it
+  water: [pond([[50.7, 455.3], [42.1, 471.3], [21.9, 500.5], [-6.9, 526], [-28.6, 545.8], [-39.4, 550.2], [-41.7, 538.6], [-17.8, 523.9], [11.8, 502], [9.5, 486.1], [3.6, 471.6], [4.2, 449.8], [2.7, 433.8], [12.8, 431.6], [18.7, 446.1], [21.7, 464.2], [36.2, 458.3], [46.3, 449.5]], [-28, 440])],
   trees: [[1, 0, 430, 25, 25], [-1, 0, 230, 22, 18], [-1, 250, 370, 40, 20]],
   treeClusters: [{ at: [-16, 330], r: 4 }, { at: [-24, 315], r: 3 }, { at: [-21, 242.5], r: 8 }, { at: [-38, 190], r: 6 }],
   cars: [
@@ -452,8 +452,7 @@ const HOLES = [{
   green: { at: [0.6, 141.7], r: 9, fx: [['ff', .3]] },
   shaved: true, swirl: true,
   bunkers: [{ at: [-6, 134], r: 2.5 }, { at: [3.2, 153.2], r: 3 }, { at: [-1.9, 157], r: 3 }],
-  water: creek([[27.5, 89.4], [18.5, 98.3], [9.6, 106], [0.6, 112.4], [-8.3, 118.8], [-17.2, 126.4], [-26.2, 135.4], [-35.1, 145.6], [-44, 155.8]], 7, [-5, 92])
-    .concat([{ at: [9.6, 117.5], r: 5, drop: [-5, 92] }]),
+  water: [stream([[27.5, 89.4], [18.5, 98.3], [9.6, 106], [0.6, 112.4], [-8.3, 118.8], [-17.2, 126.4], [-26.2, 135.4], [-35.1, 145.6], [-44, 155.8]], 7, [-5, 92])],
   trees: [[1, 110, 200, 15, 20], [-1, 150, 200, 20, 15]],
   treeClusters: [{ at: [27.5, 67.7], r: 7 }, { at: [-30, 51], r: 5 }, { at: [-25, 35.8], r: 6 }],
   cars: [
@@ -469,9 +468,9 @@ const HOLES = [{
   green: { at: [-58.6, 494.9], r: 11, fx: [['tier', 4, .35]] },
   shaved: true, swirl: true,
   bunkers: [{ at: [-35.8, 514.4], r: 4 }, { at: [-35.8, 490], r: 4 }, { at: [-48.8, 524], r: 4 }],
-  water: creek([[-55.4, 117.2], [-81.4, 110.7], [-107.5, 104.2]], 7, [-95, 140])
-    .concat(creek([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6]], 3, [-170, 300])) // drive zone: drop back on the fairway, not past the green-side creek
-    .concat(creek([[-127, 351.6], [-101, 397.2], [-91, 423.3], [-78, 462.4], [-70, 501.4]], 3, [-118, 430])),
+  water: [stream([[-55.4, 117.2], [-81.4, 110.7], [-107.5, 104.2]], 7, [-95, 140]),
+    stream([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6]], 2, [-170, 300])] // drive zone: drop back on the fairway, not past the green-side creek
+    .concat(stream([[-127, 351.6], [-101, 397.2], [-91, 423.3], [-78, 462.4], [-70, 501.4]], 2, [-118, 430])),
   trees: [[1, 0, 180, 20, 15], [1, 200, 470, 30, 25], [-1, 180, 420, 45, 25], [-1, 0, 100, 15, 12]],
   treeClusters: [{ at: [-94, 296], r: 25 }, { at: [-215, 280], r: 25 }, { at: [-192, 384], r: 8 }],
   cars: [
@@ -502,8 +501,9 @@ const HOLES = [{
   green: { at: [6.3, 502.9], r: 11, fx: [['ff', .4]] },
   shaved: true,
   bunkers: [{ at: [-15.8, 493.4], r: 3.5 }],
-  water: [{ at: [9.5, 474.5], r: 7, drop: [25, 455] }, { at: [-6.3, 468.2], r: 7, drop: [25, 455] }, { at: [22.1, 482.4], r: 5, drop: [25, 455] },
-    { at: [34.7, 545.5], r: 10, drop: [5, 525] }, { at: [9.5, 551.8], r: 7, drop: [5, 525] }],
+  // traced from the course map: a pond across the front of the green, another beyond it
+  water: [pond([[34.3, 489], [23.8, 491], [-0.7, 481.9], [-11.1, 482.6], [-18.8, 469.3], [-11.1, 456.8], [9.8, 461], [27.3, 466.6], [34.3, 475]], [25, 455]),
+    pond([[51.7, 527.4], [43.3, 548.4], [16.7, 558.8], [-14.7, 565.7], [-5.6, 551.8], [13.2, 541.3], [27.2, 523.9], [41.2, 518.3]], [5, 525])],
   trees: [[1, 0, 520, 45, 15], [-1, 0, 520, 45, 15]],
   treeClusters: [{ at: [66, 432], r: 12 }, { at: [34.7, 343.7], r: 14 }, { at: [56.8, 280.6], r: 12 }, { at: [53.6, 217.6], r: 12 }, { at: [31.5, 141.9], r: 10 }, { at: [18.9, 82], r: 6 },
     { at: [-33.1, 438.3], r: 10 }, { at: [-34.7, 353], r: 10 }, { at: [-33.1, 290], r: 12 }, { at: [-36.3, 214], r: 5 }, { at: [-31.5, 126], r: 10 }, { at: [-28.4, 44], r: 8 },
