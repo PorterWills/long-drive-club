@@ -1259,7 +1259,7 @@ const greenLines = (() => {
       if (hits.length === 4) seg.push(hits[2], hits[3]);
     }
   }
-  const lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(seg), new THREE.LineBasicMaterial({ color: '#EDE9DF', transparent: true, opacity: .45 }));
+  const lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(seg), new THREE.LineBasicMaterial({ color: '#EDE9DF', transparent: true, opacity: .18 }));
   // flat white arrowheads that drift downhill and fade, looping; steeper slope = faster drift
   const tri = new THREE.ShapeGeometry(new THREE.Shape([new THREE.Vector2(0, .16), new THREE.Vector2(-.12, -.08), new THREE.Vector2(0, -.03), new THREE.Vector2(.12, -.08)]));
   tri.rotateX(-Math.PI / 2);
