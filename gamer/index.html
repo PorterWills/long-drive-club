@@ -1411,7 +1411,7 @@ const sfx = {
   bounce(speed, m) { // softer on sand and rough, a firmer thud on fairway and green
     if (!SND.ac) return;
     const k = clamp(speed / 18, 0.05, 1);
-    if (m === 'sand') return noiseHit({ type: 'lowpass', f: 1400, peak: 0.25 * k, dec: 0.18 });
+    if (m === 'sand') return noiseHit({ type: 'lowpass', f: 180, q: 0.3, peak: 0.08 * k, a: 0.006, dec: 0.04 }); // owner: the hiss was unrealistic. Sand swallows a landing: a faint, dull puff
     const soft = m === 'rough' ? 0.5 : m === 'firstcut' ? 0.75 : 1;
     noiseHit({ type: 'lowpass', f: 260, q: 0.3, peak: 0.22 * k * soft, a: 0.004, dec: 0.03 }); // owner: hollow. A short, soft, low thud: turf deadens it
   },
