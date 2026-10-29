@@ -337,23 +337,31 @@ const shoreD = (shore, x, z) => {
 };
 const HOLES = [{
   name: 'Tee Tree', par: 4, si: 9,
-  tee: [0, 0], pin: [-55, 403],                  // 445 yd tee to pin
+  // Re-traced from the owner's reference illustration (29 Oct 2026): scale 0.254 m/px (407 m over ~1,600 px).
+  // A tight chute: wide off the tee, pinched to ~20 m between the trees where the fairway bunker sits, then
+  // bending right to a green guarded front-left by sand and wrapped by trees right and behind.
+  tee: [0, 0], pin: [-41, 404.7],                // 445 yd tee to pin
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 15, line: [[0, 0], [112, -8], [197, 2], [265, -8], [333, -29], [408, -56]] }, // [z, x] centreline
+  fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405, -42]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-56, 405], r: 15, fx: [['ff', .35], ['tier', 6, .3]] },
-  // owner (with Augusta's yardage map): the fairway bunker sits in the right half of the fairway at about 300 yd, not tucked off it
-  bunkers: [{ at: [-13, 265], r: 5.5 }, { at: [-16, 276], r: 6 }, { at: [-37, 393], r: 3.6 }, { at: [-39, 401], r: 3.4 }],
+  green: { at: [-42, 405], r: 13, fx: [['ff', .35], ['tier', 6, .3]] },
+  // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd; greenside pair front-left
+  bunkers: [{ at: [-16.5, 284.5], r: 5 }, { at: [-18.5, 270.5], r: 5.5 }, { at: [-26, 401], r: 3.8 }, { at: [-29, 389], r: 3.8 }],
   water: [],
   trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
-    [1, 82, 392, 24, 16], [-1, 62, 470, 23, 18],
+    [1, 159, 225, 30, 22], [1, 225, 300, 15, 25], [1, 300, 362, 12, 25],   // left: wide, then the pinch
+    [-1, 146, 240, 27, 25], [-1, 240, 330, 12, 30], [-1, 330, 455, 22, 25], // right: the pinch, then wraps the green
   ],
-  treeClusters: [{ at: [-48, 60], r: 16 }, { at: [-14, 430], r: 14 }, { at: [-62, 452], r: 22 }, { at: [-90, 430], r: 14 }],
-  cars: [ // the arrival: parked behind the tee, one by the clubhouse end of the green
+  treeClusters: [
+    { at: [-34, 47], r: 17 }, { at: [-44, 70], r: 10 },                        // right of the tee
+    { at: [6.4, 416], r: 11 }, { at: [-15, 415], r: 7 }, { at: [-21, 430], r: 6 }, { at: [-10, 399], r: 7 }, // left of the green
+    { at: [-60, 463], r: 20 }, { at: [-27, 461], r: 12 },                     // behind the green
+  ],
+  cars: [ // the arrival: parked behind the tee
     { at: [9, -14], heading: 20, colour: '#C1121F', kind: 'hyper' },   // the one redline car
     { at: [-8, -15], heading: -15, colour: '#EDE9DF', kind: 'gt' },
     { at: [21, -11], heading: 45, colour: '#262320', kind: 'gt' },
-    { at: [-80, 404], heading: 80, colour: '#163826', kind: 'hyper' },
+    { at: [-22, -17], heading: -40, colour: '#163826', kind: 'hyper' },
   ],
 }, {
   // Traced from an aerial of a long downhill par 5: 585 yd, straight down a tree-lined chute, then a hard dogleg
