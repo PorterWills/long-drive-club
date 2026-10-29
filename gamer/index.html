@@ -803,6 +803,8 @@ function simulate(start, shot, wind, opts = {}) {
     }
     p = np; pts.push({ ...p });
   }
+  // owner: a ball that dies over the cup sat on the lip. The stop checks above end the roll before the cup check runs, so check where it stopped
+  if (pin && Math.hypot(p.x - pin.x, p.z - pin.z) < cupR(0)) { p = v(pin.x, heightAt(pin.x, pin.z), pin.z); pts.push({ ...p }); return finish('holed'); }
   return finish('rest');
 }
 
@@ -843,6 +845,14 @@ if (location.search.includes('test')) {
         const rr = simulate(st, s, calm, { rolling: true, pin }); res.push(rr.outcome + (rr.outcome === 'holed' ? '' : ` min ${Math.min(...rr.pts.map(q => Math.hypot(q.x - pin.x, q.z - pin.z))).toFixed(3)} end ${flat(rr.final, pin).toFixed(2)}`));
       }
       return ['firm short putts at the cup drop', res.every(o => o === 'holed'), res.join(',')];
+    })(),
+    (() => { // a putt weighted to die at the cup drops, from four directions (it used to stop on the lip)
+      const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
+      for (const ang of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const st = v(pin.x - Math.sin(ang) * 0.5, 0, pin.z - Math.cos(ang) * 0.5); st.y = heightAt(st.x, st.z) + BALL.r;
+        res.push(simulate(st, strike(CLUBS[7], puttPower(st, pin), ang, 'green', Math.random), calm, { rolling: true, pin }).outcome);
+      }
+      return ['dying putts at the cup drop', res.every(o => o === 'holed'), res.join(',')];
     })(),
     (() => { // a firm putt 6.2 cm off centre lips out on at least one side (it dropped on both before: the old catch radius was 6.6–7.4 cm); slope can bend one side in
       const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
