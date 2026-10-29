@@ -1399,10 +1399,10 @@ function tone(f, peak, dec, t0 = 0, type = 'sine', to = SND.out) {
   o.type = type; o.frequency.value = f; env(g, t, peak, 0.001, dec); o.connect(g).connect(to); o.start(t); o.stop(t + dec + 0.05);
 }
 const sfx = {
-  hit(power, putt) { // owner: the ring sounded tinny. A dull, compact thwack: low body, a short muted click on top, no ring
+  hit(power, putt, k = 1) { // owner: the ring sounded tinny. A dull, compact thwack: low body, a short muted click on top, no ring
     if (!SND.ac) return;
-    if (putt && SND.putt) return clip(SND.putt, 0.4 + 0.9 * power);
-    if (!putt && SND.drive) return clip(SND.drive, 0.6 + 1.2 * power, 0.97 + Math.random() * 0.06); // a touch of pitch spread so shots don't sound identical
+    if (putt && SND.putt) return clip(SND.putt, 0.12 + 0.28 * power); // owner: putts were far too loud
+    if (!putt && SND.drive) return clip(SND.drive, (0.6 + 1.2 * power) * (0.4 + 0.6 * k), (1 + (1 - k) * 0.8) * (0.97 + Math.random() * 0.06)); // owner loves it on the driver; shorter clubs play it higher and quieter (a crisper iron click), plus a touch of pitch spread
     if (putt) { noiseHit({ type: 'lowpass', f: 1200, q: 1, peak: 0.08 + 0.18 * power, a: 0.001, dec: 0.02 }); return; }
     noiseHit({ type: 'lowpass', f: 450, q: 0.9, peak: 0.35 + 0.4 * power, a: 0.001, dec: 0.05 }); // the thump of the ball compressing
     noiseHit({ f: 1400, q: 1.2, peak: 0.15 + 0.25 * power, a: 0.0005, dec: 0.015 }); // the contact click, kept short and low
@@ -1418,7 +1418,7 @@ const sfx = {
   splash() { if (!SND.ac) return; noiseHit({ f: 600, f2: 2400, q: 0.7, peak: 0.35, a: 0.01, dec: 0.45 }); noiseHit({ type: 'lowpass', f: 300, peak: 0.25, dec: 0.2 }); },
   cup() { // a hollow plastic clunk, then the ball rattling round the cup
     if (!SND.ac) return;
-    if (SND.cup) return clip(SND.cup, 1);
+    if (SND.cup) return clip(SND.cup, 0.3); // owner: far too loud
     tone(210, 0.35, 0.16, 0, 'triangle'); tone(470, 0.15, 0.1);
     [0.05, 0.11, 0.16, 0.2, 0.23].forEach((t, k) => setTimeout(() => SND.ac && noiseHit({ f: 1600 + k * 250, q: 4, peak: 0.25 / (k + 1), dec: 0.03 }), t * 1000));
   },
@@ -1462,7 +1462,7 @@ function swing() {
   const s = strike(c, state.power, state.aim, lie, rng(state.seed + state.strokes * 7919));
   const r = simulate(state.ball, s, WIND, { pin: PIN, rolling: !!c.putter });
   state.shot = { from: { ...state.ball }, s, r, i: 0, t0: performance.now(), heard: 0 };
-  sfx.hit(state.power, !!c.putter);
+  sfx.hit(state.power, !!c.putter, c.speed / CLUBS[0].speed);
   state.phase = 'flying';
   refresh();
 }
