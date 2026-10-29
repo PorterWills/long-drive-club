@@ -425,19 +425,25 @@ const HOLES = [{
     { at: [-10, -12], heading: -15, colour: '#262320', kind: 'gt' }, // owner: no car by the green on this hole
   ],
 }, {
-  name: 'Blossoming Shrimp Pear', par: 3, si: 15,
-  tee: [0, 0], pin: [-4.6, 219.4],             // 240 yd tee to pin (back tee, aerial scale 0.172 m/px)
+  // Re-traced from the owner's illustration (0.165 m/px, 219 m over ~1,330 px): a long par 3 down a corridor between
+  // two tree bands. Green complex from the owner's top-down (~0.047 m/px): two deep bunkers across the front, a tall
+  // one left and a big one right, with a ~7 m throat between them; the green sits behind them.
+  name: 'Blossoming Shrimp Pear', par: 3, si: 15, gallery: true, // roped tee and empty chairs (owner)
+  tee: [0, 0], pin: [-5.8, 219.38],            // 240 yd tee to pin
   wind: { mph: 12, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 20, line: [[0, 0], [68, 10], [120, 1.4], [171, -2], [219.4, -4.6]] },
+  fairway: { half_width: 18, line: [[0, 0], [66, 5.8], [148, 0.8], [219.4, -5.8]] },
   elevation: [[0, 4], [120, 2], [220, 1], [270, 1.5]],
-  green: { at: [-4.6, 219.4], r: 13, fx: [['tier', -4, .3]] },
-  bunkers: [{ at: [17, 214], r: 4 }, { at: [17, 221], r: 4 }, { at: [-9, 206], r: 4 }, { at: [-15, 211], r: 4 }],
+  green: { at: [-5.8, 219.4], r: 10.5, fx: [['tier', -4, .3]] },
+  bunkers: [
+    { at: [6.5, 214], r: 3, soft: 1 }, { at: [5.6, 209.3], r: 3.2, soft: 1 }, { at: [5.2, 204.6], r: 4, soft: 1 },                                       // front-left
+    { at: [-10.7, 204.6], r: 4.5, soft: 1 }, { at: [-16.3, 208.8], r: 5.2, soft: 1 }, { at: [-20.6, 212.1], r: 2.4, soft: 1 }, // front-right
+  ],
   water: [],
-  trees: [[1, 73, 240, 26, 20], [-1, -18, 262, 23, 22]],
-  treeClusters: [{ at: [22, -11], r: 10 }, { at: [28, 255], r: 6 }, { at: [-19, 243], r: 10 }],
+  trees: [[1, 74, 250, 29, 25], [-1, -10, 70, 17, 30], [-1, 70, 200, 25, 30], [-1, 200, 235, 30, 25]],
+  treeClusters: [{ at: [22, -12], r: 7 }, { at: [5, -35], r: 10 }, { at: [27, 257], r: 5 }, { at: [-14, 250], r: 8 }, { at: [-22, 238], r: 7 }],
   cars: [
     { at: [10, -14], heading: 20, colour: '#C1121F', kind: 'hyper' },
-    { at: [30, 235], heading: -60, colour: '#EDE9DF', kind: 'gt' },
+    { at: [5, 252], heading: -60, colour: '#EDE9DF', kind: 'gt' },   // behind the green
   ],
 }, {
   name: 'Violet', par: 4, si: 5,
@@ -674,7 +680,7 @@ const roundDone = () => ROUND.scores.length >= HOLES.length;
 const askedHole = parseInt(new URLSearchParams(location.search).get('hole'));
 const HOLE_NO = clamp(askedHole || roundHole(), 1, HOLES.length), HOLE = HOLES[HOLE_NO - 1];
 const PRACTICE = roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
-if (HOLE.par === 3) HOLE.cars[HOLE.cars.findIndex(c => c.at[1] < 0)] = { at: [HOLE.tee[0] + 12, HOLE.tee[1] + 8], heading: 124, colour: '#EDE9DF', kind: 'hyper', display: true } // 124°: square side-on to the tee camera; // hole-in-one prize car
+if (HOLE.par === 3) HOLE.cars[HOLE.cars.findIndex(c => c.at[1] < 0)] = { at: [HOLE.tee[0] + (HOLE.gallery ? 15 : 12), HOLE.tee[1] + 8], heading: 124, colour: '#EDE9DF', kind: 'hyper', display: true } // 124°: square side-on to the tee camera; // hole-in-one prize car
 document.getElementById('holeNo').textContent = HOLE_NO; document.getElementById('holeName').textContent = HOLE.name;
 document.getElementById('holePar').textContent = `Par ${HOLE.par}`; document.getElementById('hole').classList.toggle('prac', PRACTICE);
 // smooth (cosine) interpolation through [z, value] points
