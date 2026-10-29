@@ -254,7 +254,8 @@ const HOLES = [{
   fairway: { half_width: 15, line: [[0, 0], [112, -8], [197, 2], [265, -8], [333, -29], [408, -56]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
   green: { at: [-56, 405], r: 15, fx: [['ff', .35], ['tier', 6, .3]] },
-  bunkers: [{ at: [-23, 232], r: 5 }, { at: [-26, 248], r: 5.5 }, { at: [-37, 393], r: 3.6 }, { at: [-39, 401], r: 3.4 }],
+  // owner (with Augusta's yardage map): the fairway bunker sits in the right half of the fairway at about 300 yd, not tucked off it
+  bunkers: [{ at: [-13, 265], r: 5.5 }, { at: [-16, 276], r: 6 }, { at: [-37, 393], r: 3.6 }, { at: [-39, 401], r: 3.4 }],
   water: [],
   trees: [ // [side (+1 left / -1 right), z from, z to, inner offset from centreline, depth]
     [1, 82, 392, 24, 16], [-1, 62, 470, 23, 18],
