@@ -185,9 +185,16 @@
     #side { right: 8px; width: auto; max-width: calc(100% - 16px); padding: 8px 10px; } #side #stats { margin: 0; padding: 0; border-bottom: 0; }
  }
   @media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+  /* cover shown from the first paint until the course is drawn, so nobody sees an empty HUD while Three.js loads and the hole builds */
+  #loading { position: fixed; inset: 0; z-index: 100; background: var(--ldc-green); display: grid; place-content: center; justify-items: center; gap: 18px; transition: opacity .5s; }
+  #loading .roundel { width: 96px; height: 96px; animation: ldcPulse 1.6s ease-in-out infinite; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  @keyframes ldcPulse { 50% { transform: scale(.94); opacity: .8; } }
+  @media (prefers-reduced-motion: reduce) { #loading .roundel { animation: none; } }
 </style>
 </head>
 <body>
+<div id="loading" role="status"><div class="roundel logo display">LDC</div><div class="eyebrow">Loading the course</div></div>
 <div class="stripe" style="top:0"><i></i><i></i><i></i></div>
 <div class="stripe" style="bottom:0"><i></i><i></i><i></i></div>
 <div id="hole" class="panel hud">
@@ -1928,6 +1935,7 @@ function frame(now) {
     for (let i = 0; i < a.count; i++) { const x = clothX[i * 3]; a.setZ(i, Math.sin(x * 9 - now / 140) * flap * x / .8); }
     a.needsUpdate = true; clothGeo.computeVertexNormals(); }
   renderer.render(scene, camera);
+  if (!frame.shown) { frame.shown = true; const l = document.getElementById('loading'); l.classList.add('done'); setTimeout(() => l.remove(), 600); }
 }
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight;
   // portrait phones: widen the view (up to 80°) so it isn't a narrow slit; landscape/desktop stay at the signed-off 55°
