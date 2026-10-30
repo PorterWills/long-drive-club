@@ -502,15 +502,20 @@ const HOLES = [{
   ],
 }, {
   name: 'Blue Steele', par: 5, si: 3,
-  tee: [0, 0], pin: [-9.9, 521.1],             // 570 yd tee to pin (back tee, aerial scale 0.259 m/px), uphill all the way
+  tee: [0, 0], pin: [-9.9, 521.1],             // 570 yd tee to pin (back tee, illustration 0.323 m/px), uphill all the way
   wind: { mph: 19, toward_deg: 280 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 15, line: [[0, 0], [107.5, 11.6], [207, 5], [306, 5], [405, -14.9], [472, -14.9], [521.1, -9.9]] },
-  elevation: [[0, 1], [150, 1.5], [300, 6], [450, 11], [520, 13], [580, 13.5]],
-  green: { at: [-9.9, 521.1], r: 10, fx: [['tilt', -90, .03]] },
-  bunkers: [{ at: [-8.3, 263], r: 4 }, { at: [-9.9, 250], r: 4 }],
+  // owner's illustration: wide off the tee, a narrow landing zone between a long left tree band and a right island, then a steep blind climb
+  fairway: { half_width: 15, line: [[0, 0], [96.8, 17.6], [193.6, 11], [290, -0.5], [386.5, -12], [467.3, -14.3], [521.1, -9.9]] },
+  elevation: [[0, 0], [150, 1], [260, 3], [380, 11], [470, 15.5], [540, 16.5], [580, 17]], // the second plays 10–15 yd uphill, blind
+  green: { at: [-9.9, 521.1], r: 5, long: [29, 3], fx: [ // long and narrow (~10 × 30 m), bunkerless; the mounds guard it, biggest on the left
+    ['bowl', -5, 14, 5, 1.3], ['bowl', 3, 17, 5, 1.5], ['bowl', -18, 10, 4, 1], ['bowl', 18, 11, 4, .8],
+    ['bowl', -22, -20, 4, .8], ['bowl', -32, -36, 5, .7], ['bowl', -45, -28, 5, .8], ['bowl', 18, -16, 4, .8]] },
+  bunkers: [{ at: [-5.8, 249.1], r: 4.5, soft: 1 }, { at: [-13.5, 258.3], r: 4, soft: 1 }, { at: [-8.7, 268.4], r: 4.5, soft: 1 }, { at: [-7.1, 278.2], r: 4, soft: 1 }], // the S on the right
   water: [],
-  trees: [[1, 213, 517, 22, 30], [-1, 276, 445, 18, 25], [-1, 461, 564, 26, 20], [-1, 48, 124, 26, 10]],
-  treeClusters: [{ at: [-34.7, 245], r: 6 }, { at: [-13, 144], r: 5 }, { at: [34.7, 64.5], r: 6 }, { at: [58, 8], r: 10 }, { at: [14.9, 571], r: 8 }],
+  trees: [[1, 207, 426, 22, 30], [-1, 278, 413, 20, 35]],
+  treeClusters: [{ at: [53.3, 2], r: 14 }, { at: [33.4, 55.8], r: 6 }, { at: [-17, 58.8], r: 5 }, { at: [-17.4, 87.9], r: 5 }, { at: [-17.8, 117.1], r: 5 }, { at: [-14.3, 136.8], r: 5 },
+    { at: [-34.3, 239.1], r: 4 }, { at: [-60.9, 438.2], r: 4 }, { at: [-84.8, 478.7], r: 9 }, { at: [-72.2, 508.7], r: 9 }, { at: [-58.1, 538.9], r: 9 }, { at: [-49.8, 558.9], r: 8 },
+    { at: [8.3, 562.9], r: 8 }, { at: [12, 485.3], r: 8 }, { at: [23.4, 508.8], r: 9 }],
   cars: [
     { at: [-10, -14], heading: -15, colour: '#EDE9DF', kind: 'gt' },
     { at: [10, -15], heading: 20, colour: '#C1121F', kind: 'hyper' },
