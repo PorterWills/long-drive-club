@@ -2270,12 +2270,12 @@ function frame(now) {
   // the camera follows the ball: close and low at address (ball and club true size), pulled back for flight and settling
   const putting = CLUBS[state.club].putter, close = putting || address;
   const zd = state.club === 0 ? 1.2 : 1; // owner: the driver's address view 20% further out
-  const back = putting ? 3.2 : close ? 2.2 * zd : 10, up = putting ? 1.3 : close ? 1.1 * zd : 3.8; // putting sits low and close: ball and cup are drawn true size
+  const back = putting ? 3.2 : close ? 3 * zd : 10, up = putting ? 1.3 : close ? 1.5 * zd : 3.8; // owner: pulled back so the hole shows, not just the club // putting sits low and close: ball and cup are drawn true size
   const cx = ball.x - Math.sin(aim) * back, cz = ball.z - Math.cos(aim) * back;
   const target = new THREE.Vector3(cx, Math.max(ball.y + up, heightAt(cx, cz) + (address && !putting ? .6 : 1.5)), cz);
   // always look ahead along the line, so the view doesn't snap between "down the fairway" and "at the ball"
   // aim point a few metres past the ball puts the ball ~60% down the screen, clear of the controls (55° vertical FOV)
-  const ahead = putting ? 1.6 : close ? 3.5 : 5.6; // owner: at address look up the hole, not down at the grass
+  const ahead = putting ? 1.6 : close ? 5 : 5.6; // owner: at address look up the hole, not down at the grass
   const look = new THREE.Vector3(ball.x + Math.sin(aim) * ahead, ball.y, ball.z + Math.cos(aim) * ahead);
   camPos.lerp(target, 0.08); camLook.lerp(look, 0.12);
   camera.position.copy(camPos); camera.lookAt(camLook);
