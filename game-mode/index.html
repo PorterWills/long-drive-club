@@ -488,7 +488,7 @@ const HOLES = [{
   // owner's illustration: a tight chute off the tee, then a slim straight fairway between a long right band and a left tree island
   fairway: { half_width: 12, line: [[0, 0], [53.7, -2.5], [127.1, -4.9], [205.7, -6.9], [284.3, -8.5], [362.9, -10.2], [411.4, -10.6]] },
   elevation: [[0, 4], [200, 0], [310, 0.5], [365, 6], [392, 7.3], [460, 8]], // owner's heat map: dips, then a steep climb ~45–100 m short of the green
-  green: { at: [-10.6, 411.4], r: 8, long: [90, 1.9], plateau: .8 }, // shallow and wide, raised, ringed by sand
+  green: { at: [-10.6, 411.4], r: 8, long: [90, 1.9], plateau: .8, fx: [['tilt', 90, .012], ['bowl', -3, -9, 4.5, -.25], ['bowl', 0, 14, 3, -.2]] }, // owner's heat map: high back left of centre, falls to a low front right, drops off the far left end
   bunkers: [{ at: [1.3, 399.7], r: 4.5, soft: 1 }, { at: [-11.8, 397], r: 4.5, soft: 1 }, { at: [-24.9, 399.5], r: 4.5, soft: 1 }, // three in front
     { at: [5.1, 419.4], r: 4, soft: 1 }, { at: [-15.9, 421.8], r: 4, soft: 1 }],                                                  // two behind
   water: [],
