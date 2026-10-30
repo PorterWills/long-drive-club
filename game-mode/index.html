@@ -757,7 +757,7 @@ const HOLES = [{
   wind: { mph: 9, toward_deg: 90 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 10, line: [[0, 0], [66.3, -8.4], [120.6, -10.6], [191.4, -10.1], [262.2, -9.7], [332.9, -5.6], [402.3, 0]] }, // owner: thin
   elevation: [[0, 2], [200, 0], [350, 4], [420, 6]],
-  green: { at: [0, 400], r: 10, plateau: .9, fx: [['bowl', 0, 0, 7, .08]] }, // a faint crown: sheds every way, barely // owner (tested): flat on top, the surrounds incline away on every side
+  green: { at: [0, 400], r: 10, plateau: .9, fx: [['bowl', 7, -3, 5, .25], ['bowl', 0, -11, 3.5, -.3], ['bowl', -10, 3, 3, -.25], ['bowl', 5, 9, 4, -.12]] }, // owner's heat map: broad high middle, peak back right of centre; falls off right, at the front tongue and softly back left
   bunkers: [
     { at: [14, 387], r: 2.6, soft: 1 }, { at: [16.5, 391], r: 2.2, soft: 1 },  // front-left
     { at: [-3, 386], r: 2.6, soft: 1 }, { at: [-6.5, 388.5], r: 2.4, soft: 1 }], // front
