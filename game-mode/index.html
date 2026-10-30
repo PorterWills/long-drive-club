@@ -1708,7 +1708,7 @@ ballMesh.castShadow = true; scene.add(ballMesh);
 const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, '#4a5a32'); return Object.fromEntries(Object.keys(CLUB_KIT).map(id => [id, makeClub(id, env)])); })();
 const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(clubSwing); scene.add(clubRig);
 for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
-const SWING = { back: .5, hold: .08, down: .17, through: .35, fade: .3 }; // seconds
+const SWING = { back: .8, hold: .08, down: .12, through: .35, fade: .3 }; // seconds. Owner: slow takeaway, fast downswing
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
 const BALL_NEAR = BALL.r / .08; // drawn ball is .08 radius; this scale makes it the real 1.68 in
 const cupBallMat = new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4 });
@@ -2249,7 +2249,8 @@ function frame(now) {
     const show = state.phase === 'aim' || ((state.phase === 'swinging' || state.phase === 'flying') && t < end);
     for (const [id, m] of Object.entries(CLUB_MESH)) m.visible = show && id === c.id;
     if (show) {
-      const amp = (putt ? 8 + 22 * state.power : 40 + 60 * state.power) * Math.PI / 180, ease = x => x * x * (3 - 2 * x);
+      const full = !putt && !['pw', 'sw'].includes(c.id); // owner: woods and irons swing full, wedges and putter keep a half swing
+      const amp = (putt ? 8 + 22 * state.power : full ? 70 + 110 * state.power : 40 + 60 * state.power) * Math.PI / 180, ease = x => x * x * (3 - 2 * x);
       let a = 0; // + is the backswing
       if (t >= 0) a = t < SWING.back ? amp * ease(t / SWING.back) : t < SWING.back + SWING.hold ? amp
         : t < imp ? amp * (1 - Math.pow((t - SWING.back - SWING.hold) / SWING.down, 2))

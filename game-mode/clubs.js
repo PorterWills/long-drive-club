@@ -18,12 +18,12 @@ const FINISH = {
 export const CLUB_KIT = {
   dr: { kind: 'driver', length: 45.5, loft: 10.5, lie: 58 },
   '3w': { kind: 'driver', length: 43, loft: 15, lie: 58.5, head: .8 }, // the driver's head, smaller
-  '5i': { kind: 'iron', length: 38, loft: 27, lie: 61.5 },
-  '7i': { kind: 'iron', length: 37, loft: 34, lie: 62.5 },
-  '9i': { kind: 'iron', length: 36, loft: 42, lie: 63.5 },
+  '5i': { kind: 'iron', length: 38, loft: 27, lie: 56.5 }, // irons 5° flatter than the sheet (owner: sat a bit upright)
+  '7i': { kind: 'iron', length: 37, loft: 34, lie: 57.5 },
+  '9i': { kind: 'iron', length: 36, loft: 42, lie: 58.5 },
   pw: { kind: 'wedge', length: 35.75, loft: 46, lie: 63.5 },
   sw: { kind: 'wedge', length: 35.5, loft: 56, lie: 64 },
-  pt: { kind: 'putter', length: 34, loft: 3, lie: 70 },
+  pt: { kind: 'putter', length: 34, loft: 3, lie: 62 }, // 8° flatter than the sheet (owner: sat too upright)
 };
 
 // iron and wedge blade: the face outline, heel at x=0, sole at y=0 (inches)
