@@ -576,20 +576,30 @@ const HOLES = [{
     { at: [-45, 482], heading: 80, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
+  // Re-traced from the owner's illustration (0.123 m/px, 141.7 m over ~1,155 px) and green heat map: the creek runs
+  // diagonally across the front, the green is long and narrow, angled away to the right, with one bunker in front between
+  // the green and the water and two behind. The putting surface is flat; the bank down to the creek is steep.
   name: 'Silver Cymbal', par: 3, si: 16,
-  tee: [0, 0], pin: [0.6, 141.7],              // 155 yd tee to pin (back tee, aerial scale 0.163 m/px), creek across the front
-  wind: { mph: 8, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 14, line: [[0, 0], [141.7, 0.6]] },
-  elevation: [[0, 2], [100, 0], [150, 1], [190, 3]],
-  green: { at: [0.6, 141.7], r: 9, fx: [['ff', .3]] },
+  tee: [0, 0], pin: [0.4, 141.7],              // 155 yd tee to pin
+  wind: { mph: 10, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
+  fairway: { half_width: 16, line: [[0, 0], [141.7, 0.4]] },
+  elevation: [[0, 2], [100, 0], [125, 0.3], [135, 1.2], [160, 1.4], [195, 3]],
+  green: { at: [0.4, 141.7], r: 5.5, long: [-45, 2.5], fx: [['ff', .3]] }, // ~11 m wide, ~28 m long
   shaved: true, swirl: true,
-  bunkers: [{ at: [-6, 134], r: 2.5 }, { at: [3.2, 153.2], r: 3 }, { at: [-1.9, 157], r: 3 }],
-  water: [stream([[27.5, 89.4], [18.5, 98.3], [9.6, 106], [0.6, 112.4], [-8.3, 118.8], [-17.2, 126.4], [-26.2, 135.4], [-35.1, 145.6], [-44, 155.8]], 7, [-5, 92])],
-  trees: [[1, 110, 200, 15, 20], [-1, 150, 200, 20, 15]],
-  treeClusters: [{ at: [27.5, 67.7], r: 7 }, { at: [-30, 51], r: 5 }, { at: [-25, 35.8], r: 6 }],
+  bunkers: [
+    { at: [-0.7, 130.5], r: 2.5, soft: 1 }, { at: [-5.3, 134.6], r: 2.5, soft: 1 }, // in front, between green and creek
+    { at: [4.7, 155.2], r: 2.6, soft: 1 }, { at: [-2.1, 160.1], r: 2.6, soft: 1 }],  // the two behind
+  water: [stream([[52, 45], [41.5, 58.9], [23.1, 83.4], [5.9, 105.5], [-8.8, 123.9], [-26, 142.3], [-45.6, 163.2], [-60, 178]], 7, [-5, 92])],
+  trees: [[1, 60, 200, 30, 20], [-1, 170, 210, 25, 15]],
+  treeClusters: [
+    { at: [47.6, 77.3], r: 8 }, { at: [39, 95.7], r: 8 }, { at: [32.9, 114.1], r: 7 }, { at: [34.1, 132.5], r: 7 }, // the bank of trees beyond
+    { at: [29.2, 150.9], r: 7 }, { at: [25.5, 169.3], r: 7 }, { at: [10.8, 181.6], r: 6 }, { at: [-1.5, 189], r: 6 },
+    { at: [-26, 187.7], r: 6 }, { at: [-38.3, 181.6], r: 6 },
+    { at: [-32.1, 7.4], r: 5 }, { at: [-27.2, 18.4], r: 6 }, { at: [-39.5, 36.8], r: 4 },                             // by the tee
+  ],
   cars: [
     { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
-    { at: [-40, 120], heading: 85, colour: '#EDE9DF', kind: 'gt' },
+    { at: [-45, 60], heading: 85, colour: '#EDE9DF', kind: 'gt' },
   ],
 }, {
   name: 'Bulgaria', par: 5, si: 4,
@@ -729,7 +739,11 @@ const hardBunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => b.soft ? 9 
 // soft bunkers (owner, hole 1): the circles melt into one smooth outline like water, metres, < 0 is sand
 const softBunkerD = (x, z) => HOLE.bunkers.reduce((d, b) => b.soft ? smin(d, Math.hypot(x - b.at[0], z - b.at[1]) - b.r, 2.5) : d, 99);
 const bunkerD = (x, z) => Math.min(hardBunkerD(x, z), 1 + softBunkerD(x, z) / 4); // < 1 is sand, either kind
-const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
+// green.long = [deg, f]: a long, narrow green, r wide and f × r long, its length turned deg from straight ahead (+ towards the left)
+const greenD = (x, z) => { const g = HOLE.green;
+  if (g.long) { const a = g.long[0] * Math.PI / 180, ux = Math.sin(a), uz = Math.cos(a), dx = x - g.at[0], dz = z - g.at[1], al = (dx * ux + dz * uz) * (1 / g.long[1] - 1);
+    x += al * ux; z += al * uz; }
+  return blobD(g, x, z, HOLE_NO * 3.7, .55); };
 // per-hole green contours: two seeded soft mounds or hollows on top of the shared back-to-front slope
 const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0, 1].map(() => {
   const a = r() * 6.283, d = r() * g.r * .55; return { x: g.at[0] + Math.cos(a) * d, z: g.at[1] + Math.sin(a) * d, h: (r() - .4) * .4, s2: (g.r * (.3 + r() * .15)) ** 2 }; }); })();
@@ -1013,7 +1027,7 @@ if (location.search.includes('test')) {
       return ['flagstick is solid', r.landing.z < pz, `landed ${(r.landing.z - pz).toFixed(2)}m from pin`];
     })(),
     ['ball comes to rest', ['rest', 'ob', 'water'].includes(r0.outcome), r0.outcome],
-    (() => { const pin = v(HOLE.pin[0], 0, HOLE.pin[1]); const st = v(pin.x, heightAt(pin.x, pin.z - 10) + BALL.r, pin.z - 10); const pw = puttPower(st, pin); const r = simulate(st, strike(CLUBS[7], pw, 0, 'green', Math.random), calm, { rolling: true, pin }); const d = flat(r.final, pin), rolled = flat(r.final, st); return ['putter preset rolls ~the distance (break is the player\'s job)', r.outcome === 'holed' || Math.abs(rolled - 10.4) < 2,`${r.outcome} ${d.toFixed(2)}m pw=${pw.toFixed(2)} rolled=${flat(r.final, st).toFixed(2)}`]; })(),
+    (() => { const pin = v(HOLE.pin[0], 0, HOLE.pin[1]), a0 = (HOLE.green.long?.[0] ?? 0) * Math.PI / 180, sx = pin.x - 10 * Math.sin(a0), sz = pin.z - 10 * Math.cos(a0); const st = v(sx, heightAt(sx, sz) + BALL.r, sz); const pw = puttPower(st, pin); const r = simulate(st, strike(CLUBS[7], pw, a0, 'green', Math.random), calm, { rolling: true, pin }); const d = flat(r.final, pin), rolled = flat(r.final, st); return ['putter preset rolls ~the distance (break is the player\'s job)', r.outcome === 'holed' || Math.abs(rolled - 10.4) < 2,`${r.outcome} ${d.toFixed(2)}m pw=${pw.toFixed(2)} rolled=${flat(r.final, st).toFixed(2)}`]; })(),
     (() => { // 3 ft putt hit firmly (2.2 m/s) dead at the cup must drop, uphill and downhill (across a steep slope it breaks, as it should: the player aims off)
       const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
       for (const ang of fallLine()) {
