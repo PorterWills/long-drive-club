@@ -450,7 +450,7 @@ const HOLES = [{
   // owner's illustration: a narrow chute off the tee, out right, then uphill and left round a wooded bank to the green
   fairway: { half_width: 22, line: [[0, 0], [65.7, -5.1], [136.6, -29.4], [192.5, -32.2], [247.8, -23.9], [303.3, -18.4], [358, 1.1], [412.5, 26.1], [450.8, 40.5]] },
   elevation: [[0, 0], [120, 1], [250, 4], [380, 9], [430, 11], [470, 11.5], [530, 12]], // uphill all the way
-  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .55], ['tier', 5, .3]] }, // carry the crest ~12 yd in; slopes back to front
+  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .55], ['tier', 5, .3], ['tilt', -60, .008], ['bowl', -8, -5, 5, -.35], ['bowl', -5, 7, 3.5, .15]] }, // owner's heat map: false front kept; high back right, steep low front right, flat middle shelf, small rise front left
   // two deep soft fairway bunkers on the inside (left) of the dogleg at full-driver carry; rear bunker back-left of the green
   bunkers: [{ at: [-14.9, 250.7], r: 4.5, soft: 1 }, { at: [-9.1, 254.9], r: 4.5, soft: 1 },
     { at: [-9.5, 268.8], r: 4.5, soft: 1 }, { at: [-4.6, 272.5], r: 4.5, soft: 1 },
