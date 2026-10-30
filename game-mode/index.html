@@ -2080,25 +2080,39 @@ $('skies').onclick = e => { const k = e.target.closest('button')?.dataset.sky; i
 // course map: the hole drawn top-down from the same ground the ball plays on, pin and ball marked, rings every 50 yd to the pin
 function drawMap() {
   if (!drawMap.ready) return void (drawMap.t ??= setTimeout(() => { drawMap.ready = true; drawMap(); }, 400)); // build after the course is on screen, so loading isn't held up
-  const b = drawMap.base ??= (() => {
-    const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]), M = 1; // owner: was pixelated at 2 m a pixel
+  const ext = drawMap.ext ??= (() => {
+    const xs = HOLE.fairway.line.map(p => p[1]).concat(HOLE.tee[0], HOLE.green.at[0]);
     let x0 = Math.min(...xs) - 50, x1 = Math.max(...xs) + 50; const z0 = HOLE.tee[1] - 20, z1 = GZ + 30;
     const mm = $('mapMini'), ar = mm.clientHeight ? mm.clientWidth / mm.clientHeight : (innerWidth - 30) / (innerHeight - 60); // phone: no mini map, so fill the big one
     const pad = Math.max(0, (z1 - z0) * ar - (x1 - x0)) / 2; x0 -= pad; x1 += pad; // owner: fill the panel, not half of it
-    const c = document.createElement('canvas'); c.width = Math.ceil((x1 - x0) / M); c.height = Math.ceil((z1 - z0) / M);
-    const g = c.getContext('2d'), img = g.createImageData(c.width, c.height), col = new THREE.Color();
-    for (let j = 0; j < c.height; j++) for (let i = 0; i < c.width; i++) { // +x is the player's left, so the map runs right to left
-      const x = x1 - (i + .5) * M, z = z1 - (j + .5) * M, k = (j * c.width + i) * 4;
-      col.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[materialAt(x, z)]).multiplyScalar(1.45); // owner: too dark; lifted, not the 3D colours
-      img.data[k] = col.r * 255; img.data[k + 1] = col.g * 255; img.data[k + 2] = col.b * 255; img.data[k + 3] = 255;
+    return { x0, x1, z0, z1 };
+  })();
+  // owner: was NES-pixelated (1 m a pixel, stretched). Now drawn at the screen's own resolution, one base per size, and
+  // pixels on an edge between surfaces are sampled 4x4 and blended, so bunkers and fairway edges come out smooth.
+  const base = M => (drawMap.bases ??= {})[M] ??= (() => {
+    const { x0, x1, z0, z1 } = ext, c = document.createElement('canvas'); c.width = Math.ceil((x1 - x0) / M); c.height = Math.ceil((z1 - z0) / M);
+    const W = c.width, H = c.height, g = c.getContext('2d'), img = g.createImageData(W, H), col = new THREE.Color(), cache = new Map();
+    const rgb = (x, z) => { const key = outOfBounds(x, z) ? 'oob' : materialAt(x, z); let v = cache.get(key); if (!v) { col.set(key === 'oob' ? '#2f5626' : COLOURS[key]).multiplyScalar(1.45); v = [col.r * 255, col.g * 255, col.b * 255]; v.key = key; cache.set(key, v); } return v; }; // owner: too dark; lifted, not the 3D colours
+    const at = new Array(W * H); // +x is the player's left, so the map runs right to left
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) at[j * W + i] = rgb(x1 - (i + .5) * M, z1 - (j + .5) * M);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const n = j * W + i, k = n * 4, me = at[n].key; let v = at[n];
+      if ((i && at[n - 1].key !== me) || (i < W - 1 && at[n + 1].key !== me) || (j && at[n - W].key !== me) || (j < H - 1 && at[n + W].key !== me)) {
+        const sum = [0, 0, 0]; for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) { const q = rgb(x1 - (i + (a + .5) / 4) * M, z1 - (j + (b + .5) / 4) * M); sum[0] += q[0]; sum[1] += q[1]; sum[2] += q[2]; }
+        v = sum.map(t => t / 16);
+      }
+      img.data[k] = v[0]; img.data[k + 1] = v[1]; img.data[k + 2] = v[2]; img.data[k + 3] = 255;
     }
     g.putImageData(img, 0, 0); g.fillStyle = 'rgba(24,52,30,.85)';
     for (const t of TREES) { g.beginPath(); g.arc((x1 - t.x) / M, (z1 - t.z) / M, 2.4 * t.s / M, 0, 6.283); g.fill(); }
     return { c, x1, z1, M };
   })();
+  const mFor = px => Math.max(.25, Math.round((ext.z1 - ext.z0) / px * 8) / 8); // about one map pixel per screen pixel (cached in 1/8 m steps), never finer than 25 cm
   const big = $('mapPop').classList.contains('open'), dpr = devicePixelRatio || 1;
+  drawMap.pre ??= setTimeout(() => { const ar = (ext.x1 - ext.x0) / (ext.z1 - ext.z0); base(mFor(Math.round(Math.min(innerHeight - 60, (innerWidth - 30) / ar) * dpr))); }, 1500); // the big map takes a second or so to build: do it in the background, so it opens at once
   for (const cv of big ? [$('mapMini'), $('mapBig')] : [$('mapMini')]) {
-    const ar = b.c.width / b.c.height, h = cv === $('mapMini') ? cv.clientHeight : Math.min(innerHeight - 60, (innerWidth - 30) / ar), w = h * ar; cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * dpr; cv.height = h * dpr;
+    const ar = (ext.x1 - ext.x0) / (ext.z1 - ext.z0), h = cv === $('mapMini') ? cv.clientHeight : Math.min(innerHeight - 60, (innerWidth - 30) / ar), w = h * ar; cv.style.width = w + 'px'; cv.style.height = h + 'px'; cv.width = w * dpr; cv.height = h * dpr; if (!cv.height) continue; // phones hide the mini map
+    const b = base(mFor(cv.height));
     const g = cv.getContext('2d'), k = cv.height / b.c.height / b.M, P = (x, z) => [(b.x1 - x) * k, (b.z1 - z) * k], [px, pz] = P(PIN.x, PIN.z), [bx, bz] = P(state.ball.x, state.ball.z);
     g.imageSmoothingQuality = 'high'; g.drawImage(b.c, 0, 0, cv.width, cv.height);
     const lab = cv === $('mapBig'), fs = 10 * dpr; g.font = `600 ${fs}px Archivo`; g.letterSpacing = `${.12 * fs}px`; g.textAlign = 'center'; g.textBaseline = 'middle';
