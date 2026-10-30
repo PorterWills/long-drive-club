@@ -758,15 +758,17 @@ const HOLES = [{
     { at: [-45, 420], heading: -80, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
+  // owner (photo from the tee): iconic because it's a really tight tunnel. Trees stand right on the edge of a ~22 m chute
+  // the whole way to the landing area, where it opens a little round the bend, past the fairway bunkers on the left.
   name: 'Polly', par: 4, si: 10,
   tee: [0, 0], pin: [-91.8, 415.1],            // 465 yd tee to pin (back tee, aerial scale 0.341 m/px), uphill chute, dogleg right
   wind: { mph: 10, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 15, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
+  fairway: { half_width: 11, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
   elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
   green: { at: [-91.8, 415.1], r: 10, fx: [['tier', -4, .35]] },
   bunkers: [{ at: [-71.8, 399], r: 4 }, { at: [-102.4, 403], r: 4 }, { at: [-5.3, 312.7], r: 5 }, { at: [2.7, 294], r: 4 }],
   water: [],
-  trees: [],
+  trees: [[1, -10, 250, 11, 30], [-1, -10, 250, 11, 30], [1, 250, 370, 26, 20], [-1, 250, 385, 18, 20], [1, 370, 470, 28, 15], [-1, 385, 470, 26, 15]],
   treeClusters: [{ at: [24, 161], r: 15 }, { at: [24, 241], r: 12 }, { at: [18.6, 307], r: 6 }, { at: [42.6, 272.8], r: 6 }, { at: [10.6, 25], r: 4 },
     { at: [-40, 161], r: 15 }, { at: [-40, 241], r: 14 }, { at: [-50.6, 81], r: 12 }, { at: [-29, 14.6], r: 8 }, { at: [-82.5, 339], r: 10 }, { at: [-74.5, 318], r: 5 }],
   cars: [
