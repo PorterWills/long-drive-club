@@ -16,7 +16,7 @@ const FINISH = {
 
 // one head per kind; length, loft and lie per club in the bag (the 5, 7 and 9 irons share a head, as do the two wedges)
 export const CLUB_KIT = {
-  dr: { kind: 'driver', length: 45.5, loft: 10.5, lie: 58 },
+  dr: { kind: 'driver', length: 45.5, loft: 10.5, lie: 28 }, // owner: 30° flatter than the sheet, held lower in the hands
   '3w': { kind: 'driver', length: 43, loft: 15, lie: 58.5, head: .8 }, // the driver's head, smaller
   '5i': { kind: 'iron', length: 38, loft: 27, lie: 56.5 }, // irons 5° flatter than the sheet (owner: sat a bit upright)
   '7i': { kind: 'iron', length: 37, loft: 34, lie: 57.5 },
