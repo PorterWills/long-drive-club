@@ -1710,6 +1710,7 @@ const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(cl
 for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
 const _aimDir = new THREE.Vector3();
 const SWING = { back: .8, hold: .08, down: .12, through: .35, fade: .3 }; // seconds. Owner: slow takeaway, fast downswing
+const swingBack = () => CLUBS[state.club].id === 'dr' ? 1.1 : SWING.back; // owner: the driver takes it away slower still
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
 const BALL_NEAR = BALL.r / .08; // drawn ball is .08 radius; this scale makes it the real 1.68 in
 const cupBallMat = new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4 });
@@ -2215,7 +2216,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   let ball = state.ball;
   if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
-  if (state.phase === 'swinging' && (now - state.swingT0) / 1000 >= SWING.back + SWING.hold + SWING.down) launch();
+  if (state.phase === 'swinging' && (now - state.swingT0) / 1000 >= swingBack() + SWING.hold + SWING.down) launch();
   if (state.phase === 'flying') {
     const sh = state.shot, f = clamp((now - sh.t0) / 1000 * 120 * 1.15, 0, sh.r.pts.length - 1), i = Math.floor(f); // rAF's now can be a hair before t0
     // blend between the 1/120 s samples: snapping to whole samples moved the ball 2, then 3, then 2 a frame, so it juddered in flight
@@ -2246,15 +2247,15 @@ function frame(now) {
   cupBall.visible = !!state.dropT0; ballMesh.visible = !state.dropT0;
   { // the club: at address while aiming, then back, down through the ball and on to the finish, then gone
     const c = CLUBS[state.club], putt = !!c.putter, t = state.phase === 'aim' ? -1 : (now - state.swingT0) / 1000;
-    const imp = SWING.back + SWING.hold + SWING.down, end = imp + SWING.through + SWING.fade;
+    const BK = swingBack(), imp = BK + SWING.hold + SWING.down, end = imp + SWING.through + SWING.fade;
     const show = state.phase === 'aim' || ((state.phase === 'swinging' || state.phase === 'flying') && t < end);
     for (const [id, m] of Object.entries(CLUB_MESH)) m.visible = show && id === c.id;
     if (show) {
       const full = !putt && !['pw', 'sw'].includes(c.id); // owner: woods and irons swing full (the driver furthest, past parallel), wedges and putter keep a half swing
       const amp = (putt ? 8 + 22 * state.power : full ? (c.id === 'dr' ? 80 + 150 * state.power : 70 + 110 * state.power) : 40 + 60 * state.power) * Math.PI / 180, ease = x => x * x * (3 - 2 * x);
       let a = 0; // + is the backswing
-      if (t >= 0) a = t < SWING.back ? amp * ease(t / SWING.back) : t < SWING.back + SWING.hold ? amp
-        : t < imp ? amp * (1 - Math.pow((t - SWING.back - SWING.hold) / SWING.down, 2))
+      if (t >= 0) a = t < BK ? amp * ease(t / BK) : t < BK + SWING.hold ? amp
+        : t < imp ? amp * (1 - Math.pow((t - BK - SWING.hold) / SWING.down, 2))
         : -amp * .9 * ease(Math.min(1, (t - imp) / SWING.through));
       const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = 1; // true size, like the ball at address
       // owner: the club looked wrong when aiming. The face now sits square behind the ball along the aim line (it was
