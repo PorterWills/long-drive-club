@@ -322,17 +322,28 @@ const stream = (pts, hw, drop) => {
   return pond([...pts.map((p, i) => [p[0] + side[i][0], p[1] + side[i][1]]), ...pts.map((p, i) => [p[0] - side[i][0], p[1] - side[i][1]]).reverse()], drop);
 };
 // signed distance to a closed outline: < 0 inside
+// the outline is split into runs of 12 edges with their own boxes, so a long winding creek (hole 13) only walks the edges near the point
 const shoreD = (shore, x, z) => {
   const b = shore.box ??= shore.reduce((b, [px, pz]) => [Math.min(b[0], px), Math.min(b[1], pz), Math.max(b[2], px), Math.max(b[3], pz)], [1e9, 1e9, -1e9, -1e9]);
   const far = Math.hypot(Math.max(b[0] - x, 0, x - b[2]), Math.max(b[1] - z, 0, z - b[3]));
   if (far > 10) return far; // well clear of the water: every caller saturates by 5 m, so skip the per-segment walk (it dominated load time)
-  let d = 1e9, inside = false;
-  for (let i = 0, j = shore.length - 1; i < shore.length; j = i++) {
-    const [ax, az] = shore[j], [bx, bz] = shore[i], ex = bx - ax, ez = bz - az;
-    const t = clamp(((x - ax) * ex + (z - az) * ez) / (ex * ex + ez * ez || 1), 0, 1);
-    d = Math.min(d, Math.hypot(x - ax - ex * t, z - az - ez * t));
-    if ((az > z) !== (bz > z) && x < ax + (z - az) * ex / ez) inside = !inside;
+  const runs = shore.runs ??= Array.from({ length: Math.ceil(shore.length / 12) }, (_, r) => {
+    const i0 = r * 12, i1 = Math.min(shore.length, i0 + 12), bb = [1e9, 1e9, -1e9, -1e9];
+    for (let i = i0; i < i1; i++) for (const [px, pz] of [shore[i], shore[(i + shore.length - 1) % shore.length]]) {
+      bb[0] = Math.min(bb[0], px); bb[1] = Math.min(bb[1], pz); bb[2] = Math.max(bb[2], px); bb[3] = Math.max(bb[3], pz); }
+    return [i0, i1, bb];
+  });
+  let d = 1e9, inside = false, lo = 1e9; // lo: the nearest run's box, a stand-in distance once every edge is over 12 m away
+  for (const [i0, i1, bb] of runs) {
+    const bd = Math.hypot(Math.max(bb[0] - x, 0, x - bb[2]), Math.max(bb[1] - z, 0, z - bb[3])), near = bd < Math.min(d, 12), cross = z >= bb[1] && z <= bb[3] && x < bb[2];
+    lo = Math.min(lo, bd); if (!near && !cross) continue;
+    for (let i = i0; i < i1; i++) {
+      const [ax, az] = shore[(i + shore.length - 1) % shore.length], [bx, bz] = shore[i], ex = bx - ax, ez = bz - az;
+      if (near) { const t = clamp(((x - ax) * ex + (z - az) * ez) / (ex * ex + ez * ez || 1), 0, 1); d = Math.min(d, Math.hypot(x - ax - ex * t, z - az - ez * t)); }
+      if (cross && (az > z) !== (bz > z) && x < ax + (z - az) * ex / ez) inside = !inside;
+    }
   }
+  if (d === 1e9) d = lo;
   return inside ? -d : d;
 };
 const HOLES = [{
@@ -826,7 +837,9 @@ const blobD = (c, x, z, seed, k = 1) => {
 };
 // water: the circles melt into one smooth shoreline (smooth minimum), so ponds and creeks have no scalloped edges. Metres, < 0 is wet
 const smin = (a, b, k) => { const h = clamp(.5 + .5 * (b - a) / k, 0, 1); return b + (a - b) * h - k * h * (1 - h); };
-const waterD = (x, z) => HOLE.water.reduce((d, w) => smin(d, w.shore ? shoreD(w.shore, x, z) : Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99);
+const waterD = (x, z) => { // the terrain asks twice per vertex (height, then colour), so the last answer is kept
+  const m = waterD.m ??= [NaN, NaN, 0]; if (x === m[0] && z === m[1]) return m[2];
+  m[0] = x; m[1] = z; return m[2] = HOLE.water.reduce((d, w) => smin(d, w.shore ? shoreD(w.shore, x, z) : Math.hypot(x - w.at[0], z - w.at[1]) - w.r, 3), 99); };
 const hardBunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => b.soft ? 9 : blobD(b, x, z, i * 2.1 + HOLE_NO)), 9);
 // soft bunkers (owner, hole 1): the circles melt into one smooth outline like water, metres, < 0 is sand
 const softBunkerD = (x, z) => HOLE.bunkers.reduce((d, b) => b.soft ? smin(d, Math.hypot(x - b.at[0], z - b.at[1]) - b.r, 2.5) : d, 99);
@@ -1267,7 +1280,7 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
   const geo = new THREE.PlaneGeometry(W, D, seg[0], seg[1]); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, col = [], rough = [], haz = [], c = new THREE.Color();
+  const pos = geo.attributes.position, col = [], rough = [], haz = [], gEdge = [], c = new THREE.Color();
   const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color('#6e4a2f');
   const wob = (x, z) => Math.sin(x * .37 + z * .11) * .9 + Math.sin(z * .23 - x * .19) * .7; // ragged bed edges, metres
   const strawAt = (x, z) => { // pine straw under the tree lines and clusters, 0..1
@@ -1280,35 +1293,47 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
     const x = pos.getX(i) + X0 + W / 2, z = pos.getZ(i) + D / 2 - 40;
     const m = turfAt(x, z);
     pos.setXYZ(i, x, heightAt(x, z), z);
-    c.set(outOfBounds(x, z) ? '#2f5626' : COLOURS[m]);
-    let rg = m === 'rough' || outOfBounds(x, z) ? 1 : m === 'firstcut' ? .35 : 0;
-    if ((m === 'fairway' || m === 'firstcut' || m === 'rough') && !shavedBank(x, z) && z > HOLE.tee[1] && z < FW_END + 6 && greenD(x, z) >= 1 + APRON / HOLE.green.r && !outOfBounds(x, z)) { // cuts step down softly: fairway, first cut, rough
-      const off = Math.abs(x - centreX(z)), hw = z <= 30 ? HOLE.fairway.half_width * .7 : HOLE.fairway.half_width, fwOn = z > 30 && z < FW_END;
-      const a = fwOn ? clamp((off - hw + 1) / 2, 0, 1) : 1, b = clamp((off - hw - (fwOn ? 2 : -1)) / 3, 0, 1) * (z > FW_END ? 1 : 1);
+    const oob = outOfBounds(x, z), ge = (greenD(x, z) - 1) * HOLE.green.r; // ge: metres beyond the green's edge
+    c.set(oob ? '#2f5626' : COLOURS[m === 'green' || m === 'fringe' ? 'fairway' : m]); // green and fringe are laid over per pixel in the shader
+    let rg = m === 'rough' || oob ? 1 : m === 'firstcut' ? .35 : 0;
+    if (m !== 'green' && m !== 'fringe' && !oob) { // cuts step down softly from every patch of short grass: fairway, first cut, rough
+      let a = 1, b = 1; const cut = (pa, pb) => { a = Math.min(a, pa); b = Math.min(b, pb); };
+      const ramp = d => cut(clamp((d + 1) / 2, 0, 1), clamp((d - 2) / 3, 0, 1)); // d: metres outside the short grass (owner: smoother rough edges, no grid steps)
+      if (z > HOLE.tee[1] && z < FW_END + 6) {
+        const off = Math.abs(x - centreX(z)), hw = z <= 30 ? HOLE.fairway.half_width * .7 : HOLE.fairway.half_width, fwOn = z > 30 && z < FW_END;
+        cut(fwOn ? clamp((off - hw + 1) / 2, 0, 1) : 1, clamp((off - hw - (fwOn ? 2 : -1)) / 3, 0, 1));
+      }
+      ramp(ge - APRON); // the apron round the green
+      ramp(Math.max(Math.abs(x - HOLE.tee[0]) - 6, Math.abs(z - HOLE.tee[1]) - 9)); // the tee box
+      if (HOLE.shaved) ramp(waterD(x, z) - 5); // shaved banks into the water
       c.copy(FW).lerp(FC, a).lerp(RO, b); rg = a * .35 + b * .65;
     }
     const tp = teePad(x, z); if (tp > 0) { c.lerp(TEE, tp); rg *= 1 - tp; }
-    const st = m === 'rough' || outOfBounds(x, z) ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, st * .85); rg = Math.max(rg, st); }
-    if (m === 'fairway' && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
+    const st = m === 'rough' || oob ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, st * .85); rg = Math.max(rg, st); }
+    if (!oob && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
     if (tp > .9 && Math.floor((x - HOLE.tee[0] + 4) / 1.6) % 2) c.offsetHSL(0, 0, 0.025); // tee pad: crisp stripes
-    if (m === 'green') { c.offsetHSL(0, 0, 0.018 * (Math.sin(x * .19 + Math.sin(z * .13) * 1.7) + Math.sin(z * .23 - x * .07 + Math.sin(x * .11) * 1.3))); // owner: soft patches of a few shades, no checker
-      const gd = greenD(x, z); if (gd > .93) c.lerp(LIP, (gd - .93) / .07 * .35); }     // collar where green meets fringe
-    col.push(c.r, c.g, c.b); rough.push(rg); haz.push(bunkerD(x, z), waterD(x, z));
+    col.push(c.r, c.g, c.b); rough.push(rg); haz.push(bunkerD(x, z), waterD(x, z)); gEdge.push(ge);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   geo.setAttribute('rough', new THREE.Float32BufferAttribute(rough, 1));
+  geo.setAttribute('gedge', new THREE.Float32BufferAttribute(gEdge, 1)); // the green's edge, laid per pixel like the hazards (owner: smoother green edges)
   geo.setAttribute('haz', new THREE.Float32BufferAttribute(haz, 2)); // bunker and water distances, interpolated per pixel so their edges are smooth curves, not grid steps
   geo.computeVertexNormals();
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   mat.onBeforeCompile = sh => { // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough; attribute vec2 haz; varying float vR; varying vec2 vXZ, vH;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vXZ = position.xz; vH = haz;');
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough, gedge; attribute vec2 haz; varying float vR, vG; varying vec2 vXZ, vH;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vG = gedge; vXZ = position.xz; vH = haz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying float vR; varying vec2 vXZ, vH;
+      varying float vR, vG; varying vec2 vXZ, vH;
       float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
         return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + 1.), f.x), f.y); }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
+      float ga = max(fwidth(vG), .12);                                                              // green and fringe: smooth curves, softened a touch
+      float gp = .018 * (sin(vXZ.x * .19 + sin(vXZ.y * .13) * 1.7) + sin(vXZ.y * .23 - vXZ.x * .07 + sin(vXZ.x * .11) * 1.3)); // owner: soft patches of a few shades, no checker
+      vec3 grn = mix(${glsl(new THREE.Color(COLOURS.green))} * (1. + 5. * gp), ${glsl(LIP)}, .35 * smoothstep(${(-.07 * HOLE.green.r).toFixed(3)}, 0., vG)); // collar at the edge
+      diffuseColor.rgb = mix(${glsl(new THREE.Color(COLOURS.fringe))}, diffuseColor.rgb, smoothstep(2. - ga, 2. + ga, vG));
+      diffuseColor.rgb = mix(grn, diffuseColor.rgb, smoothstep(-ga, ga, vG));
       float n = vn(vXZ * 4.) * .35 + vn(vXZ * .9) * .35 + vn(vXZ * .18) * .3;
       diffuseColor.rgb *= mix(.93 + .14 * n, .66 + .62 * n, vR);
       float bd = vH.x, wd = vH.y, ba = fwidth(bd), wa = fwidth(wd);
@@ -2181,8 +2206,10 @@ function frame(now) {
   let ball = state.ball;
   if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
   if (state.phase === 'flying') {
-    const sh = state.shot, i = clamp(Math.floor((now - sh.t0) / 1000 * 120 * 1.15), 0, sh.r.pts.length - 1); // rAF's now can be a hair before t0
-    ball = sh.r.pts[i];
+    const sh = state.shot, f = clamp((now - sh.t0) / 1000 * 120 * 1.15, 0, sh.r.pts.length - 1), i = Math.floor(f); // rAF's now can be a hair before t0
+    // blend between the 1/120 s samples: snapping to whole samples moved the ball 2, then 3, then 2 a frame, so it juddered in flight
+    const a = sh.r.pts[i], b = sh.r.pts[Math.min(i + 1, sh.r.pts.length - 1)], t = f - i;
+    ball = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
     while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); }
     trail.geometry.setFromPoints(sh.r.pts.slice(0, i + 1).filter((_, k) => k % 3 === 0).map(p => new THREE.Vector3(p.x, p.y, p.z)));
     if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); } if (sh.r.outcome === 'water') sfx.splash(); }
