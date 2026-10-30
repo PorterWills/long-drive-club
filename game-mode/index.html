@@ -288,6 +288,7 @@
 <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
 <script type="module">
 import * as THREE from 'three';
+import { CLUB_KIT, makeClub, clubEnv } from './clubs.js';
 
 // ---------- vectors ----------
 const v = (x, y, z) => ({ x, y, z });
@@ -1703,6 +1704,11 @@ const drawBallLogo = () => {
 drawBallLogo();
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4, map: ballTex }));
 ballMesh.castShadow = true; scene.add(ballMesh);
+// the floating club: waits behind the ball at address, swings on Swing; the ball leaves at impact. No golfer (owner's sheet)
+const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, '#4a5a32'); return Object.fromEntries(Object.keys(CLUB_KIT).map(id => [id, makeClub(id, env)])); })();
+const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(clubSwing); scene.add(clubRig);
+for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
+const SWING = { back: .5, hold: .08, down: .17, through: .35, fade: .3 }; // seconds
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
 const BALL_NEAR = BALL.r / .08; // drawn ball is .08 radius; this scale makes it the real 1.68 in
 const cupBallMat = new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4 });
@@ -1946,6 +1952,9 @@ $('soundBtn').onclick = () => { SND.on = !SND.on; try { localStorage.setItem(SND
 function swing() {
   if (state.phase !== 'aim') return;
   showMap(false);
+  state.phase = 'swinging'; state.swingT0 = performance.now(); refresh(); // the ball leaves at impact (launch, from frame)
+}
+function launch() {
   const c = CLUBS[state.club], lie = materialAt(state.ball.x, state.ball.z);
   state.strokes++;
   const s = strike(c, state.power, state.aim, lie, rng(state.seed + state.strokes * 7919));
@@ -2205,6 +2214,7 @@ function frame(now) {
   requestAnimationFrame(frame);
   let ball = state.ball;
   if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
+  if (state.phase === 'swinging' && (now - state.swingT0) / 1000 >= SWING.back + SWING.hold + SWING.down) launch();
   if (state.phase === 'flying') {
     const sh = state.shot, f = clamp((now - sh.t0) / 1000 * 120 * 1.15, 0, sh.r.pts.length - 1), i = Math.floor(f); // rAF's now can be a hair before t0
     // blend between the 1/120 s samples: snapping to whole samples moved the ball 2, then 3, then 2 a frame, so it juddered in flight
@@ -2219,7 +2229,7 @@ function frame(now) {
     const p = ballMesh.position, dx = ball.x - p.x, dz = ball.z - p.z, d = Math.hypot(dx, dz);
     if (d > 1e-4 && d < 5) { const air = ball.y - heightAt(ball.x, ball.z) > BALL.r + .05; ballMesh.rotateOnWorldAxis(_spinAxis.set(dz / d, 0, -dx / d), (air ? -.15 : 1) * d / (.08 * bs)); }
   }
-  const teed = state.phase === 'aim' && !CLUBS[state.club].putter && Math.hypot(ball.x - HOLE.tee[0], ball.z - HOLE.tee[1]) < .5, lift = teed ? .05 * bs : 0;
+  const teed = (state.phase === 'aim' || state.phase === 'swinging') && !CLUBS[state.club].putter && Math.hypot(ball.x - HOLE.tee[0], ball.z - HOLE.tee[1]) < .5, lift = teed ? .05 * bs : 0;
   ballMesh.scale.setScalar(bs); ballMesh.position.set(ball.x, ball.y - BALL.r + 0.08 * bs + 0.005 + lift, ball.z);
   SEE.uBall.value.copy(ballMesh.position);
   peg.visible = teed; peg.scale.setScalar(bs); peg.position.set(ball.x, ball.y - BALL.r + .03 * bs, ball.z);
@@ -2228,6 +2238,25 @@ function frame(now) {
     cupBall.position.set(PIN.x, CUP_Y + BALL.r - fall + bounce, PIN.z);
   }
   cupBall.visible = !!state.dropT0; ballMesh.visible = !state.dropT0;
+  { // the club: at address while aiming, then back, down through the ball and on to the finish, then gone
+    const c = CLUBS[state.club], putt = !!c.putter, t = state.phase === 'aim' ? -1 : (now - state.swingT0) / 1000;
+    const imp = SWING.back + SWING.hold + SWING.down, end = imp + SWING.through + SWING.fade;
+    const show = state.phase === 'aim' || ((state.phase === 'swinging' || state.phase === 'flying') && t < end);
+    for (const [id, m] of Object.entries(CLUB_MESH)) m.visible = show && id === c.id;
+    if (show) {
+      const amp = (putt ? 8 + 22 * state.power : 40 + 60 * state.power) * Math.PI / 180, ease = x => x * x * (3 - 2 * x);
+      let a = 0; // + is the backswing
+      if (t >= 0) a = t < SWING.back ? amp * ease(t / SWING.back) : t < SWING.back + SWING.hold ? amp
+        : t < imp ? amp * (1 - Math.pow((t - SWING.back - SWING.hold) / SWING.down, 2))
+        : -amp * .9 * ease(Math.min(1, (t - imp) / SWING.through));
+      const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = bs * .08 / BALL.r; // drawn at the ball's scale
+      const from = state.phase === 'flying' ? state.shot.from : state.ball;
+      clubRig.position.set(from.x, from.y - BALL.r + lift, from.z - .1 * bs); clubRig.rotation.y = state.aim; clubRig.scale.set(-k, k, k); // mirrored: built toe to +x, but from behind the ball the toe sits on screen right
+      clubSwing.position.copy(pivot); clubSwing.quaternion.setFromAxisAngle(axis, a); m.position.copy(pivot).negate();
+      const fade = t > end - SWING.fade ? (end - t) / SWING.fade : 1;
+      m.traverse(o => { if (o.material) { o.material.transparent = fade < 1; o.material.opacity = fade; } });
+    }
+  }
   const aim = state.aim; // stays on the line you hit until the next shot is set up, so the camera never lurches toward the pin
   // one framing for aiming, flight and settling: the camera just follows the ball, so it never zooms out and back in
   const putting = CLUBS[state.club].putter;
