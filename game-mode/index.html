@@ -465,16 +465,21 @@ const HOLES = [{
     { at: [10, 470], heading: 90, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
-  name: 'Saturn', par: 3, si: 17,
-  tee: [0, 0], pin: [0.6, 164.6],              // 180 yd tee to pin (back tee, aerial scale 0.092 m/px), downhill
+  name: 'Saturn', par: 3, si: 17, gallery: true, // roped tee and empty chairs (owner)
+  tee: [0, 0], pin: [0.6, 164.6],              // 180 yd tee to pin, from a high tee (owner's photo)
   wind: { mph: 5, toward_deg: 20 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 12, line: [[0, 0], [54, 0.6], [89, 4.7], [125, 7.6], [164.6, 0.6]] },
-  elevation: [[0, 10], [100, 3], [170, 0], [210, 0.5]],
-  green: { at: [0.6, 164.6], r: 13, fx: [['tier', 5, .4, -60]] },
-  bunkers: [{ at: [15.9, 148.2], r: 4 }, { at: [8.8, 145.8], r: 4 }, { at: [4.1, 136.4], r: 4 }],
+  fairway: { half_width: 16, line: [[0, 0], [54, 0.6], [89, 2], [125, 2], [164.6, 0.6]] },
+  elevation: [[0, 9], [30, 8.5], [80, 3], [140, 0], [175, 0.6], [210, 1.5]], // ~8 m drop: plays a club shorter
+  green: { at: [0.6, 164.6], r: 14, fx: [['tier', -6, .4], ['tier', 5, .35]] }, // wide, shifting levels front to back
+  garden: { // owner's photo: azaleas and a dogwood left of the tee under tall pines
+    azaleas: [[18, -4, 22, 22, 5], [24, 30, 28, 60, 4]],
+    trees: [['dogwood', 17, 16, 1], ['dogwood', 21, 26, .8]],
+  },
+  bunkers: [{ at: [3, 150], r: 3.5, soft: 1 }, { at: [8, 148], r: 4.2, soft: 1 }, { at: [13.5, 148.5], r: 4, soft: 1 },
+    { at: [18.5, 151.5], r: 3.2, soft: 1 }, { at: [11, 152.5], r: 3, soft: 1 }], // one big sprawling bunker short-left
   water: [],
-  trees: [[1, 0, 89, 11, 16], [1, 95, 185, 25, 16], [-1, 0, 50, 10, 14], [-1, 108, 190, 21, 16]],
-  treeClusters: [{ at: [-14.7, 82], r: 7 }, { at: [18, 189], r: 6 }, { at: [-21.8, 182], r: 6 }],
+  trees: [[1, 0, 200, 26, 18], [-1, 0, 70, 18, 14], [-1, 70, 200, 30, 18]],
+  treeClusters: [{ at: [-24, 120], r: 5 }, { at: [6, 196], r: 10 }, { at: [-28, 186], r: 7 }, { at: [26, 182], r: 6 }],
   cars: [
     { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
     { at: [-32, 165], heading: 85, colour: '#EDE9DF', kind: 'gt' },
