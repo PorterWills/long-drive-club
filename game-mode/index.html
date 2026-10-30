@@ -447,15 +447,19 @@ const HOLES = [{
   ],
 }, {
   name: 'Violet', par: 4, si: 5,
-  tee: [0, 0], pin: [40.5, 450.8],             // 495 yd tee to pin (back tee, aerial scale 0.319 m/px)
+  tee: [0, 0], pin: [40.5, 450.8],             // 495 yd tee to pin (back tee, illustration 0.278 m/px)
   wind: { mph: 14, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 22, line: [[0, 0], [84, -7], [180, -20], [276, -26], [355, -14], [403, 15], [450.8, 40.5]] },
-  elevation: [[0, 2], [200, 0], [350, 5], [460, 8], [520, 8.5]],
-  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .35], ['tier', 5, .3]] },
-  bunkers: [{ at: [56, 462], r: 4 }, { at: [-7, 285], r: 4.5 }, { at: [-11, 264], r: 4.5 }],
+  // owner's illustration: a narrow chute off the tee, out right, then uphill and left round a wooded bank to the green
+  fairway: { half_width: 22, line: [[0, 0], [65.7, -5.1], [136.6, -29.4], [192.5, -32.2], [247.8, -23.9], [303.3, -18.4], [358, 1.1], [412.5, 26.1], [450.8, 40.5]] },
+  elevation: [[0, 0], [120, 1], [250, 4], [380, 9], [430, 11], [470, 11.5], [530, 12]], // uphill all the way
+  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .55], ['tier', 5, .3]] }, // carry the crest ~12 yd in; slopes back to front
+  // two deep soft fairway bunkers on the inside (left) of the dogleg at full-driver carry; rear bunker back-left of the green
+  bunkers: [{ at: [-14.9, 250.7], r: 4.5, soft: 1 }, { at: [-9.1, 254.9], r: 4.5, soft: 1 },
+    { at: [-9.5, 268.8], r: 4.5, soft: 1 }, { at: [-4.6, 272.5], r: 4.5, soft: 1 },
+    { at: [56, 462], r: 4, soft: 1 }],
   water: [],
-  trees: [[1, 78, 282, 30, 20], [-1, -37, 492, 40, 25]],
-  treeClusters: [{ at: [33, 339], r: 25 }, { at: [80, 401], r: 12 }, { at: [95, 451], r: 14 }, { at: [31, 508], r: 18 }, { at: [28, 17], r: 10 }, { at: [9, 65], r: 6 }],
+  trees: [[1, 0, 80, 20, 18], [1, 80, 290, 30, 22], [-1, 0, 120, 20, 18], [-1, 120, 500, 34, 25]],
+  treeClusters: [{ at: [30, 323], r: 16 }, { at: [36, 300], r: 10 }, { at: [68, 420], r: 12 }, { at: [79, 466], r: 14 }, { at: [44, 495], r: 16 }, { at: [8.9, 67.8], r: 4 }],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
     { at: [10, 470], heading: 90, colour: '#C1121F', kind: 'hyper' },
