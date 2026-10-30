@@ -761,12 +761,15 @@ const HOLES = [{
   // owner (photo from the tee): iconic because it's a really tight tunnel. Trees stand right on the edge of a ~22 m chute
   // the whole way to the landing area, where it opens a little round the bend, past the fairway bunkers on the left.
   name: 'Polly', par: 4, si: 10,
-  tee: [0, 0], pin: [-91.8, 415.1],            // 465 yd tee to pin (back tee, aerial scale 0.341 m/px), uphill chute, dogleg right
+  tee: [0, 0], pin: [-88.6, 415.9],            // 465 yd tee to pin (back tee, aerial scale 0.341 m/px), uphill chute, dogleg right
   wind: { mph: 10, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 11, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
   elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
-  green: { at: [-91.8, 415.1], r: 10, fx: [['tier', -4, .35]] },
-  bunkers: [{ at: [-71.8, 399], r: 4 }, { at: [-102.4, 403], r: 4 }, { at: [-5.3, 312.7], r: 5 }, { at: [2.7, 294], r: 4 }],
+  green: { at: [-91.8, 415.1], r: 11, plateau: 1, drop: [-90, 3] }, // owner's heat map: flat on top, banked, a massive drop off the right
+  bunkers: [
+    { at: [-77.5, 411.6], r: 3.4, soft: 1 }, { at: [-74.8, 408.2], r: 3, soft: 1 },  // front-left, a big kidney
+    { at: [-104.9, 408.1], r: 3.2, soft: 1 }, { at: [-104, 412.6], r: 2.8, soft: 1 }, // back-right
+    { at: [-5.3, 312.7], r: 4.5, soft: 1 }, { at: [2.7, 294], r: 4, soft: 1 }],         // fairway bunkers, left of the landing area
   water: [],
   trees: [[1, -10, 250, 11, 30], [-1, -10, 250, 11, 30], [1, 250, 370, 26, 20], [-1, 250, 385, 18, 20], [1, 370, 470, 28, 15], [-1, 385, 470, 26, 15]],
   treeClusters: [{ at: [24, 161], r: 15 }, { at: [24, 241], r: 12 }, { at: [18.6, 307], r: 6 }, { at: [42.6, 272.8], r: 6 }, { at: [10.6, 25], r: 4 },
@@ -823,6 +826,13 @@ const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0,
 // green shapes per hole (green.fx), in the green's own frame: along = metres towards the back, side = metres to the player's left.
 // ['ff', h] false front (green body raised h above its front apron), ['tier', off, h, deg] a step h high, off metres from the centre,
 // ['tilt', deg, grade] a lean (rising towards deg; 0 = back, 90 = left, -90 = right), ['bowl', along, side, r, h] a hollow (h < 0) or hump
+// green.drop = [deg, h]: beyond the green's edge, the ground falls away h metres over ~10 m towards deg (0 = back, -90 = right), in the approach frame
+const GDROP = (() => {
+  const g = HOLE.green; if (!g.drop) return () => 0;
+  const [cx, cz] = g.at, ax = cx - centreX(cz - 40), n = Math.hypot(ax, 40), bx = ax / n, bz = 40 / n, a = g.drop[0] * Math.PI / 180;
+  const ux = bx * Math.cos(a) + bz * Math.sin(a), uz = bz * Math.cos(a) - bx * Math.sin(a), sm = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+  return (x, z) => -g.drop[1] * sm(((x - cx) * ux + (z - cz) * uz - g.r) / 10) * sm((24 - Math.abs((x - cx) * uz - (z - cz) * ux)) / 8);
+})();
 const GFX = (() => {
   const g = HOLE.green, [cx, cz] = g.at, r = g.r, ax = cx - centreX(cz - 40), n = Math.hypot(ax, 40), bx = ax / n, bz = 40 / n;
   const dir = a => { const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180); return [bx * c + bz * s, bz * c - bx * s]; };
@@ -879,6 +889,7 @@ function heightAt(x, z) {
     const w = clamp((1.6 - greenD(x, z)) / .6, 0, 1), top = lerpPts(HOLE.elevation, HOLE.green.at[1]) + HOLE.green.plateau;
     h += (top - h) * w * w * (3 - 2 * w);
   }
+  if (HOLE.green.drop) h += GDROP(x, z); // green.drop = [deg, h]: the ground falls h metres away off one side (owner, hole 18: massive drop right)
   const wd = waterD(x, z); if (wd < 4) h -= 0.8 * clamp(1 - wd / 4, 0, 1);
   h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
