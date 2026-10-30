@@ -733,13 +733,13 @@ const HOLES = [{
   // Re-traced from the owner's illustration (0.236 m/px, back tee, 402.3 m over ~1,705 px), heat map and approach view:
   // a thin, straight, uphill fairway between a long band of trees on the left and two tree islands on the right, both
   // closer than they look. The approach lands between tight trees. Two bunkers guard the front and front-left of a green
-  // that looks flat but sheds in every direction (a soft crown, with a knob back right).
+  // that is flat on top, with the surrounds inclining away on every side.
   name: 'Mamdani', par: 4, si: 14,
   tee: [0, 0], pin: [-3, 402.2],               // 440 yd tee to pin, back-right of centre (the demanding one)
   wind: { mph: 9, toward_deg: 140 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 10, line: [[0, 0], [66.3, -8.4], [120.6, -10.6], [191.4, -10.1], [262.2, -9.7], [332.9, -5.6], [402.3, 0]] }, // owner: thin
   elevation: [[0, 2], [200, 0], [350, 4], [420, 6]],
-  green: { at: [0, 400], r: 10, fx: [['bowl', 0, 0, 8, .22], ['bowl', 5, -5, 3.5, .12]] }, // flat-looking, but sheds every way
+  green: { at: [0, 400], r: 10, plateau: .9 }, // owner (tested): flat on top, the surrounds incline away on every side
   bunkers: [
     { at: [14, 387], r: 2.6, soft: 1 }, { at: [16.5, 391], r: 2.2, soft: 1 },  // front-left
     { at: [-3, 386], r: 2.6, soft: 1 }, { at: [-6.5, 388.5], r: 2.4, soft: 1 }], // front
