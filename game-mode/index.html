@@ -1435,7 +1435,7 @@ if (HOLE.garden) {
     g.rotation.y = Math.atan2(-dz, dx); g.position.set(b.at[0], heightAt(b.at[0], b.at[1]) - .2, b.at[1]); scene.add(g);
   }
 }
-// azalea-style shrubs along the tree-line edges and grass tufts near the tee and green.
+// azalea-style shrubs along the tree-line edges. No grass tufts: the course is manicured (owner).
 // Decoration only (no collisions). Each kind is one InstancedMesh, so hundreds cost one draw.
 {
   const r = rng(4242), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
@@ -1463,25 +1463,6 @@ if (HOLE.garden) {
     shrubMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
   });
   scene.add(shrubMesh);
-
-  // tufts: five thin blades fanned round a point, about 25 cm tall
-  const blades = [];
-  for (let k = 0; k < 7; k++) { const a = k * .898, cx = Math.cos(a), sz = Math.sin(a), lean = .06;
-    blades.push(-.035 * sz, 0, .035 * cx,  .035 * sz, 0, -.035 * cx,  cx * lean * 2, .32, sz * lean * 2); }
-  const tuftGeo = new THREE.BufferGeometry(); tuftGeo.setAttribute('position', new THREE.Float32BufferAttribute(blades, 3)); tuftGeo.computeVertexNormals();
-  const phone = matchMedia('(pointer: coarse)').matches, tufts = [];
-  for (const [cx, cz] of [HOLE.tee, HOLE.green.at]) // 30 m round the tee and the green
-    for (let k = 0; k < (phone ? 2000 : 4000); k++) {
-      const a = r() * 6.28, d = 4 + Math.sqrt(r()) * 30, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
-      if (clear(x, z)) tufts.push([x, z]);
-    }
-  const tuftMesh = new THREE.InstancedMesh(tuftGeo, new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, emissive: '#1c2a14' }), tufts.length);
-  tufts.forEach(([x, z], i) => {
-    const s = .7 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
-    tuftMesh.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z), z), q, sc.set(s, s, s)));
-    tuftMesh.setColorAt(i, col.set('#5a7d42').offsetHSL(r() * .05 - .025, 0, r() * .1 - .04));
-  });
-  scene.add(tuftMesh);
 }
 function makeBag() { // Racing Green golf bag on a stand, Redline band, club heads poking out
   const bag = new THREE.Group(), green = new THREE.MeshStandardMaterial({ color: '#0E2A1C', roughness: .6 }), red = new THREE.MeshLambertMaterial({ color: '#C1121F' }), steel = new THREE.MeshStandardMaterial({ color: '#9a968c', metalness: .8, roughness: .3 });
