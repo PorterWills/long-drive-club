@@ -406,7 +406,7 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 270 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 12, line: [[0, 0], [66, -7], [125, -5], [185, 5], [244, 8.9], [284, 5], [320, -8.9]] }, // owner: 40 m was too forgiving
   elevation: [[0, 2], [150, 1], [250, 3], [330, 5], [380, 5.5]],
-  green: { at: [-8.9, 319.9], r: 12, fx: [['ff', .45]] },
+  green: { at: [-8.9, 319.9], r: 12, fx: [['tilt', -90, .025], ['tilt', 180, .02], ['bowl', 0, -10, 4, .25]] }, // owner's heat map: high right (steepest at the right edge), falls right to left, little back-to-front
   bunkers: [ // the four fairway bunkers, left of centre
     { at: [28.8, 223.6], r: 4.4, soft: 1 }, { at: [20.9, 221.6], r: 4.4, soft: 1 },
     { at: [27.8, 238.5], r: 4, soft: 1 }, { at: [20.9, 235.5], r: 4, soft: 1 }, { at: [15.9, 233.5], r: 3, soft: 1 },
