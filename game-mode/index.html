@@ -549,11 +549,11 @@ const HOLES = [{
     { at: [-32, 432], heading: 70, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
-  name: 'Jamelia', par: 4, si: 6,
+  name: 'Jamelia', par: 4, si: 6, gallery: true, // roped tee and empty chairs (owner)
   tee: [0, 0], pin: [79.2, 445.7],             // 495 yd tee to pin (back tee, illustration 0.276 m/px), steep downhill, sweeping left
   wind: { mph: 10, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   // owner's illustration: steeply downhill, bowing right then swinging left; drive left-centre for the angle in
-  fairway: { half_width: 17, line: [[0, 0], [61.8, -26.9], [159.2, -21.2], [240.8, -7.4], [320.9, 14.4], [372.8, 36.2], [410, 60.7], [445.7, 79.2]] },
+  fairway: { half_width: 13.6, line: [[0, 0], [61.8, -26.9], [159.2, -21.2], [240.8, -7.4], [320.9, 14.4], [372.8, 36.2], [410, 60.7], [445.7, 79.2]] },
   elevation: [[0, 22], [150, 14], [300, 4], [380, 0], [420, 1.5], [450, 2.5], [490, 3]], // the green sits on the rise beyond the big bunker
   green: { at: [79.2, 445.7], r: 8, long: [11, 1.8], fx: [['tilt', -90, .02]] }, // ~16 × 29 m, pitches right to left
   bunkers: [ // the big centre bunker well short of the green (~55 m, with fingers), and a kidney front-right of the green
@@ -561,8 +561,9 @@ const HOLES = [{
     { at: [48.5, 368], r: 3.5, soft: 1 }, { at: [55.5, 384], r: 3.5, soft: 1 }, { at: [47.5, 398], r: 3, soft: 1 }, // fingers
     { at: [59.5, 436.5], r: 4.2, soft: 1 }, { at: [63, 442.5], r: 4, soft: 1 }],
   water: [],
-  trees: [[1, 20, 400, 30, 20], [-1, 130, 300, 40, 20], [-1, 300, 440, 26, 20]],
-  treeClusters: [{ at: [-55.1, 116.8], r: 14 }, { at: [108.5, 465.1], r: 10 }, { at: [85.2, 475.4], r: 9 }, { at: [64.1, 468.5], r: 8 }, { at: [112.1, 413.7], r: 9 }],
+  trees: [[1, 20, 400, 24, 20], [-1, 130, 300, 32, 20], [-1, 300, 440, 21, 20]], // owner: 20% tighter
+  treeClusters: [{ at: [-55.1, 116.8], r: 14 }, { at: [108.5, 465.1], r: 10 }, { at: [85.2, 475.4], r: 9 }, { at: [64.1, 468.5], r: 8 }, { at: [112.1, 413.7], r: 9 },
+    { at: [100, 462], r: 6 }, { at: [101, 427], r: 5 }, { at: [46, 446], r: 6 }, { at: [50, 462], r: 5 }], // owner: the green is set amongst trees
   cars: [
     { at: [-10, -14], heading: -20, colour: '#EDE9DF', kind: 'gt' },
     { at: [110, 440], heading: 80, colour: '#C1121F', kind: 'hyper' },
@@ -1263,8 +1264,8 @@ sun.shadow.bias = -0.0005; // low sun grazes the ground; stops shadow acne
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun, sun.target);
 
-const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', sand: '#d9cfb4', water: '#3d5f6e' }; // muted to sit with Racing Green
-const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#e4dcc4'), WATER = new THREE.Color(HOLE.garden?.water?.[0] ?? '#41687a'), WATER_DEEP = new THREE.Color(HOLE.garden?.water?.[1] ?? '#2a4a5a'); // garden holes: darker, still water
+const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', sand: '#f4f5f6', water: '#3d5f6e' }; // muted to sit with Racing Green
+const SAND_FACE = new THREE.Color('#d5d9de'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#ffffff'), WATER = new THREE.Color(HOLE.garden?.water?.[0] ?? '#41687a'), WATER_DEEP = new THREE.Color(HOLE.garden?.water?.[1] ?? '#2a4a5a'); // garden holes: darker, still water. Sand is pure white (owner: Augusta white, not off-white)
 const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; // linear-space colour for shader code
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
