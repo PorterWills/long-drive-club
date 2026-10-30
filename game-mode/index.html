@@ -697,18 +697,34 @@ const HOLES = [{
     { at: [-55, 500], heading: 80, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
+  // Re-traced from the owner's illustration (0.115 m/px, back tee, 155.4 m over ~1,350 px), top-down and heat map: played
+  // entirely over a long pond that runs down the left and tucks its tip in against the green's front-left. A long green
+  // angled from front-right to back-left, pitched right to left towards the water, with three bunkers: a small one
+  // between the water's tip and the green, a kidney front-right and a big one back-right.
   name: 'Greenpetal', par: 3, si: 18,
-  tee: [0, 0], pin: [-8.4, 155.2],             // 170 yd tee to pin (back tee, aerial scale 0.154 m/px), pond down the left
+  tee: [0, 0], pin: [0, 155.4],                // 170 yd tee to pin
   wind: { mph: 6, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 14, line: [[0, 0], [155.2, -8.4]] },
-  elevation: [[0, 4], [60, 0], [150, 1], [190, 2]],
-  green: { at: [-8.4, 155.2], r: 11, fx: [['tilt', -90, .03], ['bowl', -1, 5, 5, -.12]] },
+  fairway: { half_width: 14, line: [[0, 0], [155.4, -6]] },
+  elevation: [[0, 4], [40, 1], [120, 0], [150, 1.2], [190, 2.5]],
+  green: { at: [1, 154], r: 6.5, long: [24, 2.6], fx: [['tilt', -90, .03]] }, // ~13 m wide, ~34 m long, pitched right to left
   shaved: true,
-  bunkers: [{ at: [7.2, 159.4], r: 3.5 }, { at: [-20.4, 174.4], r: 5 }, { at: [-20.4, 140.7], r: 3.5 }],
-  // owner (with Augusta 16 from the tee): one broad pond, a straight gallery bank on the left, the right shore running diagonally up to tuck in front-left of the green
-  water: [pond([[-14, 32], [6, 26], [26, 30], [32, 55], [30, 90], [27, 120], [20, 143], [10, 151], [3, 146], [-2, 128], [-8, 100], [-14, 70], [-18, 48]], [-25, 100])],
-  trees: [[1, 0, 90, 35, 12]],
-  treeClusters: [{ at: [24, 173], r: 10 }, { at: [-14.4, 185], r: 8 }, { at: [-33.7, 155], r: 8 }, { at: [-47, 119], r: 12 }, { at: [-27.7, 77], r: 8 }],
+  garden: { // azaleas under the trees, still water
+    water: ['#2b4a41', '#122219'],
+    azaleas: [[24, 12, 28, 40, 5], [30, 45, 34, 75, 5], [-30, 120, -36, 140, 5]],
+    trees: [['dogwood', 26, 25, 1], ['dogwood', -28, 132, .9], ['maple', 30, 170, 1.1]],
+  },
+  bunkers: [
+    { at: [14, 158], r: 2.2, soft: 1 }, { at: [11.5, 155], r: 2, soft: 1 },                                      // between the water's tip and the green
+    { at: [-11, 137.5], r: 2.4, soft: 1 }, { at: [-14.5, 141.5], r: 2.4, soft: 1 },                              // kidney, front-right
+    { at: [-7, 173], r: 3.5, soft: 1 }, { at: [-12, 169], r: 3.2, soft: 1 }, { at: [-16.5, 164], r: 3, soft: 1 }], // big, back-right
+  water: [pond([[13.3, 42.6], [16.9, 46.5], [18.4, 69.5], [17.8, 98.3], [15.7, 115.7], [18.1, 132.8], [21.7, 150], [20.2, 156.4], [15.5, 154.8],
+    [9.4, 145.9], [5.4, 133.3], [-0.5, 127.8], [-7.5, 125.8], [-10.6, 121.3], [-11.8, 105.3], [-8.2, 82.1], [-8, 59], [-6.2, 45.2], [2.9, 41.9]], [-20, 110])],
+  trees: [[1, 0, 90, 30, 14]],
+  treeClusters: [
+    { at: [-18.4, 71], r: 3 },                                                                   // the lone tree right of the pond
+    { at: [30, 167], r: 3 },                                                                      // left of the green
+    { at: [-25, 159], r: 3 }, { at: [-32, 145], r: 3 }, { at: [-38, 124], r: 7 },                 // right of the green
+    { at: [-6, 182], r: 3 }, { at: [-17, 176], r: 4 }, { at: [-26, 172], r: 5 }],                 // behind the big bunker
   cars: [
     { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
     { at: [-45, 150], heading: 85, colour: '#262320', kind: 'gt' },
