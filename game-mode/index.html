@@ -1709,6 +1709,7 @@ const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, '#4a5a32'); 
 const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(clubSwing); scene.add(clubRig);
 for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
 const DRIVER_PLANE = new THREE.Vector3(Math.sin(Math.PI / 4), Math.cos(Math.PI / 4), 0); // owner: the driver swings on a shallower 45° plane (its shaft sits at 58°)
+const _aimDir = new THREE.Vector3();
 const SWING = { back: .8, hold: .08, down: .12, through: .35, fade: .3 }; // seconds. Owner: slow takeaway, fast downswing
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
 const BALL_NEAR = BALL.r / .08; // drawn ball is .08 radius; this scale makes it the real 1.68 in
@@ -2257,8 +2258,9 @@ function frame(now) {
         : t < imp ? amp * (1 - Math.pow((t - SWING.back - SWING.hold) / SWING.down, 2))
         : -amp * .9 * ease(Math.min(1, (t - imp) / SWING.through));
       const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = 1; // true size, like the ball at address
-      const from = state.phase === 'flying' ? state.shot.from : state.ball;
-      clubRig.position.set(from.x, from.y - BALL.r + lift, from.z - .1 * bs); clubRig.rotation.y = state.aim; clubRig.scale.set(-k, k, k); // mirrored: built toe to +x, but from behind the ball the toe sits on screen right
+      // owner: the club looked wrong when aiming. The face now sits square behind the ball along the aim line (it was
+      // pushed back along world z, so turning the aim slid it sideways), its centre level with the ball's; held at launch
+      if (address) clubRig.position.copy(ballMesh.position).addScaledVector(_aimDir.set(Math.sin(state.aim), 0, Math.cos(state.aim)), -(.08 * bs + .004)); clubRig.rotation.y = state.aim; clubRig.scale.set(-k, k, k); // mirrored: built toe to +x, but from behind the ball the toe sits on screen right
       clubSwing.position.copy(pivot); clubSwing.quaternion.setFromAxisAngle(c.id === 'dr' ? DRIVER_PLANE : axis, a); m.position.copy(pivot).negate();
       const fade = t > end - SWING.fade ? (end - t) / SWING.fade : 1;
       m.traverse(o => { if (o.material) { o.material.transparent = fade < 1; o.material.opacity = fade; } });
