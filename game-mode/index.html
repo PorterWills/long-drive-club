@@ -601,7 +601,7 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 16, line: [[0, 0], [141.7, 0.4]] },
   elevation: [[0, 2], [100, 0], [125, 0.3], [135, 1.2], [160, 1.4], [195, 3]],
-  green: { at: [0.4, 141.7], r: 5.5, long: [-45, 2.5], fx: [['ff', .3]] }, // ~11 m wide, ~28 m long
+  green: { at: [0.4, 141.7], r: 5.5, long: [-45, 2.5], fx: [['ff', .3], ['tilt', -20, .008], ['bowl', -9, 7, 4, -.2]] }, // ~11 m wide, ~28 m long; owner's heat map: high along the back (back right highest), falls to the front edge, lowest at the front-left end
   shaved: true, swirl: true,
   garden: { // owner: make it feel like the real thing (photo from the bridge)
     water: ['#2b4a41', '#122219'],                                              // dark, still creek
