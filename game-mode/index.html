@@ -376,7 +376,7 @@ const HOLES = [{
   wind: { mph: 14, toward_deg: 95 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 17, line: [[0, 0], [76, -3.8], [170, -84], [289, -108], [383, -103], [454, -61], [502, -32], [532, -19]] },
   elevation: [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]],      // downhill all the way
-  green: { at: [-19, 532], r: 10.5, fx: [['bowl', -3, -4, 4, -.15]] },
+  green: { at: [-19, 532], r: 10.5, fx: [['tilt', 90, .025], ['tilt', 180, .015], ['bowl', -7, 8, 4, .2]] }, // owner's heat map: high front left, falls hard left to right and away to the back right
   // fairway bunker (owner, from a photo): one big smooth peanut ~30 m long on the right of the landing area, its far end
   // reaching in towards the middle. Owner: it must catch drives, so it sits at full-driver carry (~250 m, 275 yd)
   bunkers: [{ at: [-99.5, 236.5], r: 6, soft: 1 }, { at: [-103.5, 231], r: 5, soft: 1 }, { at: [-107.5, 225.5], r: 5.5, soft: 1 }, { at: [-112.5, 219.5], r: 6.5, soft: 1 },
