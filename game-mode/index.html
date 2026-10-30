@@ -684,7 +684,7 @@ const HOLES = [{
   wind: { mph: 20, toward_deg: 10 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 18, line: [[0, 0], [80.8, -12.2], [168, -7.5], [261.5, -5.9], [323.8, -6.3], [401.8, 4.2], [448.5, 1.8], [502.9, 0]] },
   elevation: [[0, 8], [250, 10], [400, 4], [470, 0], [500, 0.6], [520, 0.4], [560, -0.5]],
-  green: { at: [2, 503], r: 8, long: [90, 1.8], plateau: 1.2 }, // shallow and wide (~16 m deep, ~29 m across), dead flat, banked all round (owner)
+  green: { at: [2, 503], r: 8, long: [90, 1.8], plateau: 1.2, fx: [['tilt', -70, .015]] }, // shallow and wide (~16 m deep, ~29 m across), banked all round; owner's heat map: high back right, falls across to a low left
   shaved: true,
   garden: { // owner's photo: still water, a footbridge, dogwoods
     water: ['#2b4a41', '#122219'],
