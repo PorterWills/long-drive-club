@@ -666,7 +666,7 @@ const HOLES = [{
   wind: { mph: 20, toward_deg: 10 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 18, line: [[0, 0], [80.8, -12.2], [168, -7.5], [261.5, -5.9], [323.8, -6.3], [401.8, 4.2], [448.5, 1.8], [502.9, 0]] },
   elevation: [[0, 8], [250, 10], [400, 4], [470, 0], [500, 0.6], [520, 0.4], [560, -0.5]],
-  green: { at: [2, 503], r: 8, long: [90, 1.8], fx: [['ff', .5]] }, // shallow and wide: ~16 m deep, ~29 m across
+  green: { at: [2, 503], r: 8, long: [90, 1.8], plateau: 1.2 }, // shallow and wide (~16 m deep, ~29 m across), dead flat, banked all round (owner)
   shaved: true,
   garden: { // owner's photo: still water, a footbridge, dogwoods
     water: ['#2b4a41', '#122219'],
@@ -689,7 +689,9 @@ const HOLES = [{
     { at: [60, 403], r: 10 }, { at: [58, 450], r: 9 },
     { at: [-34, 261], r: 7 }, { at: [-32, 286], r: 8 }, { at: [-38, 314], r: 8 }, { at: [-35, 342], r: 7 }, { at: [-42, 364], r: 6 }, // the long island, right
     { at: [-40, 420], r: 7 }, { at: [-37, 448], r: 7 },                                                                       // the island short of the green, right
-    { at: [-41, 211], r: 3 }, { at: [-33, 482], r: 3 }],                                                                      // two lone trees
+    { at: [-41, 211], r: 3 },                                                                                                  // a lone tree
+    { at: [-3, 516], r: 1.5 }, { at: [5, 517], r: 1.5 }, { at: [12, 516], r: 1.5 },                                          // three trees between the green and the back pond (owner)
+    { at: [-37, 462], r: 1.5 }, { at: [-39, 472], r: 1.5 }, { at: [-36, 481], r: 1.5 }],                                    // three right of the front pond (owner)
   cars: [
     { at: [10, -14], heading: 20, colour: '#262320', kind: 'gt' },
     { at: [-55, 500], heading: 80, colour: '#C1121F', kind: 'hyper' },
@@ -843,6 +845,10 @@ function heightAt(x, z) {
   h += (bd < 1 ? -0.75 * t * t * (3 - 2 * t) : bd < 1.25 ? 0.22 * Math.sin(Math.PI * (bd - 1) / .25) : 0) * fwBunker; // flat floor, steep face, grass lip
   const sd = softBunkerD(x, z), u = clamp(-sd / 3, 0, 1);              // soft bunker: a smooth bowl 3 m in from the edge, low rounded lip
   if (sd < 0) h -= 0.55 * u * u * (3 - 2 * u); else if (sd < 1.5) h += 0.12 * Math.sin(Math.PI * sd / 1.5);
+  if (HOLE.green.plateau) { // green.plateau = h: a dead-flat putting surface h above the approach, banked down on every side (owner, hole 15)
+    const w = clamp((1.6 - greenD(x, z)) / .6, 0, 1), top = lerpPts(HOLE.elevation, HOLE.green.at[1]) + HOLE.green.plateau;
+    h += (top - h) * w * w * (3 - 2 * w);
+  }
   const wd = waterD(x, z); if (wd < 4) h -= 0.8 * clamp(1 - wd / 4, 0, 1);
   h += .25 * teePad(x, z); // raised tee pad, 8 x 12 m on top, with a gentle bank
   return h;
