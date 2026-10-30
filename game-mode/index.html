@@ -467,7 +467,7 @@ const HOLES = [{
   wind: { mph: 5, toward_deg: 20 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 16, line: [[0, 0], [54, 0.6], [89, 2], [125, 2], [164.6, 0.6]] },
   elevation: [[0, 9], [30, 8.5], [80, 3], [140, 0], [175, 0.6], [210, 1.5]], // ~8 m drop: plays a club shorter
-  green: { at: [0.6, 164.6], r: 14, fx: [['tier', -6, .4], ['tier', 5, .35]] }, // wide, shifting levels front to back
+  green: { at: [0.6, 164.6], r: 14, fx: [['tier', 3.5, .5, -45], ['tilt', -45, .012]] }, // owner's heat map: a diagonal bank just above the pin, high back-right shelf above, low front left below
   garden: { // owner's photo: azaleas and a dogwood left of the tee under tall pines
     azaleas: [[26, -4, 30, 22, 5], [27, 30, 31, 60, 4]],
     trees: [['dogwood', 25, 18, 1], ['dogwood', 24, 30, .8]],
