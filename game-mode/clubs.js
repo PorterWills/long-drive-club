@@ -17,7 +17,7 @@ const FINISH = {
 // one head per kind; length, loft and lie per club in the bag (the 5, 7 and 9 irons share a head, as do the two wedges)
 export const CLUB_KIT = {
   dr: { kind: 'driver', length: 45.5, loft: 10.5, lie: 48 }, // owner: 10° flatter than the sheet, held lower in the hands
-  '3w': { kind: 'driver', length: 43, loft: 15, lie: 53.5, head: .8, black: true }, // the driver's head, smaller and all black (owner: to set it apart), 5° flatter
+  '3w': { kind: 'driver', length: 43, loft: 15, lie: 53.5, head: .8, silver: true }, // the driver's head, smaller and all silver (owner: to set it apart), 5° flatter
   '5i': { kind: 'iron', length: 38, loft: 27, lie: 56.5 }, // irons 5° flatter than the sheet (owner: sat a bit upright)
   '7i': { kind: 'iron', length: 37, loft: 34, lie: 57.5 },
   '9i': { kind: 'iron', length: 36, loft: 42, lie: 58.5 },
@@ -65,7 +65,7 @@ function head(kind, m, size = 1) {
       }
       geo.computeVertexNormals(); return geo;
     };
-    const body = new THREE.Mesh(shell(), m.body), crown = new THREE.Mesh(shell(Math.PI * .4, 1.008), m.satin);
+    const body = new THREE.Mesh(shell(), m.body), crown = new THREE.Mesh(shell(Math.PI * .4, 1.008), m.crown);
     const at = new THREE.Vector3(cx, -S * h, 0); // the middle of the face
     const fw = w * .8, fh = h * .66, fy = at.y, fx = at.x;
     const face = new THREE.Mesh(new THREE.CircleGeometry(.5, 40), m.steel); face.scale.set(fw, fh, 1); face.position.set(fx, fy, .015);
@@ -105,7 +105,7 @@ export function makeClub(id, env) {
   const k = CLUB_KIT[id], m = {};
   for (const [n, f] of Object.entries(FINISH)) m[n] = new THREE.MeshStandardMaterial({ ...f, envMap: env, envMapIntensity: 1.1 });
   const club = new THREE.Group(), lie = rad(k.lie), up = new THREE.Vector3(-Math.cos(lie), Math.sin(lie), 0); // up the shaft
-  m.body = k.black ? m.satin : m.chrome;
+  m.body = m.chrome; m.crown = k.silver ? m.chrome : m.satin;
   const hd = head(k.kind, m, k.head); hd.rotation.x = -rad(k.loft); // lay the face back
   club.add(hd);
   const along = (geo, from, to) => { // a cylinder from `from` to `to` inches up the shaft
