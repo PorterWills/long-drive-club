@@ -44,7 +44,14 @@ function head(kind, m, size = 1) {
     const w = 4.9 * size, d = 4.6 * size, h = 2.4 * size, F = .32, S = -.4; // the face and sole cut flat off a ball
     const shell = (phi = Math.PI) => {
       const geo = new THREE.SphereGeometry(.5, 40, 24, 0, Math.PI * 2, 0, phi), a = geo.attributes.position;
-      for (let i = 0; i < a.count; i++) { a.setZ(i, Math.min(a.getZ(i), F)); a.setY(i, Math.max(a.getY(i), S)); }
+      for (let i = 0; i < a.count; i++) {
+        // owner: a teardrop, not a circle. From behind, full at the heel and tapering to the toe; from above, deepest
+        // behind the middle and shallower towards the toe
+        const x = a.getX(i), t = THREE.MathUtils.smoothstep(x, -.1, .5);
+        a.setY(i, a.getY(i) * (1 - .32 * t));
+        a.setZ(i, F - (F - a.getZ(i)) * (1 - .3 * t));
+        a.setZ(i, Math.min(a.getZ(i), F)); a.setY(i, Math.max(a.getY(i), S));
+      }
       geo.computeVertexNormals(); return geo;
     };
     const at = new THREE.Vector3(w * .37, -S * h, -d * F); // heel tucked onto the neck, sole on the ground datum, face plane on z=0
@@ -53,6 +60,11 @@ function head(kind, m, size = 1) {
     const fw = w * .8, fh = h * .66, fy = at.y, fx = at.x;
     const face = new THREE.Mesh(new THREE.CircleGeometry(.5, 40), m.steel); face.scale.set(fw, fh, 1); face.position.set(fx, fy, .015);
     g.add(body, crown, face);
+    // the back: a weight port low in the rear skirt, a knurled chrome ring round a dark bolt
+    const back = new THREE.Box3().setFromObject(body), bz = back.min.z, bx = at.x - w * .04, by = h * .3;
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(.34, .34, .12, 24), m.chrome); ring.rotation.x = Math.PI / 2; ring.position.set(bx, by, bz + .05);
+    const bolt = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .14, 6), m.satin); bolt.rotation.x = Math.PI / 2; bolt.position.set(bx, by, bz + .03);
+    g.add(ring, bolt);
     for (let k = 0; k < 7; k++) { // fine scorelines, no paint fill: a darker groove
       const line = new THREE.Mesh(new THREE.BoxGeometry(fw * (.62 - Math.abs(k - 3) * .07), .025, .01), m.satin);
       line.position.set(fx, fy + (k - 3) * fh * .1, .03); g.add(line);
