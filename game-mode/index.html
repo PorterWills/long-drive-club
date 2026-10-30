@@ -485,12 +485,12 @@ const HOLES = [{
     { at: [-32, 165], heading: 85, colour: '#EDE9DF', kind: 'gt' },
   ],
 }, {
-  name: 'Pompei', par: 4, si: 11,
+  name: 'Pompei', par: 4, si: 11, gallery: true, // roped tee and empty chairs, no car at the tee (owner)
   tee: [0, 0], pin: [-10.6, 411.4],            // 450 yd tee to pin (back tee, illustration 0.262 m/px), uphill finish
   wind: { mph: 8, toward_deg: 120 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   // owner's illustration: a tight chute off the tee, then a slim straight fairway between a long right band and a left tree island
   fairway: { half_width: 12, line: [[0, 0], [53.7, -2.5], [127.1, -4.9], [205.7, -6.9], [284.3, -8.5], [362.9, -10.2], [411.4, -10.6]] },
-  elevation: [[0, 4], [200, 0], [330, 2], [395, 7], [460, 8]], // dips, then climbs to a raised green
+  elevation: [[0, 4], [200, 0], [310, 0.5], [365, 6], [392, 7.3], [460, 8]], // owner's heat map: dips, then a steep climb ~45–100 m short of the green
   green: { at: [-10.6, 411.4], r: 8, long: [90, 1.9], plateau: .8 }, // shallow and wide, raised, ringed by sand
   bunkers: [{ at: [1.3, 399.7], r: 4.5, soft: 1 }, { at: [-11.8, 397], r: 4.5, soft: 1 }, { at: [-24.9, 399.5], r: 4.5, soft: 1 }, // three in front
     { at: [5.1, 419.4], r: 4, soft: 1 }, { at: [-15.9, 421.8], r: 4, soft: 1 }],                                                  // two behind
@@ -498,7 +498,6 @@ const HOLES = [{
   trees: [[1, 0, 40, 18, 16], [1, 40, 140, 12, 20], [1, 222, 380, 14, 30], [-1, 0, 55, 13, 16], [-1, 92, 440, 15, 18]],
   treeClusters: [{ at: [17.6, 160], r: 6 }, { at: [21.9, 442], r: 8 }, { at: [-29.2, 441.4], r: 10 }, { at: [-42.2, 430.8], r: 8 }],
   cars: [
-    { at: [10, -14], heading: 20, colour: '#262320', kind: 'gt' },
     { at: [30, 415], heading: -80, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
