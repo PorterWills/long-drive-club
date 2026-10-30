@@ -1710,7 +1710,7 @@ const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(cl
 for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
 const _aimDir = new THREE.Vector3();
 const SWING = { back: .8, hold: .08, down: .12, through: .35, fade: .3 }; // seconds. Owner: slow takeaway, fast downswing
-const swingBack = () => CLUBS[state.club].id === 'dr' ? 1.1 : SWING.back; // owner: the driver takes it away slower still
+const swingBack = () => ({ dr: 1.1, '5i': 1, '7i': 1, '9i': 1 })[CLUBS[state.club].id] ?? SWING.back; // owner: the driver and irons take it away slower still
 const peg = new THREE.Mesh(new THREE.CylinderGeometry(.014, .005, .06, 8), new THREE.MeshLambertMaterial({ color: '#d9c9a3' })); scene.add(peg); // wooden tee, drawn at the ball's scale
 const BALL_NEAR = BALL.r / .08; // drawn ball is .08 radius; this scale makes it the real 1.68 in
 const cupBallMat = new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4 });
