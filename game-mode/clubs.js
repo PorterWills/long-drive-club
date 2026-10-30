@@ -82,7 +82,7 @@ function head(kind, m, size = 1) {
     }
     g.userData.face = new THREE.Vector3(fx, fy, 0);
   } else if (kind === 'iron' || kind === 'wedge') { // classic blade; the wedge taller, rounder at the toe, wider soled
-    const wedge = kind === 'wedge', ht = wedge ? 3.35 : 3.4, th = wedge ? 2.35 : 2, sole = wedge ? 1.05 : .75;
+    const wedge = kind === 'wedge', ht = wedge ? 3.35 : 3.4, th = wedge ? 2.35 : 2, sole = wedge ? .65 : .45; // owner: the blades read thick from behind, so thinner than the sheet's sole widths (1.05, 0.75)
     const geo = new THREE.ExtrudeGeometry(blade(ht, th, th * .45), { depth: sole, bevelEnabled: true, bevelThickness: .06, bevelSize: .06, bevelSegments: 2, curveSegments: 12 });
     geo.translate(0, 0, -sole); // face on z=0, the back of the blade behind it
     g.add(new THREE.Mesh(geo, m.chrome));
