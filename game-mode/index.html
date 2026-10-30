@@ -550,15 +550,19 @@ const HOLES = [{
   ],
 }, {
   name: 'Jamelia', par: 4, si: 6,
-  tee: [0, 0], pin: [79.2, 445.7],             // 495 yd tee to pin (back tee, aerial scale 0.344 m/px), steep downhill, sweeping left
+  tee: [0, 0], pin: [79.2, 445.7],             // 495 yd tee to pin (back tee, illustration 0.276 m/px), steep downhill, sweeping left
   wind: { mph: 10, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 15, line: [[0, 0], [104.7, -9.4], [212.1, -14.8], [292.7, 1.3], [357.1, 28.2], [405.4, 49.7], [445.7, 79.2]] },
-  elevation: [[0, 20], [200, 8], [350, 0], [460, 1]],
-  green: { at: [79.2, 445.7], r: 12, fx: [['tier', -5, .35]] },
-  bunkers: [{ at: [47, 386.6], r: 6 }, { at: [37.6, 365], r: 6 }, { at: [60.4, 440.3], r: 4 }, { at: [59, 433], r: 3.5 }],
+  // owner's illustration: steeply downhill, bowing right then swinging left; drive left-centre for the angle in
+  fairway: { half_width: 17, line: [[0, 0], [61.8, -26.9], [159.2, -21.2], [240.8, -7.4], [320.9, 14.4], [372.8, 36.2], [410, 60.7], [445.7, 79.2]] },
+  elevation: [[0, 22], [150, 14], [300, 4], [380, 0], [420, 1.5], [450, 2.5], [490, 3]], // the green sits on the rise beyond the big bunker
+  green: { at: [79.2, 445.7], r: 8, long: [11, 1.8], fx: [['tilt', -90, .02]] }, // ~16 × 29 m, pitches right to left
+  bunkers: [ // the big centre bunker well short of the green (~55 m, with fingers), and a kidney front-right of the green
+    { at: [27.0, 345.0], r: 4.5, soft: 1 }, { at: [30.2, 351.1], r: 6, soft: 1 }, { at: [33.5, 357.2], r: 6.5, soft: 1 }, { at: [36.8, 363.4], r: 7, soft: 1 }, { at: [40.0, 369.5], r: 7, soft: 1 }, { at: [43.2, 375.6], r: 6.5, soft: 1 }, { at: [46.5, 381.8], r: 6, soft: 1 }, { at: [49.8, 387.9], r: 5, soft: 1 }, { at: [53.0, 394.0], r: 4, soft: 1 },
+    { at: [48.5, 368], r: 3.5, soft: 1 }, { at: [55.5, 384], r: 3.5, soft: 1 }, { at: [47.5, 398], r: 3, soft: 1 }, // fingers
+    { at: [59.5, 436.5], r: 4.2, soft: 1 }, { at: [63, 442.5], r: 4, soft: 1 }],
   water: [],
-  trees: [[1, 40, 440, 30, 18], [-1, 160, 420, 38, 18]],
-  treeClusters: [{ at: [-51, 139.6], r: 6 }, { at: [95, 465], r: 10 }, { at: [30, 455], r: 8 }],
+  trees: [[1, 20, 400, 30, 20], [-1, 130, 300, 40, 20], [-1, 300, 440, 26, 20]],
+  treeClusters: [{ at: [-55.1, 116.8], r: 14 }, { at: [108.5, 465.1], r: 10 }, { at: [85.2, 475.4], r: 9 }, { at: [64.1, 468.5], r: 8 }, { at: [112.1, 413.7], r: 9 }],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#EDE9DF', kind: 'gt' },
     { at: [110, 440], heading: 80, colour: '#C1121F', kind: 'hyper' },
