@@ -783,7 +783,7 @@ const HOLES = [{
   wind: { mph: 16, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 11, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
   elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
-  green: { at: [-91.8, 415.1], r: 11, plateau: 1, drop: [-90, 3], fx: [['tilt', 90, .008]] }, // owner's heat map: flat on top, banked, a massive drop off the right
+  green: { at: [-91.8, 415.1], r: 11, plateau: 1, drop: [-90, 3], fx: [['tilt', -20, .02], ['bowl', -9, 4, 4, -.25]] }, // owner's heat map: high back half (back right highest), a bank through the pin to a low front (front left lowest); a massive drop off the right
   bunkers: [
     { at: [-77.5, 411.6], r: 3.4, soft: 1 }, { at: [-74.8, 408.2], r: 3, soft: 1 },  // front-left, a big kidney
     { at: [-104.9, 408.1], r: 3.2, soft: 1 }, { at: [-104, 412.6], r: 2.8, soft: 1 }, // back-right
