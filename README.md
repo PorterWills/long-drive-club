@@ -272,7 +272,7 @@ update both if you ever redeploy to a new URL.
 ## The golf game
 
 `game-mode/` is the browser golf game (live at `/game-mode/`, tab title
-*National Course*; `/gamer/` redirects there). Its own
+*LDC Arcade*; `/gamer/` redirects there). Its own
 `game-mode/README.md` covers how it works and the owner's decisions.
 
 The home page promotes it with a full-width band (`#game`) between
