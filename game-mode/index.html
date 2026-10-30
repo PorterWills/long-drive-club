@@ -608,19 +608,35 @@ const HOLES = [{
     { at: [-45, 60], heading: 85, colour: '#EDE9DF', kind: 'gt' },
   ],
 }, {
+  // Re-traced from the owner's illustration (0.303 m/px, back tee, 498.3 m over ~1,645 px), green heat map and photo: a
+  // sweeping dogleg left. The drive crosses the big creek just off the tee (stone bridge), the fairway swings left round
+  // a wooded bank with a tributary running along its foot, and the tributary bends across the front of a big raised green
+  // with four bunkers behind. Heat map: the putting surface is gentle; the bank down to the creek is steep.
   name: 'Bulgaria', par: 5, si: 4,
-  tee: [0, 0], pin: [-58.6, 494.9],            // 545 yd tee to pin (back tee, aerial scale 0.417 m/px), dogleg left, creek down the left and across the front
+  tee: [0, 0], pin: [0, 498.3],                // 545 yd tee to pin
   wind: { mph: 10, toward_deg: 60 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 18, line: [[0, 0], [52.1, -45.6], [133.5, -100.9], [214.9, -159.5], [312.6, -172.5], [394, -146.5], [459.1, -100.9], [494.9, -58.6]] },
-  elevation: [[0, 4], [200, 0], [350, 1], [480, 2], [530, 3]],
-  green: { at: [-58.6, 494.9], r: 11, fx: [['tier', 4, .35]] },
+  fairway: { half_width: 24, line: [[0, 0], [79.2, -41.8], [145.6, -92.6], [226.4, -135.8], [317.7, -135.2], [405.6, -101.4], [460.7, -46.7], [498.3, 0]] },
+  elevation: [[0, 4], [120, 1], [300, 0], [440, 0], [470, 1.2], [500, 1.6], [540, 2.5]], // the green sits up above the creek
+  green: { at: [2, 492], r: 11, long: [0, 2.2], fx: [['ff', .4], ['tilt', -90, .01]] }, // big: ~22 m wide, ~48 m long
   shaved: true, swirl: true,
-  bunkers: [{ at: [-35.8, 514.4], r: 4 }, { at: [-35.8, 490], r: 4 }, { at: [-48.8, 524], r: 4 }],
-  water: [stream([[-55.4, 117.2], [-81.4, 110.7], [-107.5, 104.2]], 7, [-95, 140]),
-    stream([[-127, 185.6], [-140, 247.5], [-146.5, 306], [-127, 351.6]], 2, [-170, 300])] // drive zone: drop back on the fairway, not past the green-side creek
-    .concat(stream([[-127, 351.6], [-101, 397.2], [-91, 423.3], [-78, 462.4], [-70, 501.4]], 2, [-118, 430])),
-  trees: [[1, 0, 180, 20, 15], [1, 200, 470, 30, 25], [-1, 180, 420, 45, 25], [-1, 0, 100, 15, 12]],
-  treeClusters: [{ at: [-94, 296], r: 25 }, { at: [-215, 280], r: 25 }, { at: [-192, 384], r: 8 }],
+  garden: { // owner: azaleas banked behind the green and along the creek (photo)
+    water: ['#2b4a41', '#122219'],
+    azaleas: [[-92, 175, -96, 270, 6], [-88, 300, -42, 368, 6], [-28, 400, -10, 430, 5], [26, 455, 30, 500, 6], [28, 505, 16, 530, 5]],
+    trees: [['dogwood', 30, 470, 1], ['dogwood', 32, 515, .9], ['maple', 24, 535, 1.2], ['dogwood', -80, 300, .9], ['maple', -40, 380, 1.1]],
+    bridges: [{ at: [-24, 103], deg: -25, len: 18, arches: 2 }], // the stone bridge just off the tee
+  },
+  bunkers: [
+    { at: [9, 455], r: 3.5, soft: 1 }, { at: [14, 459], r: 3, soft: 1 },  // back-left
+    { at: [19, 474], r: 3.2, soft: 1 }, { at: [20, 480], r: 3, soft: 1 },
+    { at: [20, 494], r: 3.2, soft: 1 }, { at: [20, 500], r: 3, soft: 1 },
+    { at: [16, 514], r: 3.2, soft: 1 }, { at: [12, 519], r: 3, soft: 1 }], // four behind, each a soft kidney
+  water: [
+    stream([[-15, 98], [-60, 98], [-98, 97], [-135, 95], [-155, 91]], 7, [-75, 125]),          // the big creek off the tee
+    stream([[-104, 179], [-107, 223], [-109, 269], [-100, 305], [-83, 346], [-52, 373], [-38, 402], [-21, 418],
+      [-20, 442], [-22, 458], [-20, 488], [-13, 510]], 2.5, [-75, 405]),                         // the tributary: down the left, then across the front
+  ],
+  trees: [[1, 0, 85, 16, 15], [-1, 0, 85, 16, 15], [1, 130, 440, 34, 30], [-1, 130, 340, 32, 15], [-1, 420, 540, 60, 20], [1, 445, 545, 32, 20]],
+  treeClusters: [{ at: [-152, 384], r: 8 }, { at: [-110, 50], r: 7 }, { at: [-40, 160], r: 14 }, { at: [-55, 240], r: 16 }, { at: [-40, 315], r: 14 }],
   cars: [
     { at: [10, -14], heading: 20, colour: '#262320', kind: 'gt' },
     { at: [-150, 480], heading: 80, colour: '#C1121F', kind: 'hyper' },
