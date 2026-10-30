@@ -39,24 +39,39 @@ function blade(heelToe, toeH, heelH) {
 
 function head(kind, m, size = 1) {
   const g = new THREE.Group();
-  if (kind === 'driver') { // sheet Rev B: a round, deep head with a full toe; the heel sweeps up into a tapered neck
-    // that runs straight into the shaft; a flat face with fine scorelines; the crown a soft dark dome
-    const w = 4.9 * size, d = 4.6 * size, h = 2.4 * size, F = .32, S = -.4; // the face and sole cut flat off a ball
-    const shell = (phi = Math.PI) => {
-      const geo = new THREE.SphereGeometry(.5, 40, 24, 0, Math.PI * 2, 0, phi), a = geo.attributes.position;
+  if (kind === 'driver') { // owner's plan view: a flat face, a broad toe, a rounded point at the back (where the bolt
+    // sits) and a heel that narrows into the neck, which sits just behind the face; the crown a soft dark dome
+    const w = 4.9 * size, d = 4.6 * size, h = 2.4 * size, S = -.4; // the sole cut flat off the ball
+    // the outline from above, [toe 0..1 from the heel, back 0..1 from the face], traced from the owner's diagram
+    const plan = new THREE.SplineCurve([[.03, .02], [.5, -.02], [.96, .03], [1.01, .3], [.98, .58], [.86, .82], [.66, .97], [.47, 1], [.3, .9],
+      [.16, .68], [.07, .4], [.03, .15], [.03, .02]].map(([u, v]) => new THREE.Vector2(u * w, -v * d))).getSpacedPoints(96);
+    const cx = w * .5, cz = -d * .45, R = []; // the outline's radius from the middle, every 2.5°
+    for (let k = 0; k < 144; k++) {
+      const t = k / 144 * Math.PI * 2, dx = Math.cos(t), dz = Math.sin(t); let best = 0;
+      for (let j = 0; j < plan.length - 1; j++) { // ray from the middle against each edge
+        const p0 = plan[j], p1 = plan[j + 1], ex = p1.x - p0.x, ez = p1.y - p0.y, den = dx * ez - dz * ex;
+        if (Math.abs(den) < 1e-9) continue;
+        const qx = p0.x - cx, qz = p0.y - cz, r = (qx * ez - qz * ex) / den, sgm = (qx * dz - qz * dx) / den;
+        if (r > 0 && sgm >= 0 && sgm <= 1) best = Math.max(best, r);
+      }
+      R.push(best);
+    }
+    const radius = t => { const f = ((t / (Math.PI * 2)) % 1 + 1) % 1 * 144, k = Math.floor(f); return R[k % 144] + (R[(k + 1) % 144] - R[k % 144]) * (f - k); };
+    const shell = (phi = Math.PI, grow = 1) => { // a ball, pulled out to the outline, its sole cut flat
+      const geo = new THREE.SphereGeometry(.5, 48, 24, 0, Math.PI * 2, 0, phi), a = geo.attributes.position;
       for (let i = 0; i < a.count; i++) {
-        a.setZ(i, Math.min(a.getZ(i), F)); a.setY(i, Math.max(a.getY(i), S));
+        const x = a.getX(i), z = a.getZ(i), rho = Math.hypot(x, z) / .5, t = Math.atan2(z, x), r = radius(t) * grow * rho;
+        a.setXYZ(i, cx + Math.cos(t) * r, (Math.max(a.getY(i), S) - S) * h * grow, Math.min(cz + Math.sin(t) * r, 0));
       }
       geo.computeVertexNormals(); return geo;
     };
-    const at = new THREE.Vector3(w * .37, -S * h, -d * F); // heel tucked onto the neck, sole on the ground datum, face plane on z=0
-    const body = new THREE.Mesh(shell(), m.chrome); body.scale.set(w, h, d); body.position.copy(at);
-    const crown = new THREE.Mesh(shell(Math.PI * .4), m.satin); crown.scale.set(w * 1.006, h * 1.03, d * 1.006); crown.position.copy(at);
+    const body = new THREE.Mesh(shell(), m.chrome), crown = new THREE.Mesh(shell(Math.PI * .4, 1.008), m.satin);
+    const at = new THREE.Vector3(cx, -S * h, 0); // the middle of the face
     const fw = w * .8, fh = h * .66, fy = at.y, fx = at.x;
     const face = new THREE.Mesh(new THREE.CircleGeometry(.5, 40), m.steel); face.scale.set(fw, fh, 1); face.position.set(fx, fy, .015);
     g.add(body, crown, face);
     // the back: a weight port low in the rear skirt, a knurled chrome ring round a dark bolt
-    const back = new THREE.Box3().setFromObject(body), bz = back.min.z, bx = at.x - w * .04, by = h * .3;
+    const back = new THREE.Box3().setFromObject(body), bz = back.min.z, bx = w * .5, by = h * .35; // the rounded point at the back
     // set nearly flush (owner: it stood proud): each disc sits mostly inside the shell, its face just at the surface
     const ring = new THREE.Mesh(new THREE.CylinderGeometry(.26, .26, .1, 24), m.chrome); ring.rotation.x = Math.PI / 2; ring.position.set(bx, by, bz + .07);
     const bolt = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .1, 6), m.satin); bolt.rotation.x = Math.PI / 2; bolt.position.set(bx, by, bz + .065);
