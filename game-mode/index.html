@@ -664,7 +664,7 @@ const HOLES = [{
   name: 'Icepick', par: 5, si: 2,
   tee: [0, 0], pin: [0, 502.9],                // 550 yd tee to pin
   wind: { mph: 20, toward_deg: 10 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 22, line: [[0, 0], [80.8, -12.2], [168, -7.5], [261.5, -5.9], [323.8, -6.3], [401.8, 4.2], [448.5, 1.8], [502.9, 0]] },
+  fairway: { half_width: 18, line: [[0, 0], [80.8, -12.2], [168, -7.5], [261.5, -5.9], [323.8, -6.3], [401.8, 4.2], [448.5, 1.8], [502.9, 0]] },
   elevation: [[0, 8], [250, 10], [400, 4], [470, 0], [500, 0.6], [520, 0.4], [560, -0.5]],
   green: { at: [2, 503], r: 8, long: [90, 1.8], fx: [['ff', .5]] }, // shallow and wide: ~16 m deep, ~29 m across
   shaved: true,
@@ -678,11 +678,14 @@ const HOLES = [{
     pond([[23, 489.3], [-3.5, 487.3], [-22.1, 480.8], [-31.3, 472.8], [-29.5, 460.4], [-15.4, 457.5], [-3.1, 467.1], [15.4, 473.6], [23.1, 480]], [0, 440]), // in front
     pond([[41.1, 523.8], [42.3, 542.6], [37.3, 561.2], [14, 562.3], [-14, 557.2], [-4.4, 544.9], [14.6, 523.4], [30.3, 517.4]], [-15, 525]),              // behind
   ],
-  trees: [[1, 0, 520, 50, 15], [-1, 0, 520, 50, 15]],
+  // owner (tested): too wide, too easy. The drive lands in a ~40 m landing area, then the second goes through a tunnel of
+  // tall trees (~30 m wide, the green's width) and over the pond. A stand of tall trees juts in
+  // from the left at the end of the landing area (owner's reference: be on the right side of the fairway)
+  trees: [[1, 0, 300, 24, 20], [-1, 0, 300, 24, 20], [1, 300, 478, 12, 30], [-1, 300, 478, 18, 30], [1, 478, 540, 30, 15], [-1, 478, 540, 34, 15]],
   treeClusters: [
     { at: [20, 50], r: 7 }, { at: [22, 84], r: 6 }, { at: [-33, 43], r: 8 }, { at: [-34, 90], r: 8 }, { at: [-35, 130], r: 7 }, // round the tee
     { at: [28, 125], r: 8 }, { at: [39, 169], r: 9 }, { at: [48, 219], r: 9 }, { at: [50, 262], r: 9 },                       // the wooded bank, left
-    { at: [36, 318], r: 9 }, { at: [26, 340], r: 9 }, { at: [21, 355], r: 6 },                                                // the island that juts in from the left
+    { at: [14, 318], r: 6 }, { at: [10, 334], r: 6 }, { at: [9, 350], r: 5 }, { at: [12, 366], r: 5 },                                                // the island that juts in from the left
     { at: [60, 403], r: 10 }, { at: [58, 450], r: 9 },
     { at: [-34, 261], r: 7 }, { at: [-32, 286], r: 8 }, { at: [-38, 314], r: 8 }, { at: [-35, 342], r: 7 }, { at: [-42, 364], r: 6 }, // the long island, right
     { at: [-40, 420], r: 7 }, { at: [-37, 448], r: 7 },                                                                       // the island short of the green, right
