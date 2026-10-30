@@ -344,7 +344,7 @@ const HOLES = [{
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405.5, -42]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-42, 405.5], r: 13, fx: [['ff', .35], ['tier', 6, .3]] },
+  green: { at: [-42, 405.5], r: 13, fx: [['ff', .5], ['tier', 4, .3], ['tilt', -40, .008], ['bowl', 1, -7, 4, .2], ['bowl', 0, 14, 5, -.3]] }, // owner's heat map: steep false front, flat middle shelf, high back right, hump right, left edge falls to the bunker
   // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd. Greenside: one big
   // bean (~25 m long) traced from the owner's top-down of the green (0.067 m/px), from the green's left middle down
   // to its front-left corner, so the tucked pin has to be carried over sand
