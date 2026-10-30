@@ -2249,8 +2249,8 @@ function frame(now) {
     const show = state.phase === 'aim' || ((state.phase === 'swinging' || state.phase === 'flying') && t < end);
     for (const [id, m] of Object.entries(CLUB_MESH)) m.visible = show && id === c.id;
     if (show) {
-      const full = !putt && !['pw', 'sw'].includes(c.id); // owner: woods and irons swing full, wedges and putter keep a half swing
-      const amp = (putt ? 8 + 22 * state.power : full ? 70 + 110 * state.power : 40 + 60 * state.power) * Math.PI / 180, ease = x => x * x * (3 - 2 * x);
+      const full = !putt && !['pw', 'sw'].includes(c.id); // owner: woods and irons swing full (the driver furthest, past parallel), wedges and putter keep a half swing
+      const amp = (putt ? 8 + 22 * state.power : full ? (c.id === 'dr' ? 80 + 150 * state.power : 70 + 110 * state.power) : 40 + 60 * state.power) * Math.PI / 180, ease = x => x * x * (3 - 2 * x);
       let a = 0; // + is the backswing
       if (t >= 0) a = t < SWING.back ? amp * ease(t / SWING.back) : t < SWING.back + SWING.hold ? amp
         : t < imp ? amp * (1 - Math.pow((t - SWING.back - SWING.hold) / SWING.down, 2))
