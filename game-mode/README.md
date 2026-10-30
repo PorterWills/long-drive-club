@@ -2,7 +2,7 @@
 
 A browser golf game for the Long Drive Club website. It plays like golfslate.com (whose mechanics were reverse engineered with REA on 28 Oct 2026). Cars are parked on the course, and it's branded with the LDC Design System.
 
-**Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *National Course*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
+**Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *LDC Arcade*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
 
 Stroke index follows the owner's official card (29 Oct 2026). Yards are the game's own, measured tee to pin. Five holes differ from the card (1: 445 vs 455, 2: 585 vs 575, 11: 520 vs 505, 13: 545 vs 510, 15: 550 vs 530), and the owner chose to keep them (29 Oct 2026), so don't move tees to match.
 
