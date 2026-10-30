@@ -506,19 +506,32 @@ const HOLES = [{
     { at: [10, -15], heading: 20, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
+  // Re-traced from the owner's illustration (0.308 m/px, 420.6 m over ~1,364 px): downhill off the tee, bowing right
+  // round a long tree island on the left with a second one on the right, then up into a dip and an elevated green
+  // that turns back left. Two greenside bunkers short-left; the green has a false front and three shelves.
   name: 'Texan Tangerine', par: 4, si: 7,
-  tee: [0, 0], pin: [46, 418],                 // 460 yd tee to pin (back tee, aerial scale 0.205 m/px), dogleg left
+  tee: [0, 0], pin: [-5, 420.6],               // 460 yd tee to pin
   wind: { mph: 11, toward_deg: 45 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 14, line: [[0, 0], [100, -15.8], [205, -28.9], [284, -23.7], [350, -5.3], [389, 28.9], [418, 46]] },
-  elevation: [[0, 6], [200, 2], [300, -1], [380, 4], [440, 6]],
-  green: { at: [46, 418], r: 11, fx: [['ff', .6]] },
-  bunkers: [{ at: [57.1, 406], r: 4 }, { at: [43.4, 401], r: 4 }],
+  fairway: { half_width: 14, line: [[0, 0], [68, -27.7], [130, -46.2], [207, -64.7], [284, -64.7], [346, -46.2], [392, -18.5], [420.6, -5]] },
+  elevation: [[0, 8], [150, 4], [300, 0], [375, -1.5], [400, 4], [440, 4.6], [470, 5]], // down to a dip, steep bank up to a gentle green (owner's heat map)
+  green: { at: [-6.5, 422], r: 10, fx: [['ff', .5], ['tier', -3, .18], ['tier', 4, .18]] }, // three soft shelves
+  bunkers: [ // the two left greenside bunkers
+    { at: [11.7, 405.6], r: 5.5, soft: 1 }, { at: [13.9, 414], r: 5, soft: 1 },
+    { at: [-1.5, 402.6], r: 5, soft: 1 }, { at: [1.5, 408], r: 4, soft: 1 }],
   water: [],
-  trees: [[1, 79, 329, 10, 15], [-1, 174, 352, 16, 20]],
-  treeClusters: [{ at: [7.9, 50], r: 4 }, { at: [10.5, 29], r: 4 }, { at: [-29, 39], r: 14 }, { at: [18, -3], r: 10 }],
+  trees: [[1, 0, 440, 75, 20], [-1, 20, 170, 45, 20], [-1, 300, 440, 45, 20]],
+  treeClusters: [
+    { at: [13.9, 28.3], r: 13 }, { at: [9.2, 65.3], r: 13 }, { at: [0, 108.4], r: 15 }, { at: [-6.2, 145.4], r: 14 }, // the long island, left
+    { at: [-18.5, 176.2], r: 13 }, { at: [-26.2, 216.2], r: 13 }, { at: [-27.7, 253.2], r: 14 }, { at: [-18.5, 287], r: 12 },
+    { at: [-101.6, 179.3], r: 12 }, { at: [-101.6, 216.2], r: 12 }, { at: [-101.6, 253.2], r: 12 }, { at: [-101.6, 293.2], r: 12 }, // the island, right
+    { at: [-126.3, 179.3], r: 12 }, { at: [-126.3, 216.2], r: 12 }, { at: [-126.3, 253.2], r: 12 }, { at: [-126.3, 293.2], r: 12 },
+    { at: [-66.2, 130], r: 3.5 },                                                                                            // the lone tree
+    { at: [-21.6, -39], r: 12 }, { at: [16.9, -17.9], r: 5 }, { at: [18.5, -39], r: 5 },                                     // round the tee
+    { at: [20, 445], r: 9 }, { at: [-25, 448], r: 8 },                                                                       // behind the green
+  ],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
-    { at: [75, 420], heading: 70, colour: '#C1121F', kind: 'hyper' },
+    { at: [-32, 432], heading: 70, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
   name: 'Jamelia', par: 4, si: 6,
@@ -536,37 +549,63 @@ const HOLES = [{
     { at: [110, 440], heading: 80, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
+  // Re-traced from the owner's illustration (0.292 m/px, back tee, 475.5 m over ~1,630 px): a tight chute off the tee,
+  // opening into a wide landing area that drifts right, then a green with a pond tucked front-left and a creek running
+  // behind it. Heat map: the putting surface is gentle and leans towards the pond; the banks down to the water are steep.
   name: 'Grey Catree', par: 4, si: 8,
-  tee: [0, 0], pin: [-14.5, 475.3],            // 520 yd tee to pin (back tee, aerial scale 0.414 m/px), pond front left of the green
+  tee: [0, 0], pin: [3.8, 475.5],              // 520 yd tee to pin
   wind: { mph: 12, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 18, line: [[0, 0], [113, 3.2], [226, 6.5], [307, 3.2], [388, -6.5], [475.3, -14.5]] },
-  elevation: [[0, 12], [250, 6], [450, 0], [520, 0]],
-  green: { at: [-14.5, 475.3], r: 13, fx: [['tilt', -90, .025]] },
+  fairway: { half_width: 17, line: [[0, 0], [84.6, 7.3], [172.1, 13.1], [245, 27.7], [318, 17.5], [390.9, -11.7], [475.5, 3.8]] },
+  elevation: [[0, 12], [250, 6], [440, 0.5], [490, 0.5], [530, 0]],
+  green: { at: [3.8, 476.5], r: 10, fx: [['tilt', -90, .015]] }, // leans down towards the pond
   shaved: true, swirl: true,
-  bunkers: [{ at: [-27.5, 494.6], r: 3.5 }, { at: [-21, 242.5], r: 3 }],
-  // traced from the course map: a long pond down the left behind the green, with a lobe tucked in front-left of it
-  water: [pond([[50.7, 455.3], [42.1, 471.3], [21.9, 500.5], [-6.9, 526], [-28.6, 545.8], [-39.4, 550.2], [-41.7, 538.6], [-17.8, 523.9], [11.8, 502], [9.5, 486.1], [3.6, 471.6], [4.2, 449.8], [2.7, 433.8], [12.8, 431.6], [18.7, 446.1], [21.7, 464.2], [36.2, 458.3], [46.3, 449.5]], [-28, 440])],
-  trees: [[1, 0, 430, 25, 25], [-1, 0, 230, 22, 18], [-1, 250, 370, 40, 20]],
-  treeClusters: [{ at: [-16, 330], r: 4 }, { at: [-24, 315], r: 3 }, { at: [-21, 242.5], r: 8 }, { at: [-38, 190], r: 6 }],
+  bunkers: [{ at: [-6, 489.5], r: 3, soft: 1 }, { at: [-1.5, 490.5], r: 2.2, soft: 1 }], // behind the green, clear of the creek (owner's photo)
+  water: [
+    pond([[16.5, 478], [16, 468], [14, 458], [10, 450], [14, 443], [24, 440], [32, 446], [34, 460], [31, 474], [24, 482]], [-10, 425]), // the pond, hard against the green's left side
+    stream([[80, 425], [55, 450], [38, 480], [20, 497], [0, 503], [-30, 515], [-55, 530]], 5, [-10, 425]),                   // the creek behind
+  ],
+  trees: [[1, -20, 200, 20, 25], [1, 200, 410, 45, 25], [-1, -20, 115, 18, 25], [-1, 200, 410, 36, 25], [-1, 410, 520, 50, 20]],
+  treeClusters: [
+    { at: [-19, 122.5], r: 9 }, { at: [-24.8, 157.5], r: 10 }, { at: [-27.7, 183.8], r: 8 },  // the island right of the chute
+    { at: [-7.3, 215.9], r: 10 }, { at: [-10.2, 245], r: 10 },                               // the island at the elbow
+    { at: [1.5, 296], r: 3 }, { at: [-10.2, 312], r: 3 }, { at: [-2.9, 329.6], r: 3 },       // three lone trees in the landing area
+    { at: [42, 425], r: 6 }, { at: [55, 485], r: 10 }, { at: [25, 515], r: 9 }, { at: [-12, 494], r: 1.5 }, { at: [-60, 449], r: 5 }, // round the green
+  ],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
-    { at: [-50, 470], heading: 80, colour: '#C1121F', kind: 'hyper' },
+    { at: [-45, 482], heading: 80, colour: '#C1121F', kind: 'hyper' },
   ],
 }, {
+  // Re-traced from the owner's illustration (0.123 m/px, 141.7 m over ~1,155 px) and green heat map: the creek runs
+  // diagonally across the front, the green is long and narrow, angled away to the right, with one bunker in front between
+  // the green and the water and two behind. The putting surface is flat; the bank down to the creek is steep.
   name: 'Silver Cymbal', par: 3, si: 16,
-  tee: [0, 0], pin: [0.6, 141.7],              // 155 yd tee to pin (back tee, aerial scale 0.163 m/px), creek across the front
-  wind: { mph: 8, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 14, line: [[0, 0], [141.7, 0.6]] },
-  elevation: [[0, 2], [100, 0], [150, 1], [190, 3]],
-  green: { at: [0.6, 141.7], r: 9, fx: [['ff', .3]] },
+  tee: [0, 0], pin: [0.4, 141.7],              // 155 yd tee to pin
+  wind: { mph: 10, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
+  fairway: { half_width: 16, line: [[0, 0], [141.7, 0.4]] },
+  elevation: [[0, 2], [100, 0], [125, 0.3], [135, 1.2], [160, 1.4], [195, 3]],
+  green: { at: [0.4, 141.7], r: 5.5, long: [-45, 2.5], fx: [['ff', .3]] }, // ~11 m wide, ~28 m long
   shaved: true, swirl: true,
-  bunkers: [{ at: [-6, 134], r: 2.5 }, { at: [3.2, 153.2], r: 3 }, { at: [-1.9, 157], r: 3 }],
-  water: [stream([[27.5, 89.4], [18.5, 98.3], [9.6, 106], [0.6, 112.4], [-8.3, 118.8], [-17.2, 126.4], [-26.2, 135.4], [-35.1, 145.6], [-44, 155.8]], 7, [-5, 92])],
-  trees: [[1, 110, 200, 15, 20], [-1, 150, 200, 20, 15]],
-  treeClusters: [{ at: [27.5, 67.7], r: 7 }, { at: [-30, 51], r: 5 }, { at: [-25, 35.8], r: 6 }],
+  garden: { // owner: make it feel like the real thing (photo from the bridge)
+    water: ['#2b4a41', '#122219'],                                              // dark, still creek
+    azaleas: [[24, 136, 4, 160, 6], [4, 160, -18, 176, 5], [30, 112, 26, 134, 4], [-32, 168, -46, 176, 4]], // banked behind the green, and along the far bank
+    trees: [['maple', 26, 124, 1.5], ['maple', 30, 146, 1.3], ['dogwood', 20, 168, 1], ['dogwood', -10, 184, .9], ['dogwood', 40, 104, .9], ['maple', -22, 186, .9]],
+    bridges: [{ at: [22, 86], deg: 53, len: 18, arches: 3 }, { at: [-38, 155], deg: 47, len: 15, arches: 2 }], // the stone bridge to the green, and one down the creek
+  },
+  bunkers: [
+    { at: [-0.7, 130.5], r: 2.5, soft: 1 }, { at: [-5.3, 134.6], r: 2.5, soft: 1 }, // in front, between green and creek
+    { at: [4.7, 155.2], r: 2.6, soft: 1 }, { at: [-2.1, 160.1], r: 2.6, soft: 1 }],  // the two behind
+  water: [stream([[52, 45], [41.5, 58.9], [23.1, 83.4], [5.9, 105.5], [-8.8, 123.9], [-26, 142.3], [-45.6, 163.2], [-60, 178]], 7, [-5, 92])],
+  trees: [[1, 60, 200, 30, 20], [-1, 170, 210, 25, 15]],
+  treeClusters: [
+    { at: [47.6, 77.3], r: 8 }, { at: [39, 95.7], r: 8 }, { at: [32.9, 114.1], r: 7 }, { at: [34.1, 132.5], r: 7 }, // the bank of trees beyond
+    { at: [29.2, 150.9], r: 7 }, { at: [25.5, 169.3], r: 7 }, { at: [10.8, 181.6], r: 6 }, { at: [-1.5, 189], r: 6 },
+    { at: [-26, 187.7], r: 6 }, { at: [-38.3, 181.6], r: 6 },
+    { at: [-32.1, 7.4], r: 5 }, { at: [-27.2, 18.4], r: 6 }, { at: [-39.5, 36.8], r: 4 },                             // by the tee
+  ],
   cars: [
     { at: [-9, -13], heading: -20, colour: '#C1121F', kind: 'hyper' },
-    { at: [-40, 120], heading: 85, colour: '#EDE9DF', kind: 'gt' },
+    { at: [-45, 60], heading: 85, colour: '#EDE9DF', kind: 'gt' },
   ],
 }, {
   name: 'Bulgaria', par: 5, si: 4,
@@ -706,7 +745,11 @@ const hardBunkerD = (x, z) => Math.min(...HOLE.bunkers.map((b, i) => b.soft ? 9 
 // soft bunkers (owner, hole 1): the circles melt into one smooth outline like water, metres, < 0 is sand
 const softBunkerD = (x, z) => HOLE.bunkers.reduce((d, b) => b.soft ? smin(d, Math.hypot(x - b.at[0], z - b.at[1]) - b.r, 2.5) : d, 99);
 const bunkerD = (x, z) => Math.min(hardBunkerD(x, z), 1 + softBunkerD(x, z) / 4); // < 1 is sand, either kind
-const greenD = (x, z) => blobD(HOLE.green, x, z, HOLE_NO * 3.7, .55);
+// green.long = [deg, f]: a long, narrow green, r wide and f × r long, its length turned deg from straight ahead (+ towards the left)
+const greenD = (x, z) => { const g = HOLE.green;
+  if (g.long) { const a = g.long[0] * Math.PI / 180, ux = Math.sin(a), uz = Math.cos(a), dx = x - g.at[0], dz = z - g.at[1], al = (dx * ux + dz * uz) * (1 / g.long[1] - 1);
+    x += al * ux; z += al * uz; }
+  return blobD(g, x, z, HOLE_NO * 3.7, .55); };
 // per-hole green contours: two seeded soft mounds or hollows on top of the shared back-to-front slope
 const MOUNDS = (() => { const r = rng(HOLE_NO * 101), g = HOLE.green; return [0, 1].map(() => {
   const a = r() * 6.283, d = r() * g.r * .55; return { x: g.at[0] + Math.cos(a) * d, z: g.at[1] + Math.sin(a) * d, h: (r() - .4) * .4, s2: (g.r * (.3 + r() * .15)) ** 2 }; }); })();
@@ -990,7 +1033,7 @@ if (location.search.includes('test')) {
       return ['flagstick is solid', r.landing.z < pz, `landed ${(r.landing.z - pz).toFixed(2)}m from pin`];
     })(),
     ['ball comes to rest', ['rest', 'ob', 'water'].includes(r0.outcome), r0.outcome],
-    (() => { const pin = v(HOLE.pin[0], 0, HOLE.pin[1]); const st = v(pin.x, heightAt(pin.x, pin.z - 10) + BALL.r, pin.z - 10); const pw = puttPower(st, pin); const r = simulate(st, strike(CLUBS[7], pw, 0, 'green', Math.random), calm, { rolling: true, pin }); const d = flat(r.final, pin), rolled = flat(r.final, st); return ['putter preset rolls ~the distance (break is the player\'s job)', r.outcome === 'holed' || Math.abs(rolled - 10.4) < 2,`${r.outcome} ${d.toFixed(2)}m pw=${pw.toFixed(2)} rolled=${flat(r.final, st).toFixed(2)}`]; })(),
+    (() => { const pin = v(HOLE.pin[0], 0, HOLE.pin[1]), a0 = (HOLE.green.long?.[0] ?? 0) * Math.PI / 180, sx = pin.x - 10 * Math.sin(a0), sz = pin.z - 10 * Math.cos(a0); const st = v(sx, heightAt(sx, sz) + BALL.r, sz); const pw = puttPower(st, pin); const r = simulate(st, strike(CLUBS[7], pw, a0, 'green', Math.random), calm, { rolling: true, pin }); const d = flat(r.final, pin), rolled = flat(r.final, st); return ['putter preset rolls ~the distance (break is the player\'s job)', r.outcome === 'holed' || Math.abs(rolled - 10.4) < 2,`${r.outcome} ${d.toFixed(2)}m pw=${pw.toFixed(2)} rolled=${flat(r.final, st).toFixed(2)}`]; })(),
     (() => { // 3 ft putt hit firmly (2.2 m/s) dead at the cup must drop, uphill and downhill (across a steep slope it breaks, as it should: the player aims off)
       const pin = v(HOLE.pin[0], heightAt(HOLE.pin[0], HOLE.pin[1]), HOLE.pin[1]), res = [];
       for (const ang of fallLine()) {
@@ -1118,7 +1161,7 @@ sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun, sun.target);
 
 const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', sand: '#d9cfb4', water: '#3d5f6e' }; // muted to sit with Racing Green
-const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#e4dcc4'), WATER = new THREE.Color('#41687a'), WATER_DEEP = new THREE.Color('#2a4a5a');
+const SAND_FACE = new THREE.Color('#b3a684'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#e4dcc4'), WATER = new THREE.Color(HOLE.garden?.water?.[0] ?? '#41687a'), WATER_DEEP = new THREE.Color(HOLE.garden?.water?.[1] ?? '#2a4a5a'); // garden holes: darker, still water
 const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; // linear-space colour for shader code
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
@@ -1177,6 +1220,9 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
       #ifdef USE_FOG
       wc = mix(wc, fogColor, .35 * smoothstep(12., 140., vFogDepth));                               // sky sheen further off
       #endif
+      ${HOLE.garden ? `{ vec3 upV = normalize((viewMatrix * vec4(0., 1., 0., 0.)).xyz); float fr = pow(1. - abs(dot(normalize(vViewPosition), upV)), 3.);
+        wc = mix(wc, ${glsl(new THREE.Color('#8fa79a'))}, .4 * fr * (.85 + .3 * vn(vXZ * vec2(.6, 2.2))));  // garden water: still, mirror-like sky at a glance
+        wc *= .8 + .2 * smoothstep(-1.5, -.2, wd); }` : ''}
       diffuseColor.rgb = mix(diffuseColor.rgb, wc, 1. - smoothstep(-wa, wa, wd));`);
   };
   const mesh = new THREE.Mesh(geo, mat);
@@ -1245,9 +1291,61 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   });
   for (const g of groups) g.list.forEach((t, i) => {
     col.set(g.colour).offsetHSL(r() * .03 - .015, 0, r() * .06 - .03 - (t.outer ? .04 : 0)); // each tree a shade apart, the outer forest darker
+    if (HOLE.garden && !t.pine) col.set(['#4d7a2c', '#5f8a32', '#3f6c2a', '#6a9038'][Math.floor(r() * 4)]).offsetHSL(0, 0, t.outer ? -.05 : 0); // garden holes: fresh spring broadleaf
     for (const { m, off } of g.meshes) { m.setMatrixAt(i, m4.multiplyMatrices(tm.get(t), part.makeTranslation(off.x, off.y, off.z))); m.setColorAt(i, col); }
   });
   scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
+}
+// garden holes (opt in with `garden`, owner: make 12 feel like the real thing): banked azalea beds, feature trees
+// (red maples, white dogwoods) and stone arch bridges over the creek. Decoration only (no collisions).
+if (HOLE.garden) {
+  const G = HOLE.garden, r = rng(1212), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
+  // azalea beds: [x0, z0, x1, z1, depth] runs of bushes, packed in rows that step up away from the line like a planted bank
+  const BLOOMS = ['#e0287a', '#f25c9a', '#c0174f', '#ff7aa8', '#d93a5e', '#f7f0e6', '#b8245c', '#2f5a2a', '#e8508a', '#9b1d4a', '#3a6a30'];
+  const beds = [];
+  for (const [x0, z0, x1, z1, depth] of G.azaleas || []) {
+    const L = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / L, uz = (z1 - z0) / L, nx = -uz, nz = ux; // n: across the bed
+    const away = Math.sign(nx * (x0 - HOLE.green.at[0]) + nz * (z0 - HOLE.green.at[1])) || 1;           // rows climb away from the green
+    for (let row = 0; row * 1.15 < depth; row++) for (let d = r() * .6; d < L; d += .95 + r() * .4) {
+      const o = away * (row * 1.15 + r() * .4), x = x0 + ux * d + nx * o, z = z0 + uz * d + nz * o;
+      if (waterD(x, z) > 1 && greenD(x, z) > 1.6 && bunkerD(x, z) > 1.3) beds.push([x, z, row]);
+    }
+  }
+  const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(.7, 1), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1420' })));
+  const bedMesh = new THREE.InstancedMesh(bush.geometry, bush.material, beds.length);
+  beds.forEach(([x, z, row], i) => {
+    const s = 1 + r() * 1.4; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+    bedMesh.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z) + .3 * s + row * .35, z), q, sc.set(s * (1 + r() * .4), s * (.65 + row * .06), s)));
+    bedMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
+  });
+  scene.add(bedMesh);
+  // feature trees: a short trunk under a few soft, wide puffs. maple = deep red, dogwood = white blossom
+  const puff = new THREE.IcosahedronGeometry(1, 1), bark = new THREE.MeshLambertMaterial({ color: '#3a2a20' });
+  const TREE_COL = { maple: ['#8e1f16', '#b0301f', '#6f1a14'], dogwood: ['#f4efe4', '#e9e3d4', '#dfe8cf'] };
+  for (const [kind, x, z, size = 1] of G.trees || []) {
+    const y = heightAt(x, z), trunk = new THREE.Mesh(new THREE.CylinderGeometry(.12 * size, .2 * size, 2.4 * size, 6), bark);
+    trunk.position.set(x, y + 1.2 * size, z); trunk.castShadow = true; scene.add(trunk);
+    for (let k = 0; k < 6; k++) {
+      const a = k * 1.05 + r(), d = (k ? 1.3 : 0) * size, m = new THREE.Mesh(puff, new THREE.MeshLambertMaterial({ color: TREE_COL[kind][k % 3], emissive: kind === 'maple' ? '#2a0806' : '#2a2a24', flatShading: true })); // not seeThrough: that shader is for instanced meshes
+      m.position.set(x + Math.cos(a) * d, y + (2.6 + r() * .9) * size, z + Math.sin(a) * d); m.scale.set(1.7 * size, 1.1 * size, 1.7 * size);
+      m.castShadow = true; scene.add(m);
+    }
+  }
+  // stone arch bridges: { at: [x, z], deg: heading across the water (0 = towards the green), len, arches }
+  for (const b of G.bridges || []) {
+    const L = b.len, n = b.arches || 2, H = 1.6, hump = .7, W = 2.6, sh = new THREE.Shape(), top = [];
+    for (let k = 0; k <= 16; k++) { const t = k / 16, xx = -L / 2 + L * t; top.push([xx, H + hump * Math.sin(Math.PI * t)]); }
+    sh.moveTo(-L / 2, -.8); sh.lineTo(L / 2, -.8); top.slice().reverse().forEach(([xx, yy]) => sh.lineTo(xx, yy));
+    const ar = Math.min(L / (n * 2.6), 1.9);
+    for (let k = 0; k < n; k++) { const cx = -L / 2 + L * (k + .5) / n, hole = new THREE.Path(); hole.moveTo(cx + ar, -.8); hole.lineTo(cx + ar, 0); hole.absarc(cx, 0, ar, 0, Math.PI, false); hole.lineTo(cx - ar, -.8); sh.holes.push(hole); }
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false }); geo.translate(0, 0, -W / 2);
+    const deck = new THREE.Shape(); deck.moveTo(...top[0]); top.forEach(p => deck.lineTo(...p)); top.slice().reverse().forEach(([xx, yy]) => deck.lineTo(xx, yy + .08));
+    const turf = new THREE.ExtrudeGeometry(deck, { depth: W - .5, bevelEnabled: false }); turf.translate(0, .01, -(W - .5) / 2);
+    const a = b.deg * Math.PI / 180, dx = Math.sin(a), dz = Math.cos(a), g = new THREE.Group();
+    g.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: '#8a8072', flatShading: true })), new THREE.Mesh(turf, new THREE.MeshLambertMaterial({ color: '#5f8d46' })));
+    g.children.forEach(m => { m.castShadow = m.receiveShadow = true; });
+    g.rotation.y = Math.atan2(-dz, dx); g.position.set(b.at[0], heightAt(b.at[0], b.at[1]) - .2, b.at[1]); scene.add(g);
+  }
 }
 // azalea-style shrubs along the tree-line edges and grass tufts near the tee and green.
 // Decoration only (no collisions). Each kind is one InstancedMesh, so hundreds cost one draw.
