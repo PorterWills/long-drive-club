@@ -737,14 +737,15 @@ const HOLES = [{
   name: 'Mamdani', par: 4, si: 14,
   tee: [0, 0], pin: [-3, 402.2],               // 440 yd tee to pin, back-right of centre (the demanding one)
   wind: { mph: 9, toward_deg: 140 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 13, line: [[0, 0], [66.3, -8.4], [120.6, -10.6], [191.4, -10.1], [262.2, -9.7], [332.9, -5.6], [402.3, 0]] }, // owner: thin
+  fairway: { half_width: 10, line: [[0, 0], [66.3, -8.4], [120.6, -10.6], [191.4, -10.1], [262.2, -9.7], [332.9, -5.6], [402.3, 0]] }, // owner: thin
   elevation: [[0, 2], [200, 0], [350, 4], [420, 6]],
   green: { at: [0, 400], r: 10, fx: [['bowl', 0, 0, 8, .22], ['bowl', 5, -5, 3.5, .12]] }, // flat-looking, but sheds every way
   bunkers: [
     { at: [14, 387], r: 2.6, soft: 1 }, { at: [16.5, 391], r: 2.2, soft: 1 },  // front-left
     { at: [-3, 386], r: 2.6, soft: 1 }, { at: [-6.5, 388.5], r: 2.4, soft: 1 }], // front
   water: [],
-  trees: [[1, 0, 60, 16, 15], [1, 60, 340, 19, 25], [-1, 0, 100, 18, 12], [-1, 100, 340, 34, 15], [1, 340, 440, 32, 15], [-1, 340, 440, 32, 15]],
+  // owner (tested, with a photo): still too wide. Tall pines stand right on the fairway's edge both sides, the full length
+  trees: [[1, 0, 60, 13, 15], [1, 60, 355, 12, 25], [-1, 0, 355, 12, 25], [1, 355, 440, 24, 15], [-1, 355, 440, 24, 15]],
   treeClusters: [
     { at: [-18, 43], r: 6 }, { at: [-10, 17], r: 3 },                                                      // by the tee
     { at: [23, 214], r: 5 }, { at: [14, 233], r: 5 }, { at: [10, 252], r: 5 }, { at: [12, 273], r: 5 },    // the left band bulging in
