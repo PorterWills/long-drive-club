@@ -663,15 +663,17 @@ const HOLES = [{
   ],
 }, {
   name: 'Shenzhen Silk', par: 4, si: 12,
-  tee: [0, 0], pin: [24.8, 401.6],             // 440 yd tee to pin (back tee, aerial scale 0.317 m/px), no bunkers, raised green
+  tee: [0, 0], pin: [24.8, 401.6],             // 440 yd tee to pin (back tee, illustration 0.248 m/px), no bunkers, raised green
   wind: { mph: 7, toward_deg: 220 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 15, line: [[0, 0], [88, -12.4], [187.2, -12.4], [261.5, -5], [335.9, 9.9], [401.6, 24.8]] },
-  elevation: [[0, 3], [200, 0], [330, 2], [400, 6], [440, 6.5]],
-  green: { at: [24.8, 401.6], r: 14, fx: [['ff', .6], ['bowl', 4, 5, 4, .25]] },
+  // owner's illustration: wide open right off the tee, a left tree band that bulges in at the landing area, then a gentle bend left
+  fairway: { half_width: 15, line: [[0, 0], [59.8, -11.4], [134.6, -12.9], [208.9, -9.5], [282.9, -3.6], [343.7, 8.3], [401.6, 24.8]] },
+  elevation: [[0, 3], [200, 0], [320, 1], [370, 4.5], [400, 6], [440, 6.5]], // heat map: a steep bank short of the green
+  green: { at: [24.8, 401.6], r: 15, fx: [['ff', .5], ['tier', -6, .5, 90], ['tilt', 90, .012]] }, // big and terraced (pin on the upper, left terrace), dropping left to right; no bunkers
   bunkers: [],
   water: [],
-  trees: [[1, 60, 350, 22, 18], [-1, 150, 370, 28, 18]],
-  treeClusters: [{ at: [-54.5, 169.8], r: 10 }, { at: [24.8, 145], r: 5 }, { at: [17.4, 130], r: 4 }, { at: [24.8, 75.6], r: 10 }, { at: [-2.5, 437.6], r: 5 }, { at: [54.5, 415], r: 8 }],
+  trees: [[1, 95, 200, 26, 22], [1, 200, 300, 15, 22], [1, 300, 365, 22, 22], [-1, 160, 260, 45, 20], [-1, 260, 405, 24, 20]],
+  treeClusters: [{ at: [21.3, 73.5], r: 5 }, { at: [-46, 160.7], r: 10 }, { at: [58.4, 390.3], r: 8 }, { at: [51.9, 420.9], r: 7 }, { at: [9, 438.2], r: 6 },
+    { at: [-4.6, 427.3], r: 7 }, { at: [37.4, 29.4], r: 9 }, { at: [40.8, 58.8], r: 8 }],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#EDE9DF', kind: 'gt' },
     { at: [-30, 420], heading: -80, colour: '#C1121F', kind: 'hyper' },
