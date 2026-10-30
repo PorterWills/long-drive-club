@@ -33,6 +33,7 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. **Course design pass** (re-
 - **Leaderboard:** after a full round, *Submit score* sends a name and score to the LDC Google Sheet through an Apps Script web app (`LB_URL` in `index.html`; the script, `leaderboard.gs`, isn't in this repo). The global 18-hole board sits beside the scorecard. An empty `LB_URL` hides the leaderboard buttons.
 
 ### Log
+- **30 Oct 2026 (session 11, hole 13 green from heat map):** hole 13's green re-shaped from the owner's heat map: false front kept; the lean flipped to rise to the left (`tilt` 1.2% at 70°, was rising right) plus a big `bowl` mound back left, so it falls to a low right side, lowest front right. `?hole=13&test` passes.
 - **30 Oct 2026 (session 11, hole 12 green from heat map):** hole 12's green re-shaped from the owner's heat map: false front kept, plus a gentle 0.8% `tilt` rising to the back right and a `bowl` hollow at the front-left end (the low point). `?hole=12&test` passes.
 - **30 Oct 2026 (session 11, hole 11 green from heat map):** hole 11's green re-shaped from the owner's heat map: the lean towards the pond kept, plus a 0.4% `tilt` rising to the back (1% made the uphill `?test` putt stop short) and a `bowl` hollow front left (the low corner). `?hole=11&test` passes.
 - **30 Oct 2026 (session 11, hole 10 green from heat map):** hole 10's green re-shaped from the owner's heat map: the 2% `tilt` now rises to the back right (was straight right), so it falls diagonally to a low front. `?hole=10&test` passes.
