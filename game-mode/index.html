@@ -822,7 +822,10 @@ const roundHole = () => Math.min(ROUND.scores.length + 1, HOLES.length);
 const roundDone = () => ROUND.scores.length >= HOLES.length;
 const askedHole = parseInt(new URLSearchParams(location.search).get('hole'));
 const HOLE_NO = clamp(askedHole || roundHole(), 1, HOLES.length), HOLE = HOLES[HOLE_NO - 1];
-const PRACTICE = roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
+// ?loblolly: test of Augusta's real pines (owner, 31 Oct 2026, trying it on hole 5): tall bare trunks, a ragged crown in the top
+// third, an edge layer of small trees, real pine straw lies. Practice only while on trial, so it never touches round scores.
+const LOB = new URLSearchParams(location.search).has('loblolly');
+const PRACTICE = LOB || roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
 if (HOLE.par === 3) HOLE.cars[HOLE.cars.findIndex(c => c.at[1] < 0)] = { at: [HOLE.tee[0] + (HOLE.gallery ? 15 : 12), HOLE.tee[1] + 8], heading: 124, colour: '#EDE9DF', kind: 'hyper', display: true } // 124°: square side-on to the tee camera; // hole-in-one prize car
 document.getElementById('holeNo').textContent = HOLE_NO; document.getElementById('holeName').textContent = HOLE.name;
 document.getElementById('holePar').textContent = `Par ${HOLE.par}`; document.getElementById('hole').classList.toggle('prac', PRACTICE);
@@ -886,6 +889,13 @@ const GFX = (() => {
 })();
 const shavedBank = (x, z) => HOLE.shaved && waterD(x, z) < 5; // short grass running into the water, so a ball that lands wrong rolls in
 
+const wob = (x, z) => Math.sin(x * .37 + z * .11) * .9 + Math.sin(z * .23 - x * .19) * .7; // ragged bed edges, metres
+function strawAt(x, z) { // pine straw under the tree lines and clusters, 0..1
+  let a = 0;
+  for (const [side, z0, z1, inner] of HOLE.trees) if (z > z0 - 4 && z < z1 + 4) a = Math.max(a, clamp((side * (x - centreX(Math.min(z, GZ))) - inner + 3 + wob(x, z)) / 2, 0, 1) * clamp(Math.min(z - z0 + 4, z1 + 4 - z) / 3, 0, 1));
+  for (const t of HOLE.treeClusters) a = Math.max(a, clamp((t.r + 2 + wob(x, z) - Math.hypot(x - t.at[0], z - t.at[1])) / 2, 0, 1));
+  return a;
+}
 function materialAt(x, z) {
   if (waterD(x, z) < 0) return 'water';
   if (bunkerD(x, z) < 1) return 'sand';
@@ -902,6 +912,7 @@ function turfAt(x, z) { // the grass under everything; the terrain shader lays s
   if (z > HOLE.tee[1] && z <= 30 && off < HOLE.fairway.half_width * .7) return 'firstcut'; // mown walk-off between tee and fairway
   if (z > 30 && z < FW_END && off < HOLE.fairway.half_width) return 'fairway';
   if (z > 30 && z < FW_END && off < HOLE.fairway.half_width + 3) return 'firstcut';
+  if (LOB && strawAt(x, z) > .5) return 'straw'; // pine straw: its own lie under the loblollies
   return 'rough';
 }
 const GZ = HOLE.green.at[1];
@@ -939,9 +950,18 @@ function heightAt(x, z) {
 const TREES = (() => {
   const r = rng(1934), pr = rng(7), out = [], nearCar = (x, z) => HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 5);
   const nearPlay = (x, z) => materialAt(x, z) === 'green' || materialAt(x, z) === 'fringe' || HOLE.bunkers.some(b => Math.hypot(x - b.at[0], z - b.at[1]) < b.r + 2);
-  const add = (x, z) => { if (!nearCar(x, z) && !nearPlay(x, z)) out.push({ x, z, s: .8 + r() * .7, pine: pr() < .6, h: heightAt(x, z) }); };
+  const add = (x, z, s = .8 + r() * .7, kind) => { if (!nearCar(x, z) && !nearPlay(x, z)) { const pine = kind ? kind === 'pine' : pr() < (LOB ? .9 : .6); out.push({ x, z, s, pine, lob: LOB && pine, h: heightAt(x, z) }); } };
   for (const [side, z0, z1, inner, depth] of HOLE.trees)
     for (let z = z0; z < z1; z += 3.2) for (let k = 0; k < 2; k++) add(centreX(Math.min(z, GZ)) + side * (inner + r() * depth), z + r() * 3);
+  if (LOB) { // the edge layer under the pines (references): dogwoods, small hardwoods, young pines in loose clumps along the corridor,
+    // with gaps, so a low miss is a lottery: some get caught, some run through between the trunks
+    const e = rng(555);
+    for (const [side, z0, z1, inner] of HOLE.trees) for (let z = z0; z < z1; z += 5 + e() * 6) {
+      if (e() < .35) continue;
+      const x = centreX(Math.min(z, GZ)) + side * (inner + 1 + e() * 5);
+      if (!nearCar(x, z) && !nearPlay(x, z)) out.push({ x, z: z + e() * 3, s: .45 + e() * .4, pine: false, under: true, h: heightAt(x, z) });
+    }
+  }
   for (const c of HOLE.treeClusters) for (let k = 0; k < c.r * 1.2; k++) { const a = r() * 6.283, d = Math.sqrt(r()) * c.r; add(c.at[0] + Math.cos(a) * d, c.at[1] + Math.sin(a) * d); }
   return out;
 })();
@@ -957,11 +977,13 @@ const SURF = {   // bounce, keep (tangential speed kept), roll (friction), grip 
   firstcut: { bounce: .30, keep: .44, roll: .30, grip: .42, snag: .8 },
   rough:    { bounce: .22, keep: .34, roll: .42, grip: .22, snag: 1.4 },
   sand:     { bounce: .11, keep: .18, roll: .65, grip: .15, snag: 1.2 },
+  straw:    { bounce: .2, keep: .45, roll: .32, grip: .2, snag: 1.0 }, // a slick, springy bed: lands dead-ish, then skids a little
 };
 const LIE = { // how the lie changes the strike
   green: { speed: 1, spin: 1, launch: 0, spread: 1 }, fairway: { speed: 1, spin: 1, launch: 0, spread: 1 },
   fringe: { speed: .99, spin: .96, launch: .2, spread: 1.1 }, firstcut: { speed: .95, spin: .82, launch: .8, spread: 1.5 },
   rough: { speed: .86, spin: .62, launch: 1.6, spread: 2.4 }, sand: { speed: .6, spin: .55, launch: 4, spread: 3.4 },
+  straw: { speed: .9, spin: .7, launch: 0, spread: 2 }, // sits up cleanly but slips: some wobble, no extra height (so a punch stays low)
 };
 const CLUBS = [ // ball speed (m/s) and spin: PGA Tour averages (owner, 29 Oct 2026); tour launch angles. Carries land within 3% of the tour's
   { id: 'dr', name: 'Driver',  speed: 79,   launch: 12,   spin: 2545 }, // owner: drives felt short; about 286 yd carry
@@ -1001,20 +1023,24 @@ const carColliders = c => {
   const h = c.heading * Math.PI / 180, dx = Math.sin(h) * 1.1, dz = Math.cos(h) * 1.1;
   return [-1, 0, 1].map(s => ({ x: c.at[0] + dx * s, z: c.at[1] + dz * s, r: 1.05, top: heightAt(c.at[0], c.at[1]) + 1.25 + (c.display ? .3 : 0)}));
 };
-const CAR_COLLIDERS = HOLE.cars.flatMap(carColliders).concat(TREES.map(t => ({ x: t.x, z: t.z, r: 0.45 * t.s, top: heightAt(t.x, t.z) + 3 * t.s })),
+const CAR_COLLIDERS = HOLE.cars.flatMap(carColliders).concat(TREES.map(t => ({ tree: true, x: t.x, z: t.z, r: (t.lob ? .4 : .45) * t.s, top: heightAt(t.x, t.z) + (t.lob ? 20 : t.under ? 2 : 3) * t.s })) /* loblolly: the trunk runs up into the crown */,
   { x: HOLE.pin[0], z: HOLE.pin[1], r: 0.0095, top: heightAt(...HOLE.pin) + 2.4, low: heightAt(...HOLE.pin) + 0.1 }); // flagstick; below the lip putts still drop
-// canopies match the drawn shapes: pines a cone from 3.4s to 12.1s up, broadleaf a ball of 2.4s at 4.6s
+// canopies match the drawn shapes: pines a cone from 3.4s to 12.1s up, broadleaf a ball of 2.4s at 4.6s,
+// loblollies a flattened crown 3.6s across centred 18.4s up (about 14.5s to 22.5s): open trunks underneath
+const canopyMid = t => t.lob ? 18.4 * t.s : t.pine ? 7 * t.s : 4.6 * t.s;
 function inCanopy(p) {
   for (const t of TREES) {
     const dx = p.x - t.x, dz = p.z - t.z, y = p.y - t.h, s = t.s;
-    if (dx * dx + dz * dz > 7 * s * s) continue;
+    if (dx * dx + dz * dz > (t.lob ? 14 : 7) * s * s) continue;
+    if (t.lob) { if ((dx * dx + dz * dz) / (3.6 * s) ** 2 + ((y - 18.4 * s) / (4 * s)) ** 2 < 1) return true; continue; }
     if (t.pine ? y > 3.4 * s && y < 12.1 * s && Math.hypot(dx, dz) < 2.4 * s * (12.1 * s - y) / (8.7 * s)
                : Math.hypot(dx, y - 4.6 * s, dz) < 2.4 * s) return true;
   }
   return false;
 }
-function hitCar(p, vel) {
+function hitCar(p, vel, noTrees) {
   for (const c of CAR_COLLIDERS) {
+    if (noTrees && c.tree) continue;
     const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz);
     if (d > c.r + BALL.r || p.y > c.top || p.y < (c.low ?? -1e9)) continue;
     if (p.y > c.top - 0.25 && vel.y < 0) return { p: v(p.x, c.top + BALL.r, p.z), vel: v(vel.x * .7, -vel.y * .45, vel.z * .7) }; // bonnet/roof bounce
@@ -1057,8 +1083,8 @@ function simulate(start, shot, wind, opts = {}) {
   if (!opts.rolling) {
     for (let i = 0; i < 20 * 120; i++) {
       let [np, nv] = rk4(p, vel, spin, HOLE.swirl ? swirlAt(wind, t) : wind);
-      const car = hitCar(np, nv); if (car) { np = car.p; nv = car.vel; spin = mul(spin, .3); }
-      if (inCanopy(np)) { nv = v(nv.x * 0.9, nv.y > 0 ? nv.y * 0.9 : nv.y, nv.z * 0.9); spin = mul(spin, 0.9); } // branches soak up forward speed; a falling ball keeps falling (it used to float down)
+      const car = hitCar(np, nv, opts.noTrees); if (car) { np = car.p; nv = car.vel; spin = mul(spin, .3); }
+      if (!opts.noTrees && inCanopy(np)) { nv = v(nv.x * 0.9, nv.y > 0 ? nv.y * 0.9 : nv.y, nv.z * 0.9); spin = mul(spin, 0.9); } // branches soak up forward speed; a falling ball keeps falling (it used to float down)
       apex = Math.max(apex, np.y); t += DT;
       const ground = heightAt(np.x, np.z);
       if (np.y - BALL.r <= ground) {
@@ -1137,7 +1163,7 @@ if (location.search.includes('test')) {
   const flatHeight = heightAt; // physics checks run high above terrain, landing on the real course is fine
   const [lz, lx] = HOLE.fairway.line[1], along = Math.abs(Math.atan2(lx, lz)) > .3 ? Math.atan2(lx, lz) : 0; // sharp dogleg off the tee (13): fire down the first leg, clear of the chute's trees
   // 92% on the new power curve = the old 75% club speed
-  const carry = (wind, aim = along) => { const s = strike(dr, 0.92, aim, 'fairway', () => 0.5); const r = simulate(v(0, heightAt(0, 0) + BALL.r, 0), s, wind); return r; };
+  const carry = (wind, aim = along) => { const s = strike(dr, 0.92, aim, 'fairway', () => 0.5); const r = simulate(v(0, heightAt(0, 0) + BALL.r, 0), s, wind, { noTrees: true }); return r; }; // open air: these check the physics, not the hole's trees (the loblolly crowns on 5 caught the straight test drive)
   const r0 = carry(calm), rHead = carry(v(0, 0, -6)), rCross = carry(v(6, 0, 0));
   const c0 = flat(r0.landing, v(0, 0, 0)) / YD;
   const out = [
@@ -1145,7 +1171,7 @@ if (location.search.includes('test')) {
     ['headwind shortens carry', flat(rHead.landing, v(0, 0, 0)) < flat(r0.landing, v(0, 0, 0)), (flat(rHead.landing, v(0,0,0)) / YD).toFixed(0)],
     ['crosswind toward +x pushes ball +x', rCross.landing.x > r0.landing.x + 3, rCross.landing.x.toFixed(1)],
     (() => { // a drive-speed ball fired through a canopy must drop well short of where it would fly in open air
-      const t = TREES.find(t => !t.pine), st = v(t.x, t.h + 4.6 * t.s, t.z - 6), shot = { vel: v(0, 4, 55), spin: v(0, 0, 0) };
+      const t = TREES.find(t => !t.pine && !t.under) || TREES[0], st = v(t.x, t.h + canopyMid(t), t.z - 6), shot = { vel: v(0, 4, 55), spin: v(0, 0, 0) };
       const d = flat(simulate(st, shot, calm).landing, st); // in open air this ball carries 60 m+
       return ['canopy stops the ball', d < 25, `${d.toFixed(0)}m`];
     })(),
@@ -1297,28 +1323,21 @@ sun.shadow.bias = -0.0005; // low sun grazes the ground; stops shadow acne
 sun.shadow.mapSize.set(2048, 2048);
 scene.add(sun, sun.target);
 
-const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', sand: '#f4f5f6', water: '#3d5f6e' }; // muted to sit with Racing Green
+const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', straw: '#344f2c', sand: '#f4f5f6', water: '#3d5f6e' }; // muted to sit with Racing Green
 const SAND_FACE = new THREE.Color('#d5d9de'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#ffffff'), WATER = new THREE.Color(HOLE.garden?.water?.[0] ?? '#41687a'), WATER_DEEP = new THREE.Color(HOLE.garden?.water?.[1] ?? '#2a4a5a'); // garden holes: darker, still water. Sand is pure white (owner: Augusta white, not off-white)
 const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; // linear-space colour for shader code
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
   const geo = new THREE.PlaneGeometry(W, D, seg[0], seg[1]); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, col = [], rough = [], haz = [], gEdge = [], c = new THREE.Color();
-  const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color('#6e4a2f');
-  const wob = (x, z) => Math.sin(x * .37 + z * .11) * .9 + Math.sin(z * .23 - x * .19) * .7; // ragged bed edges, metres
-  const strawAt = (x, z) => { // pine straw under the tree lines and clusters, 0..1
-    let a = 0;
-    for (const [side, z0, z1, inner] of HOLE.trees) if (z > z0 - 4 && z < z1 + 4) a = Math.max(a, clamp((side * (x - centreX(Math.min(z, GZ))) - inner + 3 + wob(x, z)) / 2, 0, 1) * clamp(Math.min(z - z0 + 4, z1 + 4 - z) / 3, 0, 1));
-    for (const t of HOLE.treeClusters) a = Math.max(a, clamp((t.r + 2 + wob(x, z) - Math.hypot(x - t.at[0], z - t.at[1])) / 2, 0, 1));
-    return a;
-  };
+  const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color(LOB ? '#a3592a' : '#6e4a2f'); // loblolly test: the rusty orange beds of the references
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + X0 + W / 2, z = pos.getZ(i) + D / 2 - 40;
     const m = turfAt(x, z);
     pos.setXYZ(i, x, heightAt(x, z), z);
     const oob = outOfBounds(x, z), ge = (greenD(x, z) - 1) * HOLE.green.r; // ge: metres beyond the green's edge
     c.set(oob ? '#2f5626' : COLOURS[m === 'green' || m === 'fringe' ? 'fairway' : m]); // green and fringe are laid over per pixel in the shader
-    let rg = m === 'rough' || oob ? 1 : m === 'firstcut' ? .35 : 0;
+    let rg = m === 'rough' || m === 'straw' || oob ? 1 : m === 'firstcut' ? .35 : 0;
     if (m !== 'green' && m !== 'fringe' && !oob) { // cuts step down softly from every patch of short grass: fairway, first cut, rough
       let a = 1, b = 1; const cut = (pa, pb) => { a = Math.min(a, pa); b = Math.min(b, pb); };
       const ramp = d => cut(clamp((d + 1) / 2, 0, 1), clamp((d - 2) / 3, 0, 1)); // d: metres outside the short grass (owner: smoother rough edges, no grid steps)
@@ -1332,7 +1351,7 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
       c.copy(FW).lerp(FC, a).lerp(RO, b); rg = a * .35 + b * .65;
     }
     const tp = teePad(x, z); if (tp > 0) { c.lerp(TEE, tp); rg *= 1 - tp; }
-    const st = m === 'rough' || oob ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, st * .85); rg = Math.max(rg, st); }
+    const st = m === 'rough' || m === 'straw' || oob ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, LOB ? clamp(st * 2 - .5, 0, 1) * .95 : st * .85); rg = Math.max(rg, st); } // loblolly: a crisper bed edge
     if (!oob && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
     if (tp > .9 && Math.floor((x - HOLE.tee[0] + 4) / 1.6) % 2) c.offsetHSL(0, 0, 0.025); // tee pad: crisp stripes
     col.push(c.r, c.g, c.b); rough.push(rg); haz.push(bunkerD(x, z), waterD(x, z)); gEdge.push(ge);
@@ -1417,32 +1436,37 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   };
   // parts in tree space (unscaled); they fill the same shapes the canopy collisions use
   const PINE = [[new THREE.ConeGeometry(2.5, 3.6, 8), 0, 4.6, 0], [new THREE.ConeGeometry(2.0, 3.4, 8), 0, 6.6, 0], [new THREE.ConeGeometry(1.4, 3.0, 8), 0, 8.4, 0]];
+  // loblolly (tree space, 22 tall at s = 1): bare trunk, a ragged crown of low-poly clumps in the top third
+  const lump = (r, sy = .72) => new THREE.IcosahedronGeometry(r, 0).scale(1, sy, 1);
+  const LOBP = [[lump(2.6), 0, 19.4, 0], [lump(2.0), 1.9, 17.6, .7], [lump(1.9), -1.8, 18.2, -.9], [lump(1.6), .5, 21.2, -.4], [lump(1.5), -.7, 15.8, 1.5], [lump(1.3), 2.1, 15.4, -1.2], [lump(1.2), -2.4, 16.4, .9]];
   const LEAF = [[new THREE.IcosahedronGeometry(2.1, 1), 0, 4.4, 0], [new THREE.IcosahedronGeometry(1.5, 1), 1.3, 5.2, .5], [new THREE.IcosahedronGeometry(1.5, 1), -1.1, 5.0, -.7], [new THREE.IcosahedronGeometry(1.3, 1), .2, 6.1, -.3]];
   // outer forest: rows of out-of-bounds trees round the hole so the course sits in woodland, never on an edge.
   // Drawn only (no collisions); every shot that reaches them is already out of bounds.
   const OUTER = [], fr = rng(77);
   for (let z = -130; z < GZ + 150; z += 7) for (let side = -1; side <= 1; side += 2) for (let off = 78; off < 150; off += 7) {
     const zz = z + fr() * 5, x = centreX(clamp(zz, 0, GZ)) + side * (off + fr() * 5);
-    if (outOfBounds(x, zz)) OUTER.push({ x, z: zz, s: 1 + fr() * .8, pine: fr() < .6, outer: true });
+    if (outOfBounds(x, zz)) { const pine = fr() < (LOB ? .9 : .6); OUTER.push({ x, z: zz, s: LOB && pine ? .9 + fr() * .5 : 1 + fr() * .8, pine, lob: LOB && pine, outer: true }); }
   }
   for (const [z0, z1] of [[-130, -42], [GZ + 72, GZ + 150]]) for (let z = z0; z < z1; z += 7) for (let off = -78; off < 78; off += 7) { // behind the tee and the green
     const zz = z + fr() * 5, x = centreX(clamp(zz, 0, GZ)) + off + fr() * 5;
-    if (outOfBounds(x, zz)) OUTER.push({ x, z: zz, s: 1 + fr() * .8, pine: fr() < .6, outer: true });
+    if (outOfBounds(x, zz)) { const pine = fr() < (LOB ? .9 : .6); OUTER.push({ x, z: zz, s: LOB && pine ? .9 + fr() * .5 : 1 + fr() * .8, pine, lob: LOB && pine, outer: true }); }
   }
   const DRAWN = TREES.concat(OUTER);
-  const pines = DRAWN.filter(t => t.pine), leaves = DRAWN.filter(t => !t.pine);
+  const pines = DRAWN.filter(t => t.pine && !t.lob), lobs = DRAWN.filter(t => t.lob), leaves = DRAWN.filter(t => !t.pine);
   const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.22, .34, 3, 6), seeThrough(new THREE.MeshLambertMaterial({ color: '#4a3526' })), DRAWN.length);
-  const groups = [[PINE, pines, '#21401f', 1.25], [LEAF, leaves, '#2f4f27', 1]].map(([parts, list, colour, ys], gi) =>
+  const groups = [[PINE, pines, '#21401f', 1.25], [LEAF, leaves, '#2f4f27', 1], [LOBP, lobs, '#2c4a26', 1]].map(([parts, list, colour, ys], gi) =>
     ({ list, ys, colour, meshes: parts.map(([g, x, y, z], pi) => ({ m: new THREE.InstancedMesh(leafy(g, 11 + gi * 7 + pi), seeThrough(new THREE.MeshLambertMaterial({ vertexColors: true })), list.length), off: new THREE.Vector3(x, y, z) })) }));
   const tm = new Map(); // tree -> its world matrix
   DRAWN.forEach((t, i) => {
     q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
-    const ys = t.pine ? 1.25 : 1, w = new THREE.Matrix4().compose(new THREE.Vector3(t.x, heightAt(t.x, t.z), t.z), q, new THREE.Vector3(t.s, t.s * ys, t.s));
-    tm.set(t, w); trunks.setMatrixAt(i, m4.multiplyMatrices(w, part.makeTranslation(0, 1.5, 0)));
+    const ys = t.pine && !t.lob ? 1.25 : 1, w = new THREE.Matrix4().compose(new THREE.Vector3(t.x, heightAt(t.x, t.z), t.z), q, new THREE.Vector3(t.s, t.s * ys, t.s));
+    tm.set(t, w); trunks.setMatrixAt(i, t.lob ? m4.multiplyMatrices(w, part.makeTranslation(0, 10, 0).multiply(new THREE.Matrix4().makeScale(1.1, 20 / 3, 1.1))) // bare trunk up into the crown
+      : m4.multiplyMatrices(w, part.makeTranslation(0, 1.5, 0)));
   });
   for (const g of groups) g.list.forEach((t, i) => {
     col.set(g.colour).offsetHSL(r() * .03 - .015, 0, r() * .06 - .03 - (t.outer ? .04 : 0)); // each tree a shade apart, the outer forest darker
-    if (HOLE.garden && !t.pine) col.set(['#4d7a2c', '#5f8a32', '#3f6c2a', '#6a9038'][Math.floor(r() * 4)]).offsetHSL(0, 0, t.outer ? -.05 : 0); // garden holes: fresh spring broadleaf
+    if (t.under) col.set(['#3f6c2a', '#557f33', '#e9e4d6', '#2f5a28', '#4d7a2c'][Math.floor(r() * 5)]); // the edge layer: young hardwoods, a dogwood in bloom here and there
+    else if (HOLE.garden && !t.pine) col.set(['#4d7a2c', '#5f8a32', '#3f6c2a', '#6a9038'][Math.floor(r() * 4)]).offsetHSL(0, 0, t.outer ? -.05 : 0); // garden holes: fresh spring broadleaf
     for (const { m, off } of g.meshes) { m.setMatrixAt(i, m4.multiplyMatrices(tm.get(t), part.makeTranslation(off.x, off.y, off.z))); m.setColorAt(i, col); }
   });
   scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
@@ -1502,7 +1526,7 @@ if (HOLE.garden) {
 // Decoration only (no collisions). Each kind is one InstancedMesh, so hundreds cost one draw.
 {
   const r = rng(4242), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
-  const clear = (x, z) => !outOfBounds(x, z) && materialAt(x, z) === 'rough' && teePad(x, z) === 0 && bunkerD(x, z) > 1.3
+  const clear = (x, z) => !outOfBounds(x, z) && ['rough', 'straw'].includes(materialAt(x, z)) && teePad(x, z) === 0 && bunkerD(x, z) > 1.3
     && !HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 4.5) && Math.hypot(x - HOLE.tee[0] + 6, z - HOLE.tee[1] - 4) > 2.5 // keep the sign clear
     && !(HOLE.gallery && Math.abs(x - HOLE.tee[0]) < 11.5 && z - HOLE.tee[1] > -8.5 && z - HOLE.tee[1] < 14); // and the roped tee and chairs
   const nearView = z => z < HOLE.tee[1] + 45 || Math.abs(z - GZ) < 45; // where the camera spends its time
@@ -1932,7 +1956,7 @@ const sfx = {
     if (!SND.ac) return;
     const k = clamp(speed / 18, 0.05, 1);
     if (m === 'sand') return noiseHit({ type: 'lowpass', f: 180, q: 0.3, peak: 0.08 * k, a: 0.006, dec: 0.04 }); // owner: the hiss was unrealistic. Sand swallows a landing: a faint, dull puff
-    const soft = m === 'rough' ? 0.5 : m === 'firstcut' ? 0.75 : 1;
+    const soft = m === 'rough' || m === 'straw' ? 0.5 : m === 'firstcut' ? 0.75 : 1;
     noiseHit({ type: 'lowpass', f: 260, q: 0.3, peak: 0.22 * k * soft, a: 0.004, dec: 0.03 }); // owner: hollow. A short, soft, low thud: turf deadens it
   },
   splash() { if (!SND.ac) return; if (SND.splash) return clip(SND.splash, 0.7); noiseHit({ f: 600, f2: 2400, q: 0.7, peak: 0.35, a: 0.01, dec: 0.45 }); noiseHit({ type: 'lowpass', f: 300, peak: 0.25, dec: 0.2 }); },
@@ -2192,7 +2216,7 @@ function drawMap() {
       img.data[k] = v[0]; img.data[k + 1] = v[1]; img.data[k + 2] = v[2]; img.data[k + 3] = 255;
     }
     g.putImageData(img, 0, 0); g.fillStyle = 'rgba(24,52,30,.85)';
-    for (const t of TREES) { g.beginPath(); g.arc((x1 - t.x) / M, (z1 - t.z) / M, 2.4 * t.s / M, 0, 6.283); g.fill(); }
+    for (const t of TREES) { g.beginPath(); g.arc((x1 - t.x) / M, (z1 - t.z) / M, (t.lob ? 3.4 : 2.4) * t.s / M, 0, 6.283); g.fill(); }
     return { c, x1, z1, M };
   })();
   const mFor = px => Math.max(.25, Math.round((ext.z1 - ext.z0) / px * 8) / 8); // about one map pixel per screen pixel (cached in 1/8 m steps), never finer than 25 cm
