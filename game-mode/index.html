@@ -1386,11 +1386,13 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
 {
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, X1 = Math.max(...xs) + 80, Z0 = -40, Z1 = GZ + 70; // the course mesh's footprint
   const W = X1 - X0 + 800, D = Z1 - Z0 + 800, geo = new THREE.PlaneGeometry(W, D, Math.ceil(W / 4), Math.ceil(D / 4)); geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position, col = [], c = new THREE.Color(), FLOOR = new THREE.Color('#3b3524'), RO = new THREE.Color('#2a4122');
+  const pos = geo.attributes.position, col = [], c = new THREE.Color(), FLOOR = new THREE.Color('#3b3524'), RO = new THREE.Color('#2a4122'), CANOPY = new THREE.Color('#1c2e1c');
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + (X0 + X1) / 2, z = pos.getZ(i) + (Z0 + Z1) / 2, inside = x > X0 + 1 && x < X1 - 1 && z > Z0 + 1 && z < Z1 - 1;
     pos.setXYZ(i, x, heightAt(x, z) - (inside ? 2 : 0), z);
-    c.copy(RO).lerp(FLOOR, .5 + .5 * Math.sin(x * .05) * Math.sin(z * .043)); col.push(c.r, c.g, c.b);
+    c.copy(RO).lerp(FLOOR, .5 + .5 * Math.sin(x * .05) * Math.sin(z * .043));
+    const out = Math.max(X0 - x, x - X1, Z0 - z, z - Z1); c.lerp(CANOPY, clamp((out - 40) / 80, 0, 1)); // further out it reads as dense forest canopy, not a pale lit bank (owner: white horizon)
+    col.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
   scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })));
