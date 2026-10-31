@@ -107,6 +107,11 @@
   #help.open { display: block; } #help .stripe { position: static; height: 8px; margin-bottom: 18px; } #help h2 { margin: 0 20px 10px; font-size: 22px; }
   #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
   #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  /* owner: pin high is the key on this course; a quiet pull-quote between the rules and Play, in the club's serif voice */
+  #help blockquote { margin: 20px 20px 0; padding: 16px 0 0 16px; border-top: 1px solid var(--hairline); position: relative; }
+  #help blockquote::before { content: ''; position: absolute; left: 0; top: 16px; bottom: 2px; width: 3px; background: var(--ldc-redline); }
+  #help blockquote p { margin: 0; font: italic 400 19px/1.35 var(--voice); color: var(--ldc-chalk); text-wrap: balance; }
+  #help blockquote footer { margin-top: 8px; color: var(--ldc-chalk-dim); }
   #helpClose:hover { background: var(--ldc-green-up); }
   #helpX { position: absolute; top: 18px; right: 14px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #helpX:hover { background: var(--ldc-green-up); }
   #cardClose { position: absolute; top: 18px; right: 14px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #cardClose:hover { background: var(--ldc-green-up); } /* owner: an x, like How to play */
@@ -232,6 +237,7 @@
     <dt class="eyebrow">Swing</dt><dd>Set the power, then swing.</dd>
     <dt class="eyebrow">Read</dt><dd>Wind is top right. Green arrows run downhill.</dd>
   </dl>
+  <blockquote><p>“The key to golf is hitting it pin high.”</p><footer class="eyebrow">Tiger Woods</footer></blockquote>
   <button id="helpClose">Play</button>
 </div>
 <div id="card" class="panel" role="dialog" aria-label="Holes">
