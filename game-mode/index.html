@@ -1259,10 +1259,19 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
       vec3 c = h < .12 ? mix(horizon, mid, smoothstep(0., .12, h)) : mix(mid, zenith, smoothstep(.12, .6, h));
       c = mix(c, horizon, pow(s, 6.) * .6 * (1. - smoothstep(0., .5, h)));   // warm bloom around the low sun
       c += sun * (pow(s, 64.) * .5 + smoothstep(.9993, .9997, s) * 1.5);     // glow and disc
-      vec2 uv = d.xz / (h + .1) * 1.6 + vec2(time * .004, time * .0015);
-      float cl = smoothstep(.42, .75, fbm(uv)) * smoothstep(0., .15, h);
-      vec3 cc = mix(cloudShade, cloudLit, clamp(pow(s, 3.) + fbm(uv + .3) * .5, 0., 1.));
-      c = mix(c, cc, cl * .9);
+      // high cirrus: thin streaks well above the cumulus, drifting slowly
+      vec2 cu = d.xz / (h + .05) * .5 + vec2(time * .002, 0.);
+      float ci = smoothstep(.5, .85, fbm(cu * vec2(1.5, 6.) + fbm(cu * 2.) * .6)) * smoothstep(.05, .4, h) * .4;
+      c = mix(c, mix(cloudLit, sun, pow(s, 4.) * .5), ci);
+      // cumulus: domain-warped so they billow; sampled again a step towards the sun to shade their far sides
+      vec2 uv = d.xz / (h + .12) * 1.2 + vec2(time * .004, time * .0015);
+      vec2 q = uv + vec2(fbm(uv * .6 + time * .002), fbm(uv * .6 + 4.7)) * .9;
+      float den = fbm(q), den2 = fbm(q + normalize(sunDir.xz + 1e-4) * .12);
+      float cl = smoothstep(.44, .64, den) * smoothstep(0., .18, h);
+      float lit = clamp(.55 + (den - den2) * 5. + pow(s, 3.) * .4 - smoothstep(.6, .85, den) * .35, 0., 1.); // bright tops, darker thick bellies
+      vec3 cc = mix(cloudShade, cloudLit, lit);
+      cc += sun * pow(s, 5.) * (1. - smoothstep(.44, .56, den)) * 1.2; // silver lining on thin edges near the sun
+      c = mix(c, cc, cl * .95);
       if (h < 0.) c = horizon; // below the horizon the haze takes over (same colour as the fog), no painted backdrop
       gl_FragColor = vec4(c, 1.);
     }`,
