@@ -1222,7 +1222,7 @@ const carryAt = (ci, power, lie) => {
 // ---------- 3D ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 // ambiance: day by default; the player can switch to dawn or dusk from Holes → Mood (kept in this browser). Looks only; play is unchanged.
