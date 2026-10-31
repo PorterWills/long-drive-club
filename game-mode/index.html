@@ -1696,12 +1696,11 @@ function finishCar(g, c) {
 }
 HOLE.cars.forEach(c => scene.add(makeCar(c)));
 
-// the tee: green markers, golf bag on the right, hole sign behind it (+x is the player's left)
+// the tee: white markers, golf bag on the right, hole sign behind it (+x is the player's left)
 const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[0] + dx, HOLE.tee[1] + dz), HOLE.tee[1] + dz);
 {
-  // dark green squat blocks: the old white spheres read as a second ball on the tee (owner video, 31 Oct 2026)
-  const markerMat = new THREE.MeshStandardMaterial({ color: '#1F4D2B', roughness: .6 });
-  for (const s of [-1, 1]) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.14, .17, .12, 6), markerMat); m.position.copy(teeAt(2.8 * s, 1.2)).y += .06; m.castShadow = true; scene.add(m); }
+  const chalk = new THREE.MeshStandardMaterial({ color: '#EDE9DF', roughness: .5 });
+  for (const s of [-1, 1]) { const m = new THREE.Mesh(new THREE.SphereGeometry(.11, 16, 12), chalk); m.position.copy(teeAt(2.8 * s, 1.2)).y += .1; m.castShadow = true; scene.add(m); }
 
   const bag = makeBag();
   bag.rotation.set(-.22, .5, 0); bag.position.copy(teeAt(-3.4, 2)); bag.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(bag);
