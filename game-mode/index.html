@@ -1467,6 +1467,17 @@ function drawShade() {
 // see-through trees: anything within a few metres of the camera, or of the line from the camera to the ball,
 // dissolves in a fine dither (no sorting, so it stays cheap). Stops the view going black when the ball lies under a tree.
 const SEE = { uBall: { value: new THREE.Vector3() } };
+const TREE_SEE = { mats: [], on: true };
+function treeSee(cam, ball) { // is any course tree near the line from the camera to the ball? (generous: crowns as tall cylinders)
+  const dx = ball.x - cam.x, dz = ball.z - cam.z, L2 = dx * dx + dz * dz || 1e-6; let hit = false;
+  for (const t of TREES) {
+    const k = Math.min(1, Math.max(0, ((t.x - cam.x) * dx + (t.z - cam.z) * dz) / L2)), px = cam.x + dx * k - t.x, pz = cam.z + dz * k - t.z;
+    const R = (t.lob ? 4 : 3) * t.s + 3; if (px * px + pz * pz > R * R) continue;
+    const top = heightAt(t.x, t.z) + (t.lob ? 24 : t.pine ? 12 : 8) * t.s, y = cam.y + (ball.y - cam.y) * k;
+    if (y - 3 < top) { hit = true; break; }
+  }
+  if (hit !== TREE_SEE.on) { TREE_SEE.on = hit; for (const [m, see, plain] of TREE_SEE.mats) m.material = hit ? see : plain; }
+}
 const seeThrough = mat => { mat.onBeforeCompile = sh => {
   sh.uniforms.uBall = SEE.uBall;
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW;')
@@ -1558,6 +1569,13 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   };
   split(trunks, TREES.length); for (const g of groups) { const nIn = g.list.filter(t => !t.outer).length; for (const { m } of g.meshes) split(m, nIn); }
   scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
+  // the course trees too: they only need the see-through when one stands between camera and ball. Otherwise they swap to a plain
+  // material (no 'discard'), so Apple GPUs can skip hidden pixels again. Owner's meter after the outer-forest fix: still 7-9 frames
+  // over 22 ms a second in flight, worst 41 ms (31 Oct 2026). Checked every frame in treeSee().
+  for (const m of [trunks, ...groups.flatMap(g => g.meshes.map(x => x.m))]) {
+    const see = m.material, plain = new THREE.MeshLambertMaterial({ color: see.color, vertexColors: see.vertexColors });
+    TREE_SEE.mats.push([m, see, plain]); // starts see-through: the first frame compiles that shader, so turning it on later never hitches
+  }
 }
 // garden holes (opt in with `garden`, owner: make 12 feel like the real thing): banked azalea beds, feature trees
 // (red maples, white dogwoods) and stone arch bridges over the creek. Decoration only (no collisions).
@@ -2477,6 +2495,7 @@ function frame(now) {
   { const a = clothGeo.attributes.position, flap = .02 + HOLE.wind.mph * .003; // ripple grows toward the free edge and with the wind
     for (let i = 0; i < a.count; i++) { const x = clothX[i * 3]; a.setZ(i, Math.sin(x * 9 - now / 140) * flap * x / .8); }
     a.needsUpdate = true; clothGeo.computeVertexNormals(); }
+  if (frame.shown) treeSee(camera.position, ballMesh.position);
   renderer.render(scene, camera);
   if (!frame.shown) { frame.shown = true; const l = document.getElementById('loading'); l.classList.add('done'); setTimeout(() => l.remove(), 600); }
 }
