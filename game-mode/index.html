@@ -364,7 +364,7 @@ const HOLES = [{
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405.5, -42]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-42, 405.5], r: 13, fx: [['ff', .425], ['tier', 4, .255], ['tilt', -40, .0068], ['bowl', 1, -7, 4, .17], ['bowl', 0, 14, 5, -.255]] }, // owner's heat map: steep false front, flat middle shelf, high back right, hump right, left edge falls to the bunker // owner 31 Oct: 15% less steep
+  green: { at: [-42, 405.5], r: 13, pinShelf: [.45, 6], fx: [['ff', .425], ['tier', 4, .255], ['tilt', -40, .0068], ['bowl', 1, -7, 4, .17], ['bowl', 0, 14, 5, -.255]] }, // owner's heat map: steep false front, flat middle shelf, high back right, hump right, left edge falls to the bunker // owner 31 Oct: 15% less steep
   // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd. Greenside: one big
   // bean (~25 m long) traced from the owner's top-down of the green (0.067 m/px), from the green's left middle down
   // to its front-left corner, so the tucked pin has to be carried over sand
@@ -470,7 +470,7 @@ const HOLES = [{
   // owner's illustration: a narrow chute off the tee, out right, then uphill and left round a wooded bank to the green
   fairway: { half_width: 22, line: [[0, 0], [65.7, -5.1], [136.6, -29.4], [192.5, -32.2], [247.8, -23.9], [303.3, -18.4], [358, 1.1], [412.5, 26.1], [450.8, 40.5]] },
   elevation: [[0, 0], [120, 1], [250, 4], [380, 9], [430, 11], [470, 11.5], [530, 12]], // uphill all the way
-  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .4675], ['tier', 5, .255], ['tilt', -60, .0068], ['bowl', -8, -5, 5, -.2975], ['bowl', -5, 7, 3.5, .1275]] }, // owner's heat map: false front kept; high back right, steep low front right, flat middle shelf, small rise front left // owner 31 Oct: 15% less steep
+  green: { at: [40.5, 450.8], r: 11, pinShelf: [.45, 6], fx: [['ff', .4675], ['tier', 5, .255], ['tilt', -60, .0068], ['bowl', -8, -5, 5, -.2975], ['bowl', -5, 7, 3.5, .1275]] }, // owner's heat map: false front kept; high back right, steep low front right, flat middle shelf, small rise front left // owner 31 Oct: 15% less steep
   // two deep soft fairway bunkers on the inside (left) of the dogleg at full-driver carry; rear bunker back-left of the green
   bunkers: [{ at: [-14.9, 250.7], r: 4.5, soft: 1 }, { at: [-9.1, 254.9], r: 4.5, soft: 1 },
     { at: [-9.5, 268.8], r: 4.5, soft: 1 }, { at: [-4.6, 272.5], r: 4.5, soft: 1 },
@@ -684,7 +684,7 @@ const HOLES = [{
   // owner's illustration: wide open right off the tee, a left tree band that bulges in at the landing area, then a gentle bend left
   fairway: { half_width: 15, line: [[0, 0], [59.8, -11.4], [134.6, -12.9], [208.9, -9.5], [282.9, -3.6], [343.7, 8.3], [401.6, 24.8]] },
   elevation: [[0, 3], [200, 0], [320, 1], [370, 4.5], [400, 6], [440, 6.5]], // heat map: a steep bank short of the green
-  green: { at: [24.8, 401.6], r: 15, fx: [['ff', .255], ['tilt', 70, .017], ['bowl', -7, -8, 5, -.2975]] }, // owner's heat map: high left, falls smoothly left to right to a steep low front right; no bunkers // owner 31 Oct: 15% less steep
+  green: { at: [24.8, 401.6], r: 15, pinShelf: [.5, 6], fx: [['ff', .255], ['tilt', 70, .017], ['bowl', -7, -8, 5, -.2975]] }, // owner's heat map: high left, falls smoothly left to right to a steep low front right; no bunkers // owner 31 Oct: 15% less steep
   bunkers: [],
   water: [],
   trees: [[1, 95, 200, 26, 22], [1, 200, 300, 15, 22], [1, 300, 365, 22, 22], [-1, 160, 260, 45, 20], [-1, 260, 405, 24, 20]],
@@ -925,7 +925,17 @@ const GZ = HOLE.green.at[1];
 const outOfBounds = (x, z) => Math.abs(x - centreX(Math.min(z, GZ))) > 75 || z < -40 || z > GZ + 70;
 
 const teePad = (x, z) => { const sm = t => t * t * (3 - 2 * t); return sm(clamp((5.8 - Math.abs(x - HOLE.tee[0])) / 1.8, 0, 1)) * sm(clamp((7.8 - Math.abs(z - HOLE.tee[1])) / 1.8, 0, 1)); };
+// green.pinShelf = [k, r]: within r metres of the pin every slope is k as steep (blending back to full by r + 9 m), so the flag
+// sits on a gentler shelf. Real terrain: contours and arrows follow it (owner 31 Oct: holes 1, 5 and 14)
+let PIN_H;
 function heightAt(x, z) {
+  const ps = HOLE.green.pinShelf, h = heightRaw(x, z); if (!ps) return h;
+  const d = Math.hypot(x - HOLE.pin[0], z - HOLE.pin[1]); if (d >= ps[1] + 9) return h;
+  if (PIN_H === undefined) PIN_H = heightRaw(...HOLE.pin);
+  const t = clamp((ps[1] + 9 - d) / 9, 0, 1), w = t * t * (3 - 2 * t);
+  return h + (PIN_H + (h - PIN_H) * ps[0] - h) * w;
+}
+function heightRaw(x, z) {
   let h = lerpPts(HOLE.elevation, z);                                   // tee high, valley at the landing area, climb to the green
   h += 0.6 * Math.sin(x * 0.045 + 1) * Math.cos(z * 0.021) + 0.4 * Math.sin(z * 0.013 + x * 0.01);
   const off = Math.abs(x - centreX(Math.min(z, GZ)));
@@ -976,6 +986,7 @@ function normalAt(x, z) { const e = 0.5; return norm(v(heightAt(x - e, z) - heig
 // ---------- physics ----------
 const BALL = { m: 0.04593, r: 0.021335 };
 const AREA = Math.PI * BALL.r * BALL.r, RHO = 1.225, DT = 1 / 120;
+const GREEN_CAP = .06; // owner 31 Oct: greens were too extreme (3x power uphill, off the green downhill). Putting-surface slope pull capped at 6%; looks, friction and speed unchanged
 const SURF = {   // bounce, keep (tangential speed kept), roll (friction), grip (spin bite), snag (stops below m/s)
   green:    { bounce: .32, keep: .60, roll: .10, grip: 1.0, snag: 0 },
   fringe:   { bounce: .34, keep: .53, roll: .21, grip: .85, snag: 0 },
@@ -1126,7 +1137,8 @@ function simulate(start, shot, wind, opts = {}) {
     if (m === 'water') return finish('water');
     const S = SURF[m];
     if (S.snag > 0 && s < S.snag * 0.5) break;
-    const n = normalAt(p.x, p.z), slope = sub(v(0, -G, 0), mul(n, dot(v(0, -G, 0), n)));
+    const n = normalAt(p.x, p.z), slope0 = sub(v(0, -G, 0), mul(n, dot(v(0, -G, 0), n))), sl = len(slope0);
+    const slope = m === 'green' && sl > GREEN_CAP * G ? mul(slope0, GREEN_CAP * G / sl) : slope0; // owner 31 Oct: the steepest spots on a putting surface pull like a 6% slope at most
     const fric = mul(norm(vel), -S.roll * G * Math.max(0.2, n.y));
     vel = add(vel, mul(add(slope, fric), DT));
     vel = sub(vel, mul(n, dot(vel, n)));
@@ -1249,7 +1261,7 @@ if (location.search.includes('test')) {
 // putter: preset speed so the ball rolls the distance on a green (v^2 = 2·mu·g·d), plus a little extra
 function puttPower(from, pin) {
   // v² = 2g(μ·d + Δh): friction over the distance plus the climb (negative downhill), as Golf Slate's preset does
-  const d = flat(from, pin) + 0.4, dh = heightAt(pin.x, pin.z) - heightAt(from.x, from.z);
+  const d = flat(from, pin) + 0.4, dh = clamp(heightAt(pin.x, pin.z) - heightAt(from.x, from.z), -GREEN_CAP * d, GREEN_CAP * d); // the climb as the capped green plays it
   return clamp(Math.sqrt(Math.max(0.05, 2 * G * (SURF.green.roll * d + dh))) / CLUBS[7].speed, 0.01, 1);
 }
 
