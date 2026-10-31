@@ -2496,11 +2496,11 @@ function frame(now) {
   const look = new THREE.Vector3(ball.x + Math.sin(aim) * ahead, ball.y, ball.z + Math.cos(aim) * ahead);
   camPos.lerp(target, 0.08); camLook.lerp(look, 0.12);
   camera.position.copy(camPos); camera.lookAt(camLook);
-  { // shadow box: 120 m square at rest, shrinks to 24 m round the ball in flight. Ground pixels outside it skip the soft-shadow lookups,
-    // which cost frames on the owner's Mac (?fps test: stutter gone with sun shadows off, 31 Oct 2026). Eases out fast, back in slowly
-    const c = sun.shadow.camera, want = state.phase === 'flying' ? 12 : 60, cur = c.right, nx = cur + (want - cur) * (want < cur ? .15 : .05);
-    if (Math.abs(nx - cur) > .01) { c.left = c.bottom = -nx; c.right = c.top = nx; c.updateProjectionMatrix(); } }
-  sun.position.set(ball.x + LIGHT.dir.x * 250, ball.y + LIGHT.dir.y * 250, ball.z + LIGHT.dir.z * 250); sun.target.position.set(ball.x, ball.y, ball.z);
+  { // shadows freeze in flight: drawn once at the strike (without the ball), then held until the ball stops. Re-drawing the shadow
+    // map every frame as the box chased a driver stuttered at the apex on the owner's Mac; with shadows off it was smooth (31 Oct 2026)
+    const fly = state.phase === 'flying';
+    if (fly !== frame.shFrozen) { frame.shFrozen = fly; ballMesh.castShadow = !fly; renderer.shadowMap.autoUpdate = !fly; renderer.shadowMap.needsUpdate = true; } }
+  if (!frame.shFrozen) { sun.position.set(ball.x + LIGHT.dir.x * 250, ball.y + LIGHT.dir.y * 250, ball.z + LIGHT.dir.z * 250); sun.target.position.set(ball.x, ball.y, ball.z); }
   sky.position.copy(camera.position); sky.material.uniforms.time.value = now / 1000;
   if (greenLines.visible) greenLines.tick(now);
   cloth.rotation.y = HOLE.wind.toward_deg * Math.PI / 180 - Math.PI / 2 + Math.sin(now / 300) * 0.1;
