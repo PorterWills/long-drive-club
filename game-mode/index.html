@@ -1072,7 +1072,11 @@ function strike(club, power, aim, lie, rand) {
   return { vel, spin, speed, launchDeg: launch * 180 / Math.PI, rpm };
 }
 
+// wind shelter (loblollies): the pine corridors break the wind near the ground. A ball low in the corridor feels about half
+// the wind; above the treetops (~20 m) it takes it all. So drives and high approaches still fight the wind; punches and chips are mostly sheltered
+const shelter = agl => { const u = clamp(agl / 20, 0, 1); return .45 + .55 * u * u * (3 - 2 * u); };
 function simulate(start, shot, wind, opts = {}) {
+  let gnd = heightAt(start.x, start.z);
   let p = { ...start }, vel = { ...shot.vel }, spin = { ...shot.spin }, t = 0;
   const pts = [{ ...p }], pin = opts.pin, hits = []; // hits: ground impacts for the sound (point index, impact speed, surface)
   let landing = null, apex = p.y, hang = 0, outcome = 'rest';
@@ -1083,11 +1087,12 @@ function simulate(start, shot, wind, opts = {}) {
 
   if (!opts.rolling) {
     for (let i = 0; i < 20 * 120; i++) {
-      let [np, nv] = rk4(p, vel, spin, HOLE.swirl ? swirlAt(wind, t) : wind);
+      const w0 = HOLE.swirl ? swirlAt(wind, t) : wind;
+      let [np, nv] = rk4(p, vel, spin, LOB && !opts.noTrees ? mul(w0, shelter(p.y - gnd)) : w0);
       const car = hitCar(np, nv, opts.noTrees); if (car) { np = car.p; nv = car.vel; spin = mul(spin, .3); }
       if (!opts.noTrees && inCanopy(np)) { nv = v(nv.x * 0.9, nv.y > 0 ? nv.y * 0.9 : nv.y, nv.z * 0.9); spin = mul(spin, 0.9); } // branches soak up forward speed; a falling ball keeps falling (it used to float down)
       apex = Math.max(apex, np.y); t += DT;
-      const ground = heightAt(np.x, np.z);
+      const ground = heightAt(np.x, np.z); gnd = ground;
       if (np.y - BALL.r <= ground) {
         np.y = ground + BALL.r; p = np; vel = nv; pts.push({ ...p });
         if (!landing) { landing = { ...p }; hang = t; }
@@ -1171,6 +1176,11 @@ if (location.search.includes('test')) {
     ['driver carry 200-290 yd at 92%', c0 > 200 && c0 < 290, c0.toFixed(0)],
     ['headwind shortens carry', flat(rHead.landing, v(0, 0, 0)) < flat(r0.landing, v(0, 0, 0)), (flat(rHead.landing, v(0,0,0)) / YD).toFixed(0)],
     ['crosswind toward +x pushes ball +x', rCross.landing.x > r0.landing.x + 3, rCross.landing.x.toFixed(1)],
+    (() => { // wind shelter: a low pitch in a 15 mph crosswind drifts less in the corridor than in open air; full wind above the treetops
+      const s = strike(CLUBS[6], .5, 0, 'fairway', () => .5), st = v(0, heightAt(0, 0) + BALL.r, 0), cw = v(6.7, 0, 0), o = { noTrees: true };
+      const dS = simulate(st, s, cw).landing.x - simulate(st, s, calm, o).landing.x, dO = simulate(st, s, cw, o).landing.x - simulate(st, s, calm, o).landing.x;
+      return ['pines shelter low shots from the wind', !LOB || (dS > 0 && dS < dO * .75 && shelter(25) === 1), `${dS.toFixed(1)} vs ${dO.toFixed(1)} m drift`];
+    })(),
     (() => { // the tree lines must not swallow a sensible tee shot: a drive down the middle of the fairway (par 3: a 5 iron at the pin)
       // lands as far as it would in open air (the tall loblolly crowns can catch shots that cleared the old cones)
       const p3 = HOLE.par === 3, tz = p3 ? HOLE.pin[1] : Math.min(230, FW_END - 10), tx = p3 ? HOLE.pin[0] : centreX(tz);
