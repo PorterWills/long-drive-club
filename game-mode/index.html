@@ -2230,7 +2230,8 @@ function frame(now) {
   // owner: ball and club in proportion, the club a real club's size. At address the ball is true size beside a true-size club
   // under a close camera; once struck it grows back to its drawn size over the first 0.6 s as the camera pulls back
   const address = state.phase === 'aim' || state.phase === 'swinging';
-  if (address) bs = BALL_NEAR;
+  const CLOSE_ADDRESS = false; // owner trying the original far camera again: the ball at its drawn size and the club scaled with it
+  if (address && CLOSE_ADDRESS) bs = BALL_NEAR;
   else if (state.phase === 'flying') bs = BALL_NEAR + (bs - BALL_NEAR) * clamp((now - state.shot.t0) / 600, 0, 1);
   { // turn the ball by the distance it moved: rolls forward on the ground, backspins in the air
     const p = ballMesh.position, dx = ball.x - p.x, dz = ball.z - p.z, d = Math.hypot(dx, dz);
@@ -2257,7 +2258,7 @@ function frame(now) {
       if (t >= 0) a = t < BK ? amp * ease(t / BK) : t < BK + SWING.hold ? amp
         : t < imp ? amp * (1 - Math.pow((t - BK - SWING.hold) / SWING.down, 2))
         : -amp * .9 * ease(Math.min(1, (t - imp) / SWING.through));
-      const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = 1; // true size, like the ball at address
+      const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = CLOSE_ADDRESS ? 1 : bs * .08 / BALL.r; // in proportion with the ball as drawn
       // owner: the club looked wrong when aiming. The face now sits square behind the ball along the aim line (it was
       // pushed back along world z, so turning the aim slid it sideways), its centre level with the ball's; held at launch
       if (address) clubRig.position.copy(ballMesh.position).addScaledVector(_aimDir.set(Math.sin(state.aim), 0, Math.cos(state.aim)), -(.08 * bs + .004)); clubRig.rotation.y = state.aim; clubRig.scale.set(-k, k, k); // mirrored: built toe to +x, but from behind the ball the toe sits on screen right
@@ -2268,11 +2269,11 @@ function frame(now) {
   }
   const aim = state.aim; // stays on the line you hit until the next shot is set up, so the camera never lurches toward the pin
   // the camera follows the ball: close and low at address (ball and club true size), pulled back for flight and settling
-  const putting = CLUBS[state.club].putter, close = putting || address;
+  const putting = CLUBS[state.club].putter, close = putting || (address && CLOSE_ADDRESS);
   const zd = state.club === 0 ? 1.2 : 1; // owner: the driver's address view 20% further out
   const back = putting ? 3.2 : close ? 3 * zd : 10, up = putting ? 1.3 : close ? 1.5 * zd : 3.8; // owner: pulled back so the hole shows, not just the club // putting sits low and close: ball and cup are drawn true size
   const cx = ball.x - Math.sin(aim) * back, cz = ball.z - Math.cos(aim) * back;
-  const target = new THREE.Vector3(cx, Math.max(ball.y + up, heightAt(cx, cz) + (address && !putting ? .6 : 1.5)), cz);
+  const target = new THREE.Vector3(cx, Math.max(ball.y + up, heightAt(cx, cz) + (close && !putting ? .6 : 1.5)), cz);
   // always look ahead along the line, so the view doesn't snap between "down the fairway" and "at the ball"
   // aim point a few metres past the ball puts the ball ~60% down the screen, clear of the controls (55° vertical FOV)
   const ahead = putting ? 1.6 : close ? 5 : 5.6; // owner: at address look up the hole, not down at the grass
