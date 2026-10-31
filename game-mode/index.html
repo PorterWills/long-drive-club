@@ -2383,7 +2383,7 @@ function frame(now) {
   const address = state.phase === 'aim' || state.phase === 'swinging';
   const CLOSE_ADDRESS = false; // owner trying the original far camera again: the ball at its drawn size and the club scaled with it
   if (address && CLOSE_ADDRESS) bs = BALL_NEAR;
-  else if (state.phase === 'flying') bs = BALL_NEAR + (bs - BALL_NEAR) * clamp((now - state.shot.t0) / 600, 0, 1);
+  else if (state.phase === 'flying' && CLOSE_ADDRESS) bs = BALL_NEAR + (bs - BALL_NEAR) * clamp((now - state.shot.t0) / 600, 0, 1);
   { // turn the ball by the distance it moved: rolls forward on the ground, backspins in the air
     const p = ballMesh.position, dx = ball.x - p.x, dz = ball.z - p.z, d = Math.hypot(dx, dz);
     if (d > 1e-4 && d < 5) { const air = ball.y - heightAt(ball.x, ball.z) > BALL.r + .05; ballMesh.rotateOnWorldAxis(_spinAxis.set(dz / d, 0, -dx / d), (air ? -.15 : 1) * d / (.08 * bs)); }
