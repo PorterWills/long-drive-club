@@ -1226,7 +1226,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 // ambiance: dawn by default; the player can switch mood from Holes → Mood (kept in this browser). Looks only; play is unchanged.
-// The sun's compass direction still changes daily (UTC). ?sky=dawn | day | golden | dusk previews one.
+// The sun's side (left or right shoulder) still changes daily (UTC). ?sky=dawn | day | golden | dusk previews one.
 // el: sun height in degrees (low enough to sit on the horizon, not mid-sky). fog: [near, far] metres. sunI / hemiI: light strengths. ground: bounce colour off the turf.
 const SKIES = {
   dawn:   { zenith: '#7b97ba', mid: '#e6c3b4', horizon: '#f6e6d2', sun: '#ffe1bd', cloudLit: '#ffeadb', cloudShade: '#a49cad', el: 5,  fog: [40, 360],  sunI: 1.5, hemiI: 1.15, ground: '#4c5a3c' }, // soft and misty
@@ -1241,7 +1241,7 @@ const LIGHT = (() => {
   if (pick === 'evening') pick = 'dusk';
   if (!SKIES[pick]) { try { pick = localStorage.getItem(SKY_KEY); } catch {} }
   if (!SKIES[pick]) pick = 'dawn'; // owner's default (was day; a saved choice still wins)
-  const k = SKIES[pick], az = r() * 6.283;
+  const k = SKIES[pick], az = (r() < .5 ? -1 : 1) * (1.9 + r() * .6); // owner: never in your eyes. Holes play towards +z, so the sun sits 110-145 degrees off the line: over a shoulder, side-lit, long shadows across the fairway
   return { ...k, name: pick, az, dir: new THREE.Vector3().setFromSphericalCoords(1, Math.PI / 2 - k.el * Math.PI / 180, az) };
 })();
 scene.fog = new THREE.Fog(LIGHT.horizon, ...LIGHT.fog); // haze: far trees melt into the sky
