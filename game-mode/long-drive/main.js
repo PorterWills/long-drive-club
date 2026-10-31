@@ -186,13 +186,7 @@ let ME = load(); if (ME.day !== today()) { ME.day = today(); ME.best = 0; save(M
 const showBest = () => $('best').textContent = ME.best ? `${Math.round(ME.best)} yd` : 'None yet';
 showBest();
 
-let wind = v(0, 0, 0), windMph = 0;
-function newWind() { // calm to a fresh breeze, any direction
-  // most swings: calm to 9 mph. About 1 in 6: a strong wind, 10 to 18 mph. A strong helping wind is the only way a drive gets near the 515 yd record
-  windMph = Math.round(rng() < 1 / 6 ? 10 + rng() * 8 : rng() * 9); const a = rng() * 6.283; wind = v(Math.sin(a) * windMph * MPH, 0, Math.cos(a) * windMph * MPH);
-  const toward = Math.cos(a) > .5 ? 'helping' : Math.cos(a) < -.5 ? 'against' : Math.sin(a) > 0 ? 'left' : 'right'; // +x is left on screen
-  $('wind').textContent = windMph ? `${windMph} mph ${toward}` : 'Calm';
-}
+// no wind: the owner wants still air every swing (a bit of fun, not a weather test)
 let aim = 0; const AIM_MAX = 4;
 function setAim(a) { aim = Math.max(-AIM_MAX, Math.min(AIM_MAX, Math.round(a * 2) / 2)); $('aimTxt').textContent = aim ? `${Math.abs(aim)}° ${aim > 0 ? 'right' : 'left'}` : 'Straight'; }
 $('aimL').onclick = () => setAim(aim - .5); $('aimR').onclick = () => setAim(aim + .5);
@@ -200,7 +194,7 @@ $('aimL').onclick = () => setAim(aim - .5); $('aimR').onclick = () => setAim(aim
 let phase = 'ready', holdStart = 0, shot = null, play = 0, result = null;
 function ready() {
   phase = 'ready'; document.body.classList.remove('flying', 'done');
-  placeMark(); drawDial(0); newWind(); $('dialTxt').textContent = 'HOLD';
+  placeMark(); drawDial(0); $('dialTxt').textContent = 'HOLD';
   ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; trailGeo.setDrawRange(0, 0);
 }
 function press(t) { if (phase !== 'ready') return; ac(); phase = 'hold'; holdStart = t; $('dialTxt').textContent = ''; }
@@ -209,8 +203,8 @@ function release(t, ranOut = false) {
   const held = (t - holdStart) / 1000, err = ranOut ? 999 : (held - tAt(MARK)) * 1000;
   const k = strike(err, ranOut);
   const speed = speedFor(k.total, k.launch, k.rpm);
-  const run = simulate(launchFor(speed, k.tilt, k.launch, k.rpm, aim), wind, { cars: CAR_BOXES });
-  const free = simulate(launchFor(speed, k.tilt, k.launch, k.rpm, aim), wind);
+  const run = simulate(launchFor(speed, k.tilt, k.launch, k.rpm, aim), undefined, { cars: CAR_BOXES });
+  const free = simulate(launchFor(speed, k.tilt, k.launch, k.rpm, aim));
   result = { k, err, speed, run, free, ranOut };
   if (QS.has('debug')) console.log('release', { held, err: Math.round(err), tier: k.tier.id, target: Math.round(k.total), total: Math.round(run.total), contacts: run.contacts });
   SND.strike(k.tier.id === 'perfect' ? 1 : k.tier.id === 'mishit' ? 0 : .5);
@@ -249,9 +243,6 @@ function finish() {
   if (ranOut) L.push('Held too long. The swing came apart.');
   if (roofHit) L.push(`Off the roof of the ${roofHit.name.toLowerCase()} at ${Math.round(roofHit.z / YD)} yd.`);
   if (hazard) L.push(`Into ${PART[hazard.part]} of the ${hazard.name.toLowerCase()}.`);
-  // the wind's share: this drive against the same strike in still air, no cars
-  const calm = simulate(launchFor(speed, k.tilt, k.launch, k.rpm, aim), v(0, 0, 0)).total, wd = Math.round(free.total - calm);
-  if (Math.abs(wd) >= 3) L.push(wd < 0 ? `The wind took ${-wd} yd off a ${Math.round(calm)} yd strike.` : `The wind added ${wd} yd to a ${Math.round(calm)} yd strike.`);
   L.push(run.inGrid ? 'Inside the grid.' : 'Outside the grid. It doesn\'t count.');
   let status = false;
   if (run.inGrid) {
