@@ -1042,6 +1042,19 @@ const carColliders = c => {
 };
 const CAR_COLLIDERS = HOLE.cars.flatMap(carColliders).concat(TREES.map(t => ({ tree: true, x: t.x, z: t.z, r: (t.lob ? .3 : .45) * t.s, top: heightAt(t.x, t.z) + (t.lob ? 20 : t.under ? 2 : 3) * t.s })) /* loblolly: the trunk runs up into the crown */,
   { x: HOLE.pin[0], z: HOLE.pin[1], r: 0.0095, top: heightAt(...HOLE.pin) + 2.4, low: heightAt(...HOLE.pin) + 0.1 }); // flagstick; below the lip putts still drop
+// the flag (owner: a chip went straight through it): the cloth as a flat 0.8 x 0.5 m panel off the stick, 1.9-2.4 m up, pointing
+// downwind as drawn (its few degrees of flutter ignored). Cloth is soft: a ball that crosses it loses most of its pace and drops
+const FLAG_ANG = HOLE.wind.toward_deg * Math.PI / 180 - Math.PI / 2, FLAG_A = v(Math.cos(FLAG_ANG), 0, -Math.sin(FLAG_ANG)), FLAG_N = v(Math.sin(FLAG_ANG), 0, Math.cos(FLAG_ANG));
+function hitFlag(p, np, nv) {
+  const [px, pz] = HOLE.pin, h = heightAt(px, pz), sd = q => (q.x - px) * FLAG_N.x + (q.z - pz) * FLAG_N.z, d0 = sd(p), d1 = sd(np);
+  if (d0 * d1 > 0 || d0 === d1) return null; // didn't cross the cloth's plane this step
+  const k = d0 / (d0 - d1), x = p.x + (np.x - p.x) * k, y = p.y + (np.y - p.y) * k, z = p.z + (np.z - p.z) * k;
+  const along = (x - px) * FLAG_A.x + (z - pz) * FLAG_A.z;
+  if (along < 0 || along > .81 || y < h + 1.9 || y > h + 2.4) return null;
+  const vn = nv.x * FLAG_N.x + nv.z * FLAG_N.z, back = Math.sign(d0) * .03; // stay on the side it came from
+  return { p: v(x + FLAG_N.x * back, y, z + FLAG_N.z * back), // the cloth gives: a little bounce back, the rest of the pace soaked up
+           vel: v((nv.x - FLAG_N.x * vn) * .2 - FLAG_N.x * vn * .1, Math.min(nv.y, 0) * .3, (nv.z - FLAG_N.z * vn) * .2 - FLAG_N.z * vn * .1) };
+}
 // canopies match the drawn shapes: pines a cone from 3.4s to 12.1s up, broadleaf a ball of 2.4s at 4.6s,
 // loblollies a flattened crown 3.6s across centred 18.4s up (about 14.5s to 22.5s): open trunks underneath
 const canopyMid = t => t.lob ? 18.4 * t.s : t.pine ? 7 * t.s : 4.6 * t.s;
@@ -1106,6 +1119,7 @@ function simulate(start, shot, wind, opts = {}) {
       const w0 = HOLE.swirl ? swirlAt(wind, t) : wind;
       let [np, nv] = rk4(p, vel, spin, LOB && !opts.noTrees ? mul(w0, shelter(p.y - gnd)) : w0);
       const car = hitCar(np, nv, opts.noTrees); if (car) { np = car.p; nv = car.vel; spin = mul(spin, .3); }
+      const fl = hitFlag(p, np, nv); if (fl) { np = fl.p; nv = fl.vel; spin = mul(spin, .1); }
       if (!opts.noTrees && inCanopy(np)) { nv = v(nv.x * 0.9, nv.y > 0 ? nv.y * 0.9 : nv.y, nv.z * 0.9); spin = mul(spin, 0.9); } // branches soak up forward speed; a falling ball keeps falling (it used to float down)
       apex = Math.max(apex, np.y); t += DT;
       const ground = heightAt(np.x, np.z); gnd = ground;
@@ -1213,6 +1227,11 @@ if (location.search.includes('test')) {
     (() => { // a ball flown into the flagstick at waist height bounces back off it
       const [px, pz] = HOLE.pin, st = v(px, heightAt(px, pz) + 1, pz - 3), r = simulate(st, { vel: v(0, 0, 12), spin: v(0, 0, 0) }, calm);
       return ['flagstick is solid', r.landing.z < pz, `landed ${(r.landing.z - pz).toFixed(2)}m from pin`];
+    })(),
+    (() => { // a chip flown into the middle of the flag drops by the pin instead of flying through it (owner, 31 Oct 2026)
+      const [px, pz] = HOLE.pin, h = heightAt(px, pz), mid = v(px + FLAG_A.x * .4, h + 2.15, pz + FLAG_A.z * .4), st = v(mid.x - FLAG_N.x, mid.y, mid.z - FLAG_N.z); // 1 m out: from further it drops under the cloth
+      const d = flat(simulate(st, { vel: v(FLAG_N.x * 12, 0, FLAG_N.z * 12), spin: v(0, 0, 0) }, calm).landing, mid);
+      return ['flag stops the ball', d < 1.5, `landed ${d.toFixed(2)}m from the flag`];
     })(),
     ['ball comes to rest', ['rest', 'ob', 'water'].includes(r0.outcome), r0.outcome],
     (() => { const pin = v(HOLE.pin[0], 0, HOLE.pin[1]), a0 = (HOLE.green.long?.[0] ?? 0) * Math.PI / 180, sx = pin.x - 10 * Math.sin(a0), sz = pin.z - 10 * Math.cos(a0); const st = v(sx, heightAt(sx, sz) + BALL.r, sz); const pw = puttPower(st, pin); const r = simulate(st, strike(CLUBS[7], pw, a0, 'green', Math.random), calm, { rolling: true, pin }); const d = flat(r.final, pin), rolled = flat(r.final, st); return ['putter preset rolls ~the distance (break is the player\'s job)', r.outcome === 'holed' || Math.abs(rolled - 10.4) < 2,`${r.outcome} ${d.toFixed(2)}m pw=${pw.toFixed(2)} rolled=${flat(r.final, st).toFixed(2)}`]; })(),
