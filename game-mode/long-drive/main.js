@@ -165,7 +165,7 @@ const polar = (r, f) => { const a = (A0 + ARC * f) * Math.PI / 180; return [100 
 const arcPath = (r, f1, f2) => { const [x1, y1] = polar(r, f1), [x2, y2] = polar(r, f2); return `M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${ARC * (f2 - f1) > 180 ? 1 : 0} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`; };
 $('track').setAttribute('d', arcPath(84, 0, 1));
 $('ticks').innerHTML = Array.from({ length: 11 }, (_, i) => { const [a, b] = polar(76, i / 10), [c, d] = polar(70, i / 10); return `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`; }).join('');
-const SWING = { T: 1.5, pow: 1.7, grace: .12 }; // needle reaches the end in 1.5 s, speeding up; held .12 s past the end, the swing falls apart
+const SWING = { T: 1.5, pow: 1.7, grace: .12 }; // needle reaches the end in about 1.5 s (1.3 to 1.7, new each swing), speeding up; held .12 s past the end, the swing falls apart
 let MARK = .86;
 const tAt = f => SWING.T * Math.pow(f, 1 / SWING.pow); // time the needle reaches f
 function drawDial(f) {
@@ -173,8 +173,8 @@ function drawDial(f) {
   $('needle').setAttribute('transform', `rotate(${A0 + ARC * Math.min(1, f)} 100 100)`);
 }
 function placeMark() {
-  MARK = .8 + rng() * .1; // moves a little each swing, so it can't be learnt by rote
-  const w = .012; $('mark').setAttribute('d', arcPath(84, MARK - w, MARK + w));
+  MARK = .8 + rng() * .1; SWING.T = 1.3 + rng() * .4; // the mark and the needle's pace change each swing, so the timing can't be learnt by rote
+  const w = .007; $('mark').setAttribute('d', arcPath(84, MARK - w, MARK + w));
 }
 
 // ---------- state ----------
@@ -188,7 +188,8 @@ showBest();
 
 let wind = v(0, 0, 0), windMph = 0;
 function newWind() { // calm to a fresh breeze, any direction
-  windMph = Math.round(rng() * 9); const a = rng() * 6.283; wind = v(Math.sin(a) * windMph * MPH, 0, Math.cos(a) * windMph * MPH);
+  // most swings: calm to 9 mph. About 1 in 6: a strong wind, 10 to 18 mph. A strong helping wind is the only way a drive gets near the 515 yd record
+  windMph = Math.round(rng() < 1 / 6 ? 10 + rng() * 8 : rng() * 9); const a = rng() * 6.283; wind = v(Math.sin(a) * windMph * MPH, 0, Math.cos(a) * windMph * MPH);
   const toward = Math.cos(a) > .5 ? 'helping' : Math.cos(a) < -.5 ? 'against' : Math.sin(a) > 0 ? 'left' : 'right'; // +x is left on screen
   $('wind').textContent = windMph ? `${windMph} mph ${toward}` : 'Calm';
 }

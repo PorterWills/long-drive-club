@@ -127,8 +127,8 @@ export function speedFor(totalYd, launchDeg, rpm) {
 
 // the swing: release error (ms, + late) to a tier and a target total
 export const TIERS = [
-  { id: 'perfect', name: 'Perfect', win: 1000 / 60, lo: 437, hi: 455 },
-  { id: 'monster', name: 'Monster', win: 50, lo: 378, hi: 410 },
+  { id: 'perfect', name: 'Perfect', win: 8, lo: 437, hi: 455 }, // ±8 ms: half a frame at 60 fps (owner: ±1 frame was too easy),
+  { id: 'monster', name: 'Monster', win: 45, lo: 378, hi: 410 },
   { id: 'great', name: 'Great', win: 100, lo: 315, hi: 351 },
   { id: 'good', name: 'Good', win: 180, lo: 261, hi: 293 },
   { id: 'mishit', name: 'Mishit', win: Infinity, lo: 198, hi: 234 },

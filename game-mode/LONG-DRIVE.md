@@ -12,7 +12,9 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 - **Landing and roll match the course game (owner, 31 Oct 2026):** the grid uses the course's fairway surface exactly (`SURF.fairway`: bounce .38, keeps 58%, roll friction .14, spin grip .55) and plays back at the course's 1.15x with no fast roll. The first build had a firmer, faster surface and a 4x roll that looked nothing like the course. With shorter roll, the original distances needed 253 to 266 mph, so the owner chose to scale every tier down by 10% to keep real ball speeds: Perfect now leaves at 224 to 234 mph, Monster at 193 to 209. A Perfect drive plus a roof bonus tops out near 485 yd, so the 515 yd record line no longer comes up in play.
 - **Daily best is per browser for now** (`localStorage` key `ldc.longdrive`, which also keeps the status date). A shared daily board needs a new sheet and endpoint in the Apps Script.
 - **No beam haze cones.** They read as hard triangles across the sky; the pools of light on the strip carry the look.
-- **The dial mark moves** a little each swing (80% to 90% of the dial), so the timing can't be learnt by rote.
+- **The dial mark moves** a little each swing (80% to 90% of the dial), and the needle's pace changes too (1.3 to 1.7 s to the end), so the timing can't be learnt by rote.
+- **Perfect tightened to ±8 ms** (owner, 31 Oct 2026: ±1 frame was fairly easy). Monster is ±45 ms.
+- **The record needs the conditions.** At a real 234 mph the flight model tops out near 455 yd in still air, like real long drive hitters (the 515 yd record had help). About 1 swing in 6 now has a strong wind, 10 to 18 mph. A Perfect drive with a 15 mph helping wind goes about 508 yd; add a roof and it passes 515.
 
 ## Look and tone
 
@@ -35,8 +37,8 @@ At 60 fps one frame is about 17 ms. The windows are measured from the mark. All 
 
 | Tier | Release | Total | Real-world equivalent |
 |---|---|---|---|
-| **Perfect** | within ±1 frame (about 33 ms window) | 437–455 yd | edge of human limits |
-| **Monster** | within ±50 ms | 378–410 yd | a World Long Drive winner |
+| **Perfect** | within ±8 ms (half a frame) | 437–455 yd | edge of human limits |
+| **Monster** | within ±45 ms | 378–410 yd | a World Long Drive winner |
 | **Great** | within ±100 ms | 315–351 yd | elite tour power |
 | **Good** | within ±180 ms | 261–293 yd | an average tour drive |
 | **Mishit** | anything else | 198–234 yd | off-centre, high spin |
