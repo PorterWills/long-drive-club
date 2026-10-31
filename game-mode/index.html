@@ -2258,7 +2258,7 @@ function frame(now) {
       if (t >= 0) a = t < BK ? amp * ease(t / BK) : t < BK + SWING.hold ? amp
         : t < imp ? amp * (1 - Math.pow((t - BK - SWING.hold) / SWING.down, 2))
         : -amp * .9 * ease(Math.min(1, (t - imp) / SWING.through));
-      const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = CLOSE_ADDRESS ? 1 : putt ? Math.min(bs * .08 / BALL.r, 1.5) : 1.75; // owner: 1.75x real size under the far camera; the putter, under the close putting camera, matches the ball (true size near the cup)
+      const m = CLUB_MESH[c.id], { pivot, axis } = m.userData, k = CLOSE_ADDRESS ? 1 : putt ? .8 * Math.min(bs * .08 / BALL.r, 1.5) : 1.75; // putter 20% smaller (owner) // owner: 1.75x real size under the far camera; the putter, under the close putting camera, matches the ball (true size near the cup)
       // owner: the club looked wrong when aiming. The face now sits square behind the ball along the aim line (it was
       // pushed back along world z, so turning the aim slid it sideways), its centre level with the ball's; held at launch
       if (address) clubRig.position.copy(ballMesh.position).addScaledVector(_aimDir.set(Math.sin(state.aim), 0, Math.cos(state.aim)), -(.08 * bs + .004)); clubRig.rotation.y = state.aim; clubRig.scale.set(-k, k, k); // mirrored: built toe to +x, but from behind the ball the toe sits on screen right
