@@ -976,6 +976,7 @@ function normalAt(x, z) { const e = 0.5; return norm(v(heightAt(x - e, z) - heig
 // ---------- physics ----------
 const BALL = { m: 0.04593, r: 0.021335 };
 const AREA = Math.PI * BALL.r * BALL.r, RHO = 1.225, DT = 1 / 120;
+const GREEN_CAP = .06; // owner 31 Oct: greens were too extreme (3x power uphill, off the green downhill). Putting-surface slope pull capped at 6%; looks, friction and speed unchanged
 const SURF = {   // bounce, keep (tangential speed kept), roll (friction), grip (spin bite), snag (stops below m/s)
   green:    { bounce: .32, keep: .60, roll: .10, grip: 1.0, snag: 0 },
   fringe:   { bounce: .34, keep: .53, roll: .21, grip: .85, snag: 0 },
@@ -1126,7 +1127,8 @@ function simulate(start, shot, wind, opts = {}) {
     if (m === 'water') return finish('water');
     const S = SURF[m];
     if (S.snag > 0 && s < S.snag * 0.5) break;
-    const n = normalAt(p.x, p.z), slope = sub(v(0, -G, 0), mul(n, dot(v(0, -G, 0), n)));
+    const n = normalAt(p.x, p.z), slope0 = sub(v(0, -G, 0), mul(n, dot(v(0, -G, 0), n))), sl = len(slope0);
+    const slope = m === 'green' && sl > GREEN_CAP * G ? mul(slope0, GREEN_CAP * G / sl) : slope0; // owner 31 Oct: the steepest spots on a putting surface pull like a 6% slope at most
     const fric = mul(norm(vel), -S.roll * G * Math.max(0.2, n.y));
     vel = add(vel, mul(add(slope, fric), DT));
     vel = sub(vel, mul(n, dot(vel, n)));
