@@ -1241,8 +1241,8 @@ const LIGHT = (() => {
   if (pick === 'evening') pick = 'dusk';
   if (!SKIES[pick]) { try { pick = localStorage.getItem(SKY_KEY); } catch {} }
   if (!SKIES[pick]) pick = 'dawn'; // owner's default (was day; a saved choice still wins)
-  const k = SKIES[pick], az = r() * 6.283, el = k.el * Math.PI / 180;
-  return { ...k, name: pick, dawn: pick === 'dawn', dir: new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)) };
+  const k = SKIES[pick], az = r() * 6.283;
+  return { ...k, name: pick, az, dir: new THREE.Vector3().setFromSphericalCoords(1, Math.PI / 2 - k.el * Math.PI / 180, az) };
 })();
 scene.fog = new THREE.Fog(LIGHT.horizon, ...LIGHT.fog); // haze: far trees melt into the sky
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
@@ -1269,7 +1269,7 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
 }));
 sky.renderOrder = -1; scene.add(sky);
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1500);
-scene.add(new THREE.HemisphereLight(LIGHT.mid, LIGHT.ground, LIGHT.hemiI));
+const hemi = new THREE.HemisphereLight(LIGHT.mid, LIGHT.ground, LIGHT.hemiI); scene.add(hemi);
 const sun = new THREE.DirectionalLight(LIGHT.sun, LIGHT.sunI);
 sun.position.set(-80, 120, 60); sun.castShadow = true;
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 500 });
@@ -2111,11 +2111,38 @@ function openCard() {
   $('card').style.display = 'block';
 }
 $('holesBtn').onclick = openCard;
-// ambiance panel: opened from Holes, never forced. Picking one reloads so the whole scene relights behind the panel
+// ambiance panel: opened from Holes, never forced. Picking one relights the scene live behind the panel
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 $('skies').innerHTML = Object.entries(SKIES).map(([k, c]) => `<button data-sky="${k}" class="${k === LIGHT.name ? 'on' : ''}" aria-pressed="${k === LIGHT.name}">`
   + `<span class="sw" aria-hidden="true"><i style="background:${c.zenith}"></i><i style="background:${c.mid}"></i><i style="background:${c.horizon}"></i></span>${k}</button>`).join('');
-$('skies').onclick = e => { const k = e.target.closest('button')?.dataset.sky; if (k && k !== LIGHT.name) { store(SKY_KEY, k); try { sessionStorage.setItem('ldc.ambiance', '1'); } catch {} const u = new URL(location.href); u.searchParams.delete('sky'); location.replace(u); } }; // drop a ?sky preview so the pick wins
+// relight live: every colour, light, mist distance and the sun's height ease across over a second; the clubs' reflections swap at the end
+let skyFade = 0;
+const relight = name => {
+  const from = { ...LIGHT }, to = SKIES[name], t0 = performance.now(), id = ++skyFade, C = new THREE.Color(), lerpC = (a, b, t) => C.set(a).lerp(new THREE.Color(b), t).getStyle();
+  Object.assign(LIGHT, { name });
+  const step = now => {
+    if (id !== skyFade) return; // a newer pick took over
+    const t = THREE.MathUtils.smootherstep(Math.min((now - t0) / 1000, 1), 0, 1);
+    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade', 'ground']) LIGHT[k] = lerpC(from[k], to[k], t);
+    for (const k of ['el', 'sunI', 'hemiI']) LIGHT[k] = THREE.MathUtils.lerp(from[k], to[k], t);
+    LIGHT.fog = from.fog.map((v, i) => THREE.MathUtils.lerp(v, to.fog[i], t));
+    LIGHT.dir.setFromSphericalCoords(1, Math.PI / 2 - LIGHT.el * Math.PI / 180, LIGHT.az);
+    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]);
+    scene.fog.color.set(LIGHT.horizon); [scene.fog.near, scene.fog.far] = LIGHT.fog;
+    hemi.color.set(LIGHT.mid); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
+    sun.color.set(LIGHT.sun); sun.intensity = LIGHT.sunI;
+    if (t < 1) return requestAnimationFrame(step);
+    const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground);
+    for (const m of Object.values(CLUB_MESH)) m.traverse(o => { if (o.material?.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } });
+  };
+  requestAnimationFrame(step);
+};
+$('skies').onclick = e => {
+  const b = e.target.closest('button'), k = b?.dataset.sky; if (!k || k === LIGHT.name) return;
+  store(SKY_KEY, k); relight(k);
+  for (const o of $('skies').children) { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b); }
+  const u = new URL(location.href); if (u.searchParams.has('sky')) { u.searchParams.delete('sky'); history.replaceState(null, '', u); } // drop a ?sky preview so the pick wins
+};
 // course map: the hole drawn top-down from the same ground the ball plays on, pin and ball marked, rings every 50 yd to the pin
 function drawMap() {
   if (!drawMap.ready) return void (drawMap.t ??= setTimeout(() => { drawMap.ready = true; drawMap(); }, 400)); // build after the course is on screen, so loading isn't held up
@@ -2183,9 +2210,8 @@ const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('hel
 // the side card (shot stats, mini map) tucks under the bar, whatever height the bar is
 new ResizeObserver(() => $('side').style.top = $('hole').getBoundingClientRect().bottom + 8 + 'px').observe($('hole'));
 $('helpClose').addEventListener('click', firstMap); $('play').addEventListener('click', firstMap); setTimeout(firstMap, 0);
-$('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
+$('play').onclick = () => $('start').classList.remove('open');
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
-try { if (sessionStorage.getItem('ldc.ambiance')) $('start').classList.add('open'); } catch {} // stay open across the relight reload
 $('cardClose').onclick = () => { $('card').style.display = 'none'; };
 $('scBtn').onclick = () => openScorecard();
 $('cardRows').onclick = e => { // owner: one tap plays. The round's next hole plays the round; any other hole is practice
