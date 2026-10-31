@@ -25,11 +25,11 @@ export const CAR_TYPES = {
   coupe:  { name: 'Coupe', l: 4.5, w: 1.9, h: 1.22, belt: .8, roofL: 1.05, roofW: 1.15, rake: .85 },
 };
 // placement by where each tier's drives land (carry, not total): Good 234-264 yd, Great 285-319,
-// Monster 345-376, Perfect 401-419. Easy roofs near, small ones far, two where Perfect drives land (yards, metres across)
+// Monster 345-376, Perfect 433-452. Easy roofs near, small ones far, two where Perfect drives land (yards, metres across)
 export const CARS = [
   { type: 'van', yd: 238, x: -7 }, { type: 'pickup', yd: 258, x: 8 }, { type: 'estate', yd: 292, x: -3 },
   { type: 'saloon', yd: 314, x: 6 }, { type: 'suv', yd: 360, x: -9 },
-  { type: 'estate', yd: 405, x: 5 }, { type: 'coupe', yd: 417, x: -3 },
+  { type: 'estate', yd: 437, x: 5 }, { type: 'coupe', yd: 449, x: -3 },
 ];
 export const carBox = c => { const t = CAR_TYPES[c.type]; return { ...t, type: c.type, cx: c.x, cz: c.yd * YD }; };
 
@@ -127,7 +127,7 @@ export function speedFor(totalYd, launchDeg, rpm) {
 
 // the swing: release error (ms, + late) to a tier and a target total
 export const TIERS = [
-  { id: 'perfect', name: 'Perfect', win: 8, lo: 437, hi: 455 }, // ±8 ms: half a frame at 60 fps (owner: ±1 frame was too easy),
+  { id: 'perfect', name: 'Perfect', win: 8, lo: 470, hi: 490 }, // ±8 ms: half a frame at 60 fps (owner: ±1 frame was too easy),
   { id: 'monster', name: 'Monster', win: 45, lo: 378, hi: 410 },
   { id: 'great', name: 'Great', win: 100, lo: 315, hi: 351 },
   { id: 'good', name: 'Good', win: 180, lo: 261, hi: 293 },
