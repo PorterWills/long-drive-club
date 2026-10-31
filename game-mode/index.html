@@ -1344,6 +1344,34 @@ scene.add(sun, sun.target);
 const COLOURS = { green: '#4a7f45', fringe: '#44753f', fairway: '#557f47', firstcut: '#46703c', rough: '#344f2c', straw: '#344f2c', sand: '#f4f5f6', water: '#3d5f6e' }; // muted to sit with Racing Green
 const SAND_FACE = new THREE.Color('#d5d9de'), LIP = new THREE.Color('#2f4a29'), SAND = new THREE.Color('#ffffff'), WATER = new THREE.Color(HOLE.garden?.water?.[0] ?? '#41687a'), WATER_DEEP = new THREE.Color(HOLE.garden?.water?.[1] ?? '#2a4a5a'); // garden holes: darker, still water. Sand is pure white (owner: Augusta white, not off-white)
 const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})`; // linear-space colour for shader code
+// tree shadows (loblollies, owner): one fixed top-down shade image over the whole course (2 px a metre), each crown and trunk
+// projected along the sun, so with the low sun they fall long across the fairway. Fixed, so nothing pops in as the ball moves
+// (why trees never cast real shadows: that shadow box follows the ball). Redrawn when the Mood (sun) changes. Off with ?oldtrees
+const SHADE = { canvas: document.createElement('canvas'), trees: [], tex: null, box: new THREE.Vector4() };
+if (location.search.includes('test')) window.__shade = SHADE.canvas; // ?test: inspect the shade image
+function drawShade() {
+  const { canvas: cv, box } = SHADE, g = cv.getContext('2d'), d = LIGHT.dir, r = rng(31);
+  g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
+  if (!LOB || d.y < .03) { SHADE.tex.needsUpdate = true; return; }
+  // drawn as if the sun were at least 30 degrees up: at the real 11-17 degrees the pines' shadows run ~85 m and cover the whole
+  // fairway in one flat shade. Shorter shadows leave sunlit grass between the bands (the references' look)
+  const hl = Math.hypot(d.x, d.z) || 1, k = Math.max(d.y / hl, Math.tan(30 * Math.PI / 180)), ox = -d.x / hl / k, oz = -d.z / hl / k, ang = Math.atan2(oz, ox), L = Math.hypot(ox, oz), P = (x, z) => [(x - box.x) * 2, (z - box.y) * 2];
+  g.fillStyle = g.strokeStyle = '#fff'; g.lineCap = 'round'; g.globalAlpha = .28; // dappled: each crown lets light through; only overlaps build to full shade (owner's tee went one flat dark sheet at full strength)
+  for (const t of SHADE.trees) {
+    const s = t.s, hc = t.lob ? 18.4 * s : 4.6 * s, rr = (t.lob ? 3.2 : 2.3) * s, hv = (t.lob ? 3.6 : 2) * s, hb = t.lob ? 15 * s : 2.4 * s;
+    const [bx, bz] = P(t.x, t.z), [tx, tz] = P(t.x + ox * hb, t.z + oz * hb);
+    if (Math.min(bx, tx) > cv.width + 400 || Math.max(bx, tx) < -400) continue;
+    g.lineWidth = Math.max(1, (t.lob ? .7 : .5) * s); g.beginPath(); g.moveTo(bx, bz); g.lineTo(tx, tz); g.stroke(); // trunk
+    for (let k = 0; k < (t.lob ? 4 : 2); k++) { // crown: a few overlapping blobs, so the shade reads patchy like the crowns
+      const j = k ? .55 : 0, cx = t.x + ox * hc + (r() - .5) * rr * 2 * j, cz = t.z + oz * hc + (r() - .5) * rr * 2 * j, f = k ? .55 + r() * .3 : 1;
+      const [px, pz] = P(cx, cz); g.beginPath(); g.ellipse(px, pz, (rr + hv * L) * 2 * f, rr * 2 * f, ang, 0, 6.283); g.fill();
+    }
+  }
+  g.globalAlpha = 1;
+  if ('filter' in g) { const c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height; // soft edges where supported: one blur pass over the finished image
+    const g2 = c2.getContext('2d'); g2.filter = 'blur(1.5px)'; g2.drawImage(cv, 0, 0); g.drawImage(c2, 0, 0); }
+  SHADE.tex.needsUpdate = true;
+}
 { // terrain mesh, coloured by surface
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
   const geo = new THREE.PlaneGeometry(W, D, seg[0], seg[1]); geo.rotateX(-Math.PI / 2);
@@ -1379,12 +1407,15 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
   geo.setAttribute('gedge', new THREE.Float32BufferAttribute(gEdge, 1)); // the green's edge, laid per pixel like the hazards (owner: smoother green edges)
   geo.setAttribute('haz', new THREE.Float32BufferAttribute(haz, 2)); // bunker and water distances, interpolated per pixel so their edges are smooth curves, not grid steps
   geo.computeVertexNormals();
+  SHADE.box.set(X0, -40, W, D); SHADE.canvas.width = W * 2; SHADE.canvas.height = D * 2;
+  SHADE.tex = new THREE.CanvasTexture(SHADE.canvas); SHADE.tex.flipY = false; SHADE.tex.colorSpace = THREE.NoColorSpace;
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  mat.onBeforeCompile = sh => { // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uShade = { value: SHADE.tex }; sh.uniforms.uShadeBox = { value: SHADE.box }; // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough, gedge; attribute vec2 haz; varying float vR, vG; varying vec2 vXZ, vH;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vG = gedge; vXZ = position.xz; vH = haz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying float vR, vG; varying vec2 vXZ, vH;
+      varying float vR, vG; varying vec2 vXZ, vH; uniform sampler2D uShade; uniform vec4 uShadeBox;
       float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
         return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + 1.), f.x), f.y); }`)
@@ -1402,6 +1433,7 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
       sand *= 1. - .03 * step(.5, fract((vXZ.x + vXZ.y) * .9)) * step(bd, .72) - .03 * (vn(vXZ * 6.) - .5);  // rake lines, grain
       diffuseColor.rgb = mix(diffuseColor.rgb, sand, 1. - smoothstep(1. - ba, 1. + ba, bd));       // crisp edge
       diffuseColor.rgb *= 1. - .22 * smoothstep(.9, 0., wd);                                        // damp bank at the water's edge
+      diffuseColor.rgb *= 1. - .4 * texture2D(uShade, (vXZ - uShadeBox.xy) / uShadeBox.zw).r;      // tree shadows (SHADE)
       vec3 wc = mix(${glsl(WATER)}, ${glsl(WATER_DEEP)}, smoothstep(0., -5., wd));
       #ifdef USE_FOG
       wc = mix(wc, fogColor, .35 * smoothstep(12., 140., vFogDepth));                               // sky sheen further off
@@ -1473,6 +1505,7 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
     if (outOfBounds(x, zz)) { const pine = fr() < (LOB ? .9 : .6); OUTER.push({ x, z: zz, s: LOB && pine ? .9 + fr() * .5 : 1 + fr() * .8, pine, lob: LOB && pine, outer: true }); }
   }
   const DRAWN = TREES.concat(OUTER);
+  SHADE.trees = DRAWN; drawShade();
   const pines = DRAWN.filter(t => t.pine && !t.lob), lobs = DRAWN.filter(t => t.lob), leaves = DRAWN.filter(t => !t.pine);
   const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.22, .34, 3, 6), seeThrough(new THREE.MeshLambertMaterial({ color: '#ffffff' })), DRAWN.length); // colour per tree (setColorAt)
   const groups = [[PINE, pines, '#21401f', 1.25], [LEAF, leaves, '#2f4f27', 1], [LOBP, lobs, '#2c4a26', 1]].map(([parts, list, colour, ys], gi) =>
@@ -2216,6 +2249,7 @@ const relight = name => {
     hemi.color.set(LIGHT.mid); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
     sun.color.set(LIGHT.sun); sun.intensity = LIGHT.sunI;
     if (t < 1) return requestAnimationFrame(step);
+    drawShade(); // the sun moved: recast the tree shadows
     const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground);
     for (const m of Object.values(CLUB_MESH)) m.traverse(o => { if (o.material?.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } });
   };
