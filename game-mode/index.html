@@ -1365,6 +1365,7 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
 // tree shadows (loblollies, owner): one fixed top-down shade image over the whole course (2 px a metre), each crown and trunk
 // projected along the sun, so with the low sun they fall long across the fairway. Fixed, so nothing pops in as the ball moves
 // (why trees never cast real shadows: that shadow box follows the ball). Redrawn when the Mood (sun) changes. Off with ?oldtrees
+const DIAG = { trees: [], ground: null }; // ?fps test keys: T trees, G ground, S shadows, P pixel ratio
 const SHADE = { canvas: document.createElement('canvas'), trees: [], tex: null, box: new THREE.Vector4() };
 if (location.search.includes('test')) window.__shade = SHADE.canvas; // ?test: inspect the shade image
 function drawShade() {
@@ -1461,7 +1462,7 @@ function drawShade() {
         wc *= .8 + .2 * smoothstep(-1.5, -.2, wd); }` : ''}
       diffuseColor.rgb = mix(diffuseColor.rgb, wc, 1. - smoothstep(-wa, wa, wd));`);
   };
-  const mesh = new THREE.Mesh(geo, mat);
+  const mesh = new THREE.Mesh(geo, mat); DIAG.ground = mesh;
   mesh.receiveShadow = true; scene.add(mesh);
 }
 // see-through trees: anything within a few metres of the camera, or of the line from the camera to the ball,
@@ -1565,10 +1566,11 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
     const o = new THREE.InstancedMesh(m.geometry, new THREE.MeshLambertMaterial({ color: m.material.color, vertexColors: m.material.vertexColors }), nOut);
     o.instanceMatrix.array.set(m.instanceMatrix.array.subarray(nIn * 16, m.count * 16));
     if (m.instanceColor) { o.setColorAt(0, col); o.instanceColor.array.set(m.instanceColor.array.subarray(nIn * 3, m.count * 3)); }
-    m.count = nIn; m.computeBoundingSphere(); o.computeBoundingSphere(); o.renderOrder = 1; scene.add(o); // after the near trees, so hidden pixels are skipped
+    m.count = nIn; m.computeBoundingSphere(); o.computeBoundingSphere(); o.renderOrder = 1; scene.add(o); DIAG.trees.push(o); // after the near trees, so hidden pixels are skipped
   };
   split(trunks, TREES.length); for (const g of groups) { const nIn = g.list.filter(t => !t.outer).length; for (const { m } of g.meshes) split(m, nIn); }
   scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
+  DIAG.trees.push(trunks, ...groups.flatMap(g => g.meshes.map(x => x.m)));
   // the course trees too: they only need the see-through when one stands between camera and ball. Otherwise they swap to a plain
   // material (no 'discard'), so Apple GPUs can skip hidden pixels again. Owner's meter after the outer-forest fix: still 7-9 frames
   // over 22 ms a second in flight, worst 41 ms (31 Oct 2026). Checked every frame in treeSee().
@@ -2392,6 +2394,12 @@ $('cardRows').onclick = e => { // owner: one tap plays. The round's next hole pl
   go(no === roundHole() && !roundDone() ? '' : `?hole=${no}&practice`);
 };
 addEventListener('keydown', e => {
+  if (FPS && !e.metaKey && !e.ctrlKey) { const k = e.key.toLowerCase(); // ?fps test keys: switch parts off live to see what costs the frames
+    if (k === 't') { for (const m of DIAG.trees) m.visible = !m.visible; return; }
+    if (k === 'g' && DIAG.ground) { DIAG.ground.visible = !DIAG.ground.visible; return; }
+    if (k === 's') { sun.castShadow = !sun.castShadow; return; }
+    if (k === 'p') { const n = { 2: 1, 1: .5 }[renderer.getPixelRatio()] || 2; renderer.setPixelRatio(n); renderer.setSize(innerWidth, innerHeight); return; }
+  }
   if ($('help').classList.contains('open')) { if (e.key === 'Escape') showHelp(false); return; }
   if ($('start').classList.contains('open')) return;
   if ($('mapPop').classList.contains('open')) { if (e.key === 'Escape') showMap(false); return; }
@@ -2412,12 +2420,12 @@ addEventListener('keydown', e => {
 // ---------- loop ----------
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), _spinAxis = new THREE.Vector3();
 const FPS = QS.has('fps') && Object.assign(document.body.appendChild(document.createElement('div')), { style: 'position:fixed;top:8px;left:8px;z-index:99;background:#000c;color:#fff;font:12px monospace;padding:4px 6px;pointer-events:none' });
-let fpsLast = 0, fpsN = 0, fpsT = 0, fpsLong = 0, fpsWorst = 0;
+let fpsCpu = 0, fpsLast = 0, fpsN = 0, fpsT = 0, fpsLong = 0, fpsWorst = 0;
 function frame(now) {
-  requestAnimationFrame(frame);
+  requestAnimationFrame(frame); const cpu0 = performance.now();
   if (FPS) { const dt = now - fpsLast; fpsLast = now;
     if (dt < 500) { fpsN++; fpsT += dt; fpsWorst = Math.max(fpsWorst, dt); if (dt > 22) fpsLong++; } // >22 ms = a missed 60 Hz frame
-    if (fpsT > 1000) { FPS.textContent = `${Math.round(fpsN * 1000 / fpsT)} fps · worst ${fpsWorst.toFixed(0)} ms · missed ${fpsLong} · ${renderer.info.render.calls} draws · ${(renderer.info.render.triangles / 1000).toFixed(0)}k tris · pr ${renderer.getPixelRatio()}`; fpsN = fpsT = fpsLong = fpsWorst = 0; } }
+    if (fpsT > 1000) { FPS.textContent = `${Math.round(fpsN * 1000 / fpsT)} fps · worst ${fpsWorst.toFixed(0)} ms · missed ${fpsLong} · ${renderer.info.render.calls} draws · ${(renderer.info.render.triangles / 1000).toFixed(0)}k tris · pr ${renderer.getPixelRatio()}`; fpsN = fpsT = fpsLong = fpsWorst = 0; FPS.textContent += ` · cpu ${(fpsCpu).toFixed(1)} ms · trees ${DIAG.trees[0]?.visible ? 'on' : 'OFF'} · ground ${DIAG.ground?.visible ? 'on' : 'OFF'} · shadows ${sun.castShadow ? 'on' : 'OFF'}`; fpsCpu = 0; } }
   let ball = state.ball;
   if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
   if (state.phase === 'swinging' && (now - state.swingT0) / 1000 >= swingBack() + SWING.hold + SWING.down) launch();
@@ -2497,6 +2505,7 @@ function frame(now) {
     a.needsUpdate = true; clothGeo.computeVertexNormals(); }
   if (frame.shown) treeSee(camera.position, ballMesh.position);
   renderer.render(scene, camera);
+  if (FPS) fpsCpu = Math.max(fpsCpu, performance.now() - cpu0); // worst JS + draw-submit time this second (GPU work isn't in it)
   if (!frame.shown) { frame.shown = true; const l = document.getElementById('loading'); l.classList.add('done'); setTimeout(() => l.remove(), 600); }
 }
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight;
