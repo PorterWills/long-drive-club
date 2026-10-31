@@ -1811,7 +1811,7 @@ if (GALLERY) {
 
 // flag, ball, aim line, trail
 const flag = new THREE.Group();
-flag.add(new THREE.Mesh(new THREE.CylinderGeometry(.0095, .0095, 2.5, 8), new THREE.MeshLambertMaterial({ color: '#eee' }))); // a real 3/4 in stick; any thicker hides the 4.25 in cup
+flag.add(new THREE.Mesh(new THREE.CylinderGeometry(.0095, .0095, 2.38, 8), new THREE.MeshLambertMaterial({ color: '#eee' }))); // a real 3/4 in stick; any thicker hides the 4.25 in cup
 // the LDC roundel for canvas textures: the same master file as the CSS .roundel.logo, r = outer edge
 const ROUNDEL = new Image(); ROUNDEL.src = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 2 96 96"><circle cx="50" cy="50" r="46.5" fill="#0E2A1C"/><circle cx="50" cy="50" r="40" fill="#EDE9DF"/><circle cx="50" cy="50" r="46.5" fill="none" stroke="#EDE9DF" stroke-width="3"/><circle cx="50" cy="50" r="40" fill="none" stroke="#1B1916" stroke-width="4"/><g transform="translate(25.8469 56.5428) scale(0.016113 -0.016113)"><path d="M85 0L85 688L288 688L288 164L730 164L730 0L85 0Z" fill="#1B1916" transform="translate(0 0)"/><path d="M85 0L85 688L469 688Q596 688 687.5 648Q779 608 828.5 531Q878 454 878 344Q878 233 828.5 156.5Q779 80 687.5 40Q596 0 469 0L85 0ZM288 151L457 151Q552 151 610.5 199Q669 247 669 333L669 356Q669 441 610.5 489Q552 537 457 537L288 537L288 151Z" fill="#1B1916" transform="translate(754 0)"/><path d="M487 -12Q270 -12 162.5 79Q55 170 55 344Q55 515 165.5 607.5Q276 700 488 700Q606 700 696 664.5Q786 629 836.5 564.5Q887 500 887 412L689 412Q689 476 632.5 512.5Q576 549 485 549Q377 549 320.5 495.5Q264 442 264 357L264 332Q264 247 320.5 193Q377 139 482 139Q581 139 637.5 174Q694 209 694 272L888 272Q888 187 839 123Q790 59 700.5 23.5Q611 -12 487 -12Z" fill="#1B1916" transform="translate(1687 0)"/><path d="M66 0L66 183L284 183L284 0L66 0Z" fill="#C1121F" transform="translate(2629 0)"/></g></svg>`);
 const drawRoundel = (g, x, y, r) => { if (ROUNDEL.complete && ROUNDEL.naturalWidth) g.drawImage(ROUNDEL, x - r, y - r, 2 * r, 2 * r); };
@@ -1831,7 +1831,7 @@ const cloth = new THREE.Group();
 cloth.add(new THREE.Mesh(clothGeo, new THREE.MeshLambertMaterial({ map: flagTex })),
           new THREE.Mesh(clothGeo, new THREE.MeshLambertMaterial({ map: flagTexBack, side: THREE.BackSide }))); // printed both sides, never mirrored
 cloth.position.set(.01, 2.15, 0); flag.add(cloth);
-flag.children[0].position.y = 1.15; // owner: the stick runs down into the cup, not floating on the lip
+flag.children[0].position.y = 1.21; // above the green: from the cup's mouth (2 cm up) to the top. The part down in the cup is drawn through the mouth only (below)
 flag.position.set(PIN.x, PIN.y, PIN.z); scene.add(flag);
 // the cup: its mouth marks the stencil, then the walls, floor and a dropping ball draw only through that mouth,
 // so the hole reads as a real cup without cutting the terrain mesh
@@ -1845,6 +1845,10 @@ const cupWall = new THREE.Mesh(new THREE.CylinderGeometry(CUP_R, CUP_R, CUP_D, 2
 cupWall.position.set(PIN.x, CUP_Y - CUP_D / 2, PIN.z); inCup(cupWallMat); cupWall.renderOrder = 2; scene.add(cupWall);
 const cupFloor = new THREE.Mesh(new THREE.CircleGeometry(CUP_R, 24), cupFloorMat);
 cupFloor.rotation.x = -Math.PI / 2; cupFloor.position.set(PIN.x, CUP_Y - CUP_D, PIN.z); inCup(cupFloorMat); cupFloor.renderOrder = 2; scene.add(cupFloor);
+// owner: the stick runs down into the cup, not floating on the lip. Drawn through the cup's mouth like the walls, so it never pokes
+// out below the hole from a close, low camera (owner's screenshot, 31 Oct 2026)
+const stickInMat = new THREE.MeshLambertMaterial({ color: '#eee' }), stickIn = new THREE.Mesh(new THREE.CylinderGeometry(.0095, .0095, CUP_D, 8), stickInMat);
+stickIn.position.set(PIN.x, CUP_Y - CUP_D / 2, PIN.z); inCup(stickInMat); stickIn.renderOrder = 2.5; scene.add(stickIn);
 // the LDC roundel printed on two sides of the ball, like a real ball's logo; it reads as a flicker when the ball turns
 const ballTex = new THREE.CanvasTexture(document.createElement('canvas'));
 const drawBallLogo = () => {
