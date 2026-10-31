@@ -115,7 +115,7 @@
   #start.open { display: block; } #start .stripe { position: static; height: 8px; margin-bottom: 20px; }
   #start .roundel { width: 64px; height: 64px; margin: 0 auto 12px; font-size: 22px; }
   #start h2 { margin: 0 0 4px; font-size: 22px; } #start .eyebrow { margin: 14px 16px 10px; }
-  #skies { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 16px; }
+  #skies { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 16px; }
   #skies button { position: relative; display: grid; gap: 8px; padding: 0 0 10px; background: var(--ldc-tarmac-up); color: var(--ldc-chalk); border: 1px solid var(--hairline); border-radius: 3px; font: 600 11px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; overflow: hidden; }
   #skies button.on { background: var(--ldc-green); border-color: var(--ldc-chalk); }
   #skies button.on::after { content: ''; position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; background: var(--ldc-redline); }
@@ -1225,12 +1225,14 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-// ambiance: day by default; the player can switch to dawn or dusk from Holes → Mood (kept in this browser). Looks only; play is unchanged.
-// The sun's compass direction still changes daily (UTC). ?sky=dawn | day | dusk previews one.
+// ambiance: dawn by default; the player can switch mood from Holes → Mood (kept in this browser). Looks only; play is unchanged.
+// The sun's compass direction still changes daily (UTC). ?sky=dawn | day | golden | dusk previews one.
+// el: sun height in degrees (low enough to sit on the horizon, not mid-sky). fog: [near, far] metres. sunI / hemiI: light strengths. ground: bounce colour off the turf.
 const SKIES = {
-  dawn: { zenith: '#6d8db5', mid: '#f0b9a4', horizon: '#ffe2b8', sun: '#ffd9a8', cloudLit: '#ffe4cc', cloudShade: '#9c8aa0', el: 14 },
-  day:  { zenith: '#3f78bd', mid: '#9cc4e8', horizon: '#e4eef3', sun: '#fff6e6', cloudLit: '#f7f5f0', cloudShade: '#a7b3c2', el: 52 },
-  dusk: { zenith: '#34507e', mid: '#e9995e', horizon: '#ffc27a', sun: '#ffad5c', cloudLit: '#ffc08a', cloudShade: '#7d5a63', el: 14 },
+  dawn:   { zenith: '#7b97ba', mid: '#e6c3b4', horizon: '#f6e6d2', sun: '#ffe1bd', cloudLit: '#ffeadb', cloudShade: '#a49cad', el: 5,  fog: [40, 360],  sunI: 1.5, hemiI: 1.15, ground: '#4c5a3c' }, // soft and misty
+  day:    { zenith: '#3f78bd', mid: '#9cc4e8', horizon: '#e4eef3', sun: '#fff6e6', cloudLit: '#f7f5f0', cloudShade: '#a7b3c2', el: 52, fog: [140, 650], sunI: 2.1, hemiI: 1.25, ground: '#4a5a32' },
+  golden: { zenith: '#4f7fb5', mid: '#e9cfa2', horizon: '#ffdea0', sun: '#ffcc78', cloudLit: '#ffe4b5', cloudShade: '#a8977f', el: 8,  fog: [110, 560], sunI: 2.4, hemiI: 1.0,  ground: '#5a5a30' }, // warm, long shadows
+  dusk:   { zenith: '#2e4168', mid: '#8b93b4', horizon: '#dcb79c', sun: '#ffd3a6', cloudLit: '#e4c6b8', cloudShade: '#666b86', el: 3,  fog: [90, 480],  sunI: 1.2, hemiI: 1.0,  ground: '#3e4a3a' }, // cool blue hour, a last warm edge low down
 };
 const SKY_KEY = 'ldc.light';
 const LIGHT = (() => {
@@ -1239,10 +1241,10 @@ const LIGHT = (() => {
   if (pick === 'evening') pick = 'dusk';
   if (!SKIES[pick]) { try { pick = localStorage.getItem(SKY_KEY); } catch {} }
   if (!SKIES[pick]) pick = 'dawn'; // owner's default (was day; a saved choice still wins)
-  const k = SKIES[pick], az = r() * 6.283, el = k.el * Math.PI / 180;
-  return { ...k, name: pick, dawn: pick === 'dawn', dir: new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)) };
+  const k = SKIES[pick], az = r() * 6.283;
+  return { ...k, name: pick, az, dir: new THREE.Vector3().setFromSphericalCoords(1, Math.PI / 2 - k.el * Math.PI / 180, az) };
 })();
-scene.fog = new THREE.Fog(LIGHT.horizon, 140, 650); // haze: far trees melt into the sky
+scene.fog = new THREE.Fog(LIGHT.horizon, ...LIGHT.fog); // haze: far trees melt into the sky
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
@@ -1267,8 +1269,8 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
 }));
 sky.renderOrder = -1; scene.add(sky);
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1500);
-scene.add(new THREE.HemisphereLight(LIGHT.mid, '#4a5a32', 1.25));
-const sun = new THREE.DirectionalLight(LIGHT.sun, 2.1);
+const hemi = new THREE.HemisphereLight(LIGHT.mid, LIGHT.ground, LIGHT.hemiI); scene.add(hemi);
+const sun = new THREE.DirectionalLight(LIGHT.sun, LIGHT.sunI);
 sun.position.set(-80, 120, 60); sun.castShadow = true;
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 500 });
 sun.shadow.bias = -0.0005; // low sun grazes the ground; stops shadow acne
@@ -1705,7 +1707,7 @@ drawBallLogo();
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4, map: ballTex }));
 ballMesh.castShadow = true; scene.add(ballMesh);
 // the floating club: waits behind the ball at address, swings on Swing; the ball leaves at impact. No golfer (owner's sheet)
-const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, '#4a5a32'); return Object.fromEntries(Object.keys(CLUB_KIT).map(id => [id, makeClub(id, env)])); })();
+const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground); return Object.fromEntries(Object.keys(CLUB_KIT).map(id => [id, makeClub(id, env)])); })();
 const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(clubSwing); scene.add(clubRig);
 for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
 const _aimDir = new THREE.Vector3();
@@ -2109,11 +2111,38 @@ function openCard() {
   $('card').style.display = 'block';
 }
 $('holesBtn').onclick = openCard;
-// ambiance panel: opened from Holes, never forced. Picking one reloads so the whole scene relights behind the panel
+// ambiance panel: opened from Holes, never forced. Picking one relights the scene live behind the panel
 const store = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
 $('skies').innerHTML = Object.entries(SKIES).map(([k, c]) => `<button data-sky="${k}" class="${k === LIGHT.name ? 'on' : ''}" aria-pressed="${k === LIGHT.name}">`
   + `<span class="sw" aria-hidden="true"><i style="background:${c.zenith}"></i><i style="background:${c.mid}"></i><i style="background:${c.horizon}"></i></span>${k}</button>`).join('');
-$('skies').onclick = e => { const k = e.target.closest('button')?.dataset.sky; if (k && k !== LIGHT.name) { store(SKY_KEY, k); try { sessionStorage.setItem('ldc.ambiance', '1'); } catch {} const u = new URL(location.href); u.searchParams.delete('sky'); location.replace(u); } }; // drop a ?sky preview so the pick wins
+// relight live: every colour, light, mist distance and the sun's height ease across over a second; the clubs' reflections swap at the end
+let skyFade = 0;
+const relight = name => {
+  const from = { ...LIGHT }, to = SKIES[name], t0 = performance.now(), id = ++skyFade, C = new THREE.Color(), lerpC = (a, b, t) => C.set(a).lerp(new THREE.Color(b), t).getStyle();
+  Object.assign(LIGHT, { name });
+  const step = now => {
+    if (id !== skyFade) return; // a newer pick took over
+    const t = THREE.MathUtils.smootherstep(Math.min((now - t0) / 1000, 1), 0, 1);
+    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade', 'ground']) LIGHT[k] = lerpC(from[k], to[k], t);
+    for (const k of ['el', 'sunI', 'hemiI']) LIGHT[k] = THREE.MathUtils.lerp(from[k], to[k], t);
+    LIGHT.fog = from.fog.map((v, i) => THREE.MathUtils.lerp(v, to.fog[i], t));
+    LIGHT.dir.setFromSphericalCoords(1, Math.PI / 2 - LIGHT.el * Math.PI / 180, LIGHT.az);
+    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]);
+    scene.fog.color.set(LIGHT.horizon); [scene.fog.near, scene.fog.far] = LIGHT.fog;
+    hemi.color.set(LIGHT.mid); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
+    sun.color.set(LIGHT.sun); sun.intensity = LIGHT.sunI;
+    if (t < 1) return requestAnimationFrame(step);
+    const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground);
+    for (const m of Object.values(CLUB_MESH)) m.traverse(o => { if (o.material?.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } });
+  };
+  requestAnimationFrame(step);
+};
+$('skies').onclick = e => {
+  const b = e.target.closest('button'), k = b?.dataset.sky; if (!k || k === LIGHT.name) return;
+  store(SKY_KEY, k); relight(k);
+  for (const o of $('skies').children) { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', o === b); }
+  const u = new URL(location.href); if (u.searchParams.has('sky')) { u.searchParams.delete('sky'); history.replaceState(null, '', u); } // drop a ?sky preview so the pick wins
+};
 // course map: the hole drawn top-down from the same ground the ball plays on, pin and ball marked, rings every 50 yd to the pin
 function drawMap() {
   if (!drawMap.ready) return void (drawMap.t ??= setTimeout(() => { drawMap.ready = true; drawMap(); }, 400)); // build after the course is on screen, so loading isn't held up
@@ -2181,9 +2210,8 @@ const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('hel
 // the side card (shot stats, mini map) tucks under the bar, whatever height the bar is
 new ResizeObserver(() => $('side').style.top = $('hole').getBoundingClientRect().bottom + 8 + 'px').observe($('hole'));
 $('helpClose').addEventListener('click', firstMap); $('play').addEventListener('click', firstMap); setTimeout(firstMap, 0);
-$('play').onclick = () => { $('start').classList.remove('open'); try { sessionStorage.removeItem('ldc.ambiance'); } catch {} };
+$('play').onclick = () => $('start').classList.remove('open');
 $('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
-try { if (sessionStorage.getItem('ldc.ambiance')) $('start').classList.add('open'); } catch {} // stay open across the relight reload
 $('cardClose').onclick = () => { $('card').style.display = 'none'; };
 $('scBtn').onclick = () => openScorecard();
 $('cardRows').onclick = e => { // owner: one tap plays. The round's next hole plays the round; any other hole is practice
