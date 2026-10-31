@@ -21,7 +21,8 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ldc-tarmac); color: var(--ldc-chalk);
-    font: 400 15px/1.55 var(--font); user-select: none; touch-action: none; }
+    font: 400 15px/1.55 var(--font); user-select: none; -webkit-user-select: none; touch-action: none; }
+  input { user-select: text; -webkit-user-select: text; } /* owner (Mac): dragging the power bar selected text across the page. Safari needs the prefix; inputs stay editable */
   canvas { display: block; }
   .display { font-weight: 800; font-variation-settings: "wdth" 122; text-transform: uppercase; letter-spacing: .02em; line-height: 1.04; font-feature-settings: "tnum" 1; }
   .eyebrow { font-size: 11px; letter-spacing: .32em; text-transform: uppercase; font-weight: 600; font-variation-settings: "wdth" 112; color: var(--ldc-chalk-dim); }
@@ -2145,8 +2146,9 @@ const endDrag = () => dragX = null;
 ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => renderer.domElement.addEventListener(t, endDrag));
 let powering = false;
 const setPowerFromX = x => { const r = $('power').getBoundingClientRect(); state.power = clamp((x - r.left) / r.width, 0.01, 1); refresh(); };
-$('power').addEventListener('pointerdown', e => { if (state.phase !== 'aim') return; powering = true; $('power').setPointerCapture(e.pointerId); setPowerFromX(e.clientX); });
+$('power').addEventListener('pointerdown', e => { e.preventDefault(); getSelection()?.removeAllRanges(); if (state.phase !== 'aim') return; powering = true; $('power').setPointerCapture(e.pointerId); setPowerFromX(e.clientX); });
 $('power').addEventListener('pointermove', e => powering && setPowerFromX(e.clientX));
+document.addEventListener('selectstart', e => { if ((powering || dragX !== null) && !e.target.closest?.('input')) e.preventDefault(); }); // no text selection mid-drag (power or aim)
 ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => $('power').addEventListener(t, () => powering = false));
 $('swing').onclick = swing;
 $('again').onclick = reset;
