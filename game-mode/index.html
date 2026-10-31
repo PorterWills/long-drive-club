@@ -1245,10 +1245,13 @@ const LIGHT = (() => {
   return { ...k, name: pick, az, dir: new THREE.Vector3().setFromSphericalCoords(1, Math.PI / 2 - k.el * Math.PI / 180, az) };
 })();
 const farOf = h => new THREE.Color(h).lerp(new THREE.Color('#3e5a3b'), .45); // distant hazy woodland: the horizon colour pulled towards the trees
-scene.fog = new THREE.Fog(farOf(LIGHT.horizon), ...LIGHT.fog); // haze: far trees melt into a distant treeline, not into white
+// the sky shader writes its colours straight to the screen, while lit meshes (and their fog) are converted to sRGB on the way out.
+// So the fog takes the sky's colour decoded once more, and the fogged ground lands on exactly the shade the sky shows (owner: pale, washed-out haze)
+const fogOf = h => farOf(h).convertSRGBToLinear();
+scene.fog = new THREE.Fog(fogOf(LIGHT.horizon), ...LIGHT.fog); // haze: far trees melt into a distant treeline, not into white
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, far: { value: scene.fog.color }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
+  uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, far: { value: farOf(LIGHT.horizon) }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
   vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
   fragmentShader: `varying vec3 vDir; uniform vec3 sunDir, zenith, mid, horizon, sun, cloudLit, cloudShade, far; uniform float time;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -2141,7 +2144,7 @@ const relight = name => {
     LIGHT.fog = from.fog.map((v, i) => THREE.MathUtils.lerp(v, to.fog[i], t));
     LIGHT.dir.setFromSphericalCoords(1, Math.PI / 2 - LIGHT.el * Math.PI / 180, LIGHT.az);
     for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]);
-    scene.fog.color.copy(farOf(LIGHT.horizon)); [scene.fog.near, scene.fog.far] = LIGHT.fog;
+    sky.material.uniforms.far.value.copy(farOf(LIGHT.horizon)); scene.fog.color.copy(fogOf(LIGHT.horizon)); [scene.fog.near, scene.fog.far] = LIGHT.fog;
     hemi.color.set(LIGHT.mid); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
     sun.color.set(LIGHT.sun); sun.intensity = LIGHT.sunI;
     if (t < 1) return requestAnimationFrame(step);
