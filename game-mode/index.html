@@ -124,7 +124,7 @@
   #play:hover { background: var(--ldc-green-up); }
   #card { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(520px, calc(100% - 28px)); max-height: calc(100% - 60px); overflow: hidden auto; padding: 0 0 16px; z-index: 6; }
   #card .stripe { position: static; height: 8px; margin-bottom: 0; }
-  /* owner (v2): the course as a plain list of 18 holes, par and yards, each with its own Play button; Mood and Sound at the foot */
+  /* owner (v2): the course as a plain list of 18 holes, par and yards, each with its own Play button; Sound at the foot (Mood moved to the top bar) */
   #card .cHead { padding: 18px 64px 14px 16px; border-bottom: 1px solid var(--hairline); } #card h2 { margin: 4px 0 6px; font-size: 22px; }
   .hrow { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 8px 16px; background: none; border: 0; border-bottom: 1px solid var(--hairline); color: var(--ldc-chalk); font: 400 14px var(--font); text-align: left; cursor: pointer; }
   .hrow .no { font-size: 20px; font-feature-settings: "tnum" 1; } .hrow .nm { display: grid; gap: 3px; min-width: 0; } .hrow .nm b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -179,13 +179,13 @@
   .scBtns button, .scBtns a, #scForm button { text-decoration: none; display: inline-block; background: var(--ldc-green); color: var(--ldc-chalk); border: 0; border-radius: 3px; padding: 12px 20px; font: 600 12px var(--font); letter-spacing: .2em; text-transform: uppercase; cursor: pointer; }
   .scBtns button:hover, .scBtns a:hover { background: var(--ldc-green-up); }
   .cardBtns { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px 0; }
-  .cardBtns #lightBtn, .cardBtns #scBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
+  .cardBtns #scBtn, .cardBtns #cardClose { background: var(--ldc-tarmac-up); }
   button:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 2px; }
   @media (max-width: 520px) { .roundel { width: 38px; height: 38px; font-size: 11px; }
     #hole { left: 8px; right: 8px; flex-wrap: wrap; gap: 10px 12px; padding: 8px 10px; } #hole .hn { font-size: 34px; } #hole .name { font-size: 12px; } #hole .eyebrow { letter-spacing: .16em; }
     #hole .num { font-size: 24px; } #hole .cell { padding-left: 0; border-left: 0; } #hole .toPin { display: none; }
     #hole .row2 { flex-basis: 100%; gap: 12px; padding-top: 8px; border-top: 1px solid var(--hairline); } #hole .ibs { order: -1; margin-right: auto; padding-left: 0; border-left: 0; } /* owner: buttons left, so wind and aim sit right under the yardage */
-    #hole .ib.lbl { padding: 0 8px; letter-spacing: .1em; } #hole #holesBtn svg, #hole #scBtn .long { display: none; } #hole .ibs { gap: 4px; }
+    #hole .ib.lbl { padding: 0 8px; letter-spacing: .1em; } #hole #holesBtn svg, #hole #scBtn .long, #hole #moodBtn span { display: none; } #hole .ibs { gap: 4px; }
     #hole .row2 { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; } #hole .row2 .ibs { grid-row: 1 / 3; } #hole .row2 > .cell { justify-self: end; } /* phones: labels stay, the icon and "card" go, and aim sits under the wind, so nothing runs off */
     #hole .wcell.swirl .eyebrow { letter-spacing: .08em; } /* swirling holes: the longer wind label tightens up so it stays inside the panel */
     #controls { width: calc(100% - 64px); } /* owner: more room either side on phones */
@@ -212,7 +212,7 @@
   <div class="row2">
     <div class="cell wcell"><span id="windMph" class="num display">0</span><span class="eyebrow">mph</span><span id="wind">➤</span></div>
     <div id="aimRead" class="eyebrow cell">At pin aim</div>
-    <div class="ibs"><button id="holesBtn" class="ib lbl"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 17.5V2.5l9 3.5-9 3.5"/></svg>Holes</button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="scBtn" class="ib lbl" aria-label="Scorecard">Score<span class="long">card</span></button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
+    <div class="ibs"><button id="holesBtn" class="ib lbl"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 17.5V2.5l9 3.5-9 3.5"/></svg>Holes</button><button id="moodBtn" class="ib lbl" aria-label="Mood"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.3 4.3l1.4 1.4M14.3 14.3l1.4 1.4M4.3 15.7l1.4-1.4M14.3 5.7l1.4-1.4"/></svg><span>Mood</span></button><button id="helpBtn" class="ib" aria-label="How to play"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".6" fill="currentColor"/></svg></button><button id="scBtn" class="ib lbl" aria-label="Scorecard">Score<span class="long">card</span></button><button id="mapBtn" class="ib" aria-haspopup="dialog" aria-label="Map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg></button></div>
   </div>
 </div>
 <div id="start" class="panel" role="dialog" aria-label="Mood">
@@ -239,7 +239,7 @@
   <div class="stripe"><i></i><i></i><i></i></div>
   <div class="cHead"><div class="eyebrow">Long Drive Club</div><h2 class="display">The course</h2><div class="eyebrow" id="cardSum"></div></div>
   <div id="cardRows"></div>
-  <div class="cardBtns cFoot"><button id="lightBtn">Mood</button><button id="soundBtn">Sound on</button></div>
+  <div class="cardBtns cFoot"><button id="soundBtn">Sound on</button></div>
 </div>
 <div id="scrim"></div>
 <div id="sc" class="panel" role="dialog" aria-label="Scorecard">
@@ -1225,7 +1225,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-// ambiance: dawn by default; the player can switch mood from Holes → Mood (kept in this browser). Looks only; play is unchanged.
+// ambiance: dawn by default; the player can switch mood from the Mood button in the top bar (kept in this browser). Looks only; play is unchanged.
 // The sun's side (left or right shoulder) still changes daily (UTC). ?sky=dawn | day | golden | dusk previews one.
 // el: sun height in degrees (low enough to sit on the horizon, not mid-sky). fog: [near, far] metres. sunI / hemiI: light strengths. ground: bounce colour off the turf.
 const SKIES = {
@@ -2227,7 +2227,7 @@ const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('hel
 new ResizeObserver(() => $('side').style.top = $('hole').getBoundingClientRect().bottom + 8 + 'px').observe($('hole'));
 $('helpClose').addEventListener('click', firstMap); $('play').addEventListener('click', firstMap); setTimeout(firstMap, 0);
 $('play').onclick = () => $('start').classList.remove('open');
-$('lightBtn').onclick = () => { $('cardClose').onclick(); $('start').classList.add('open'); };
+$('moodBtn').onclick = () => $('start').classList.add('open'); // owner: Mood up in the top bar, one tap from play
 $('cardClose').onclick = () => { $('card').style.display = 'none'; };
 $('scBtn').onclick = () => openScorecard();
 $('cardRows').onclick = e => { // owner: one tap plays. The round's next hole plays the round; any other hole is practice
