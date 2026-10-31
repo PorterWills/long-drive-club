@@ -24,12 +24,12 @@ export const CAR_TYPES = {
   suv:    { name: 'SUV', l: 4.8, w: 1.95, h: 1.8, belt: 1.15, roofL: 2.1, roofW: 1.4, rake: .5 },
   coupe:  { name: 'Coupe', l: 4.5, w: 1.9, h: 1.22, belt: .8, roofL: 1.05, roofW: 1.15, rake: .85 },
 };
-// placement by where each tier's drives land (carry, not total), on the course's fairway roll: Good 260-295 yd,
-// Great 320-355, Monster 385-420, Perfect 448-468. Easy roofs near, small ones far, two where Perfect drives land (yards, metres across)
+// placement by where each tier's drives land (carry, not total): Good 234-264 yd, Great 285-319,
+// Monster 345-376, Perfect 401-419. Easy roofs near, small ones far, two where Perfect drives land (yards, metres across)
 export const CARS = [
-  { type: 'van', yd: 242, x: -7 }, { type: 'pickup', yd: 280, x: 8 }, { type: 'estate', yd: 326, x: -3 },
-  { type: 'saloon', yd: 350, x: 6 }, { type: 'suv', yd: 402, x: -9 },
-  { type: 'estate', yd: 452, x: 5 }, { type: 'coupe', yd: 466, x: -3 },
+  { type: 'van', yd: 238, x: -7 }, { type: 'pickup', yd: 258, x: 8 }, { type: 'estate', yd: 292, x: -3 },
+  { type: 'saloon', yd: 314, x: 6 }, { type: 'suv', yd: 360, x: -9 },
+  { type: 'estate', yd: 405, x: 5 }, { type: 'coupe', yd: 417, x: -3 },
 ];
 export const carBox = c => { const t = CAR_TYPES[c.type]; return { ...t, type: c.type, cx: c.x, cz: c.yd * YD }; };
 
@@ -127,11 +127,11 @@ export function speedFor(totalYd, launchDeg, rpm) {
 
 // the swing: release error (ms, + late) to a tier and a target total
 export const TIERS = [
-  { id: 'perfect', name: 'Perfect', win: 1000 / 60, lo: 485, hi: 505 },
-  { id: 'monster', name: 'Monster', win: 50, lo: 420, hi: 455 },
-  { id: 'great', name: 'Great', win: 100, lo: 350, hi: 390 },
-  { id: 'good', name: 'Good', win: 180, lo: 290, hi: 325 },
-  { id: 'mishit', name: 'Mishit', win: Infinity, lo: 220, hi: 260 },
+  { id: 'perfect', name: 'Perfect', win: 1000 / 60, lo: 437, hi: 455 },
+  { id: 'monster', name: 'Monster', win: 50, lo: 378, hi: 410 },
+  { id: 'great', name: 'Great', win: 100, lo: 315, hi: 351 },
+  { id: 'good', name: 'Good', win: 180, lo: 261, hi: 293 },
+  { id: 'mishit', name: 'Mishit', win: Infinity, lo: 198, hi: 234 },
 ];
 export function strike(errMs, ranOut = false) {
   const e = Math.abs(errMs);
