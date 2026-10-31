@@ -2373,7 +2373,8 @@ function frame(now) {
     const a = sh.r.pts[i], b = sh.r.pts[Math.min(i + 1, sh.r.pts.length - 1)], t = f - i;
     ball = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
     while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); }
-    trail.geometry.setFromPoints(sh.r.pts.slice(0, i + 1).filter((_, k) => k % 3 === 0).map(p => new THREE.Vector3(p.x, p.y, p.z)));
+    // the trail ends exactly where the ball is drawn: ending on every 3rd whole sample left its tip up to ~2 m behind a driver, read as a second ball
+    trail.geometry.setFromPoints([...sh.r.pts.slice(0, i + 1).filter((_, k) => k % 3 === 0), ball].map(p => new THREE.Vector3(p.x, p.y, p.z)));
     if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); } if (sh.r.outcome === 'water') sfx.splash(); }
   }
   let bs = BALL_NEAR + (1 - BALL_NEAR) * clamp((flat(ball, PIN) - 20) / 20, 0, 1); // true size near the cup so what you see is what drops; eases by distance only so it never pops mid-roll
