@@ -104,6 +104,7 @@
   #mapBig { display: block; }
   #mapClose { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; background: var(--ldc-tarmac); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); border-radius: 3px; font: 400 22px/1 var(--font); cursor: pointer; } #mapClose:hover { background: var(--ldc-green-up); }
   #help { display: none; top: 50%; left: 50%; transform: translate(-50%,-50%); width: min(480px, calc(100% - 28px)); box-sizing: border-box; max-height: calc(100% - 30px); overflow: auto; padding: 0 0 20px; z-index: 8; }
+  body.intro #hole, body.intro #side, body.intro #controls { opacity: 0; pointer-events: none; } /* owner: a first-time player sees only How to play; the game UI fades in on Play or x */
   #help.open { display: block; } #help .stripe { position: static; height: 8px; margin-bottom: 18px; } #help h2 { margin: 0 20px 10px; font-size: 22px; }
   #help dl { margin: 0 20px; display: grid; grid-template-columns: 64px 1fr; gap: 10px 12px; align-items: baseline; } #help dd { margin: 0; font-size: 14px; line-height: 1.4; }
   #helpClose { margin: 18px 20px 0; background: var(--ldc-green); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); padding: 12px 40px; border-radius: 3px; font: 800 14px var(--font); font-variation-settings: "wdth" 122; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
@@ -2319,9 +2320,10 @@ $('mapMini').onclick = () => showMap(true); $('mapMini').onkeydown = e => (e.key
 $('mapClose').onclick = () => showMap(false); $('mapBtn').onclick = () => showMap(true);
 $('scrim').addEventListener('click', () => $('mapPop').classList.contains('open') && showMap(false)); // owner: tap anywhere off the map to close it
 // owner: simple instructions for a first-time player, and behind the i button any time after
-const showHelp = on => { $('help').classList.toggle('open', on); if (!on) try { localStorage.setItem('ldc.help', '1'); } catch {} };
+const showHelp = on => { $('help').classList.toggle('open', on); if (!on) document.body.classList.remove('intro'); if (!on) try { localStorage.setItem('ldc.help', '1'); } catch {} };
 $('helpBtn').onclick = () => { $('helpClose').textContent = 'Back to game'; showHelp(true); }; $('helpClose').onclick = $('helpX').onclick = () => showHelp(false); // owner: an x to close, and the button says where it goes
-try { if (!localStorage.getItem('ldc.help')) showHelp(true); } catch { showHelp(true); }
+const intro = () => { document.body.classList.add('intro'); showHelp(true); }; // first visit: How to play alone, no other UI
+try { if (!localStorage.getItem('ldc.help')) intro(); } catch { intro(); }
 // owner: on a phone the map opens by itself on the first hole of a visit, then waits behind the Map button
 const firstMap = () => { if (!matchMedia('(max-width: 520px)').matches || $('help').classList.contains('open') || $('start').classList.contains('open')) return;
   try { if (sessionStorage.getItem('ldc.map')) return; sessionStorage.setItem('ldc.map', '1'); } catch {} showMap(true); };
