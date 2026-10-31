@@ -194,7 +194,7 @@
     #hole .row2 { flex-basis: 100%; gap: 12px; padding-top: 8px; border-top: 1px solid var(--hairline); } #hole .ibs { order: -1; margin-right: auto; padding-left: 0; border-left: 0; } /* owner: buttons left, so wind and aim sit right under the yardage */
     #hole .ib.lbl { padding: 0 8px; letter-spacing: .1em; } #hole #holesBtn svg, #hole #scBtn .long, #hole #moodBtn span { display: none; } #hole .ibs { gap: 4px; }
     #hole .row2 { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; } #hole .row2 .ibs { grid-row: 1 / 3; } #hole .row2 > .cell { justify-self: end; } /* phones: labels stay, the icon and "card" go, and aim sits under the wind, so nothing runs off */
-    #hole .wcell.swirl .eyebrow { letter-spacing: .08em; } /* swirling holes: the longer wind label tightens up so it stays inside the panel */
+    #hole .wcell.swirl .eyebrow { line-height: 1.25; } #hole .wcell .swl { display: block; } #hole .wcell .swl .dot { display: none; } /* swirling holes (11-13): "swirl" stacks under "mph" so the wind stays inside the panel (the tighter tracking alone came back out at 375px) */
     #controls { width: calc(100% - 64px); } /* owner: more room either side on phones */
     #side { right: 8px; width: auto; max-width: calc(100% - 16px); padding: 8px 10px; } #side #stats { margin: 0; padding: 0; border-bottom: 0; }
  }
@@ -364,7 +364,7 @@ const HOLES = [{
   wind: { mph: 6, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 12, line: [[0, 0], [105, -7.6], [194, -3.8], [245, -5], [283, -10], [334, -27], [372, -39], [405.5, -42]] }, // [z, x] centreline
   elevation: [[0, 3], [90, 1.2], [200, -1], [280, 0.5], [345, 4], [400, 6.5], [460, 7.5]],           // [z, height m]
-  green: { at: [-42, 405.5], r: 13, fx: [['ff', .5], ['tier', 4, .3], ['tilt', -40, .008], ['bowl', 1, -7, 4, .2], ['bowl', 0, 14, 5, -.3]] }, // owner's heat map: steep false front, flat middle shelf, high back right, hump right, left edge falls to the bunker
+  green: { at: [-42, 405.5], r: 13, fx: [['ff', .425], ['tier', 4, .255], ['tilt', -40, .0068], ['bowl', 1, -7, 4, .17], ['bowl', 0, 14, 5, -.255]] }, // owner's heat map: steep false front, flat middle shelf, high back right, hump right, left edge falls to the bunker // owner 31 Oct: 15% less steep
   // fairway bunker: two lobes on the right edge, pinned against the right-hand trees at ~300 yd. Greenside: one big
   // bean (~25 m long) traced from the owner's top-down of the green (0.067 m/px), from the green's left middle down
   // to its front-left corner, so the tucked pin has to be carried over sand
@@ -466,11 +466,11 @@ const HOLES = [{
 }, {
   name: 'Violet', par: 4, si: 5,
   tee: [0, 0], pin: [40.5, 450.8],             // 495 yd tee to pin (back tee, illustration 0.278 m/px)
-  wind: { mph: 17, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
+  wind: { mph: 14, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   // owner's illustration: a narrow chute off the tee, out right, then uphill and left round a wooded bank to the green
   fairway: { half_width: 22, line: [[0, 0], [65.7, -5.1], [136.6, -29.4], [192.5, -32.2], [247.8, -23.9], [303.3, -18.4], [358, 1.1], [412.5, 26.1], [450.8, 40.5]] },
   elevation: [[0, 0], [120, 1], [250, 4], [380, 9], [430, 11], [470, 11.5], [530, 12]], // uphill all the way
-  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .55], ['tier', 5, .3], ['tilt', -60, .008], ['bowl', -8, -5, 5, -.35], ['bowl', -5, 7, 3.5, .15]] }, // owner's heat map: false front kept; high back right, steep low front right, flat middle shelf, small rise front left
+  green: { at: [40.5, 450.8], r: 11, fx: [['ff', .4675], ['tier', 5, .255], ['tilt', -60, .0068], ['bowl', -8, -5, 5, -.2975], ['bowl', -5, 7, 3.5, .1275]] }, // owner's heat map: false front kept; high back right, steep low front right, flat middle shelf, small rise front left // owner 31 Oct: 15% less steep
   // two deep soft fairway bunkers on the inside (left) of the dogleg at full-driver carry; rear bunker back-left of the green
   bunkers: [{ at: [-14.9, 250.7], r: 4.5, soft: 1 }, { at: [-9.1, 254.9], r: 4.5, soft: 1 },
     { at: [-9.5, 268.8], r: 4.5, soft: 1 }, { at: [-4.6, 272.5], r: 4.5, soft: 1 },
@@ -527,7 +527,7 @@ const HOLES = [{
   green: { at: [-9.9, 521.1], r: 5, long: [29, 3], fx: [ // long and narrow (~10 × 30 m), bunkerless; the mounds guard it, biggest on the left
     ['bowl', -5, 14, 5, 1.3], ['bowl', 3, 17, 5, 1.5], ['bowl', -18, 10, 4, 1], ['bowl', 18, 11, 4, .8],
     ['bowl', -22, -20, 4, .8], ['bowl', -32, -36, 5, .7], ['bowl', -45, -28, 5, .8], ['bowl', 18, -16, 4, .8],
-    ['tilt', -15, .012], ['bowl', 10, 6, 4, -.2]] }, // owner's heat map: high back right, falls the whole length to a low front, slight dip back left
+    ['tilt', -15, .0108], ['bowl', 10, 6, 4, -.18]] }, // owner's heat map: high back right, falls the whole length to a low front, slight dip back left (owner 31 Oct: putting surface 10% less steep; the guarding mounds unchanged)
   bunkers: [{ at: [-7.7, 257], r: 8.4, soft: 1 }, { at: [-12.6, 265.4], r: 7, soft: 1 }, { at: [-5.6, 269.6], r: 7, soft: 1 }], // one big bunker on the right (owner: not separate circles, then 40% bigger)
   water: [],
   trees: [[1, 207, 426, 22, 30], [-1, 278, 413, 20, 35]],
@@ -547,7 +547,7 @@ const HOLES = [{
   wind: { mph: 11, toward_deg: 45 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 14, line: [[0, 0], [68, -27.7], [130, -46.2], [207, -64.7], [284, -64.7], [346, -46.2], [392, -18.5], [420.6, -5]] },
   elevation: [[0, 8], [150, 4], [300, 0], [375, -1.5], [400, 4], [440, 4.6], [470, 5]], // down to a dip, steep bank up to a gentle green (owner's heat map)
-  green: { at: [-6.5, 422], r: 10, fx: [['ff', .5], ['tilt', 50, .02], ['bowl', -4, -10, 4.5, -.3]] }, // owner's heat map: high back left, falls across to a low front-right end, steepest there
+  green: { at: [-6.5, 422], r: 10, fx: [['ff', .45], ['tilt', 50, .018], ['bowl', -4, -10, 4.5, -.27]] }, // owner's heat map: high back left, falls across to a low front-right end, steepest there // owner 31 Oct: 10% less steep
   bunkers: [ // the two left greenside bunkers
     { at: [11.7, 405.6], r: 5.5, soft: 1 }, { at: [13.9, 414], r: 5, soft: 1 },
     { at: [-1.5, 402.6], r: 5, soft: 1 }, { at: [1.5, 408], r: 4, soft: 1 }],
@@ -572,7 +572,7 @@ const HOLES = [{
   // owner's illustration: steeply downhill, bowing right then swinging left; drive left-centre for the angle in
   fairway: { half_width: 13.6, line: [[0, 0], [61.8, -26.9], [159.2, -21.2], [240.8, -7.4], [320.9, 14.4], [372.8, 36.2], [410, 60.7], [445.7, 79.2]] },
   elevation: [[0, 22], [150, 14], [300, 4], [380, 0], [420, 1.5], [450, 2.5], [490, 3]], // the green sits on the rise beyond the big bunker
-  green: { at: [79.2, 445.7], r: 8, long: [11, 1.8], fx: [['tilt', -40, .02]] }, // owner's heat map: high back right, falls diagonally to a low front (a touch left)
+  green: { at: [79.2, 445.7], r: 8, long: [11, 1.8], fx: [['tilt', -40, .017]] }, // owner's heat map: high back right, falls diagonally to a low front (a touch left) // owner 31 Oct: 15% less steep
   bunkers: [ // the big centre bunker well short of the green (~55 m, with fingers), and a kidney front-right of the green
     { at: [27.0, 345.0], r: 4.5, soft: 1 }, { at: [30.2, 351.1], r: 6, soft: 1 }, { at: [33.5, 357.2], r: 6.5, soft: 1 }, { at: [36.8, 363.4], r: 7, soft: 1 }, { at: [40.0, 369.5], r: 7, soft: 1 }, { at: [43.2, 375.6], r: 6.5, soft: 1 }, { at: [46.5, 381.8], r: 6, soft: 1 }, { at: [49.8, 387.9], r: 5, soft: 1 }, { at: [53.0, 394.0], r: 4, soft: 1 },
     { at: [48.5, 368], r: 3.5, soft: 1 }, { at: [55.5, 384], r: 3.5, soft: 1 }, { at: [47.5, 398], r: 3, soft: 1 }, // fingers
@@ -594,7 +594,7 @@ const HOLES = [{
   wind: { mph: 12, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 17, line: [[0, 0], [84.6, 7.3], [172.1, 13.1], [245, 27.7], [318, 17.5], [390.9, -11.7], [475.5, 3.8]] },
   elevation: [[0, 12], [250, 6], [440, 0.5], [490, 0.5], [530, 0]],
-  green: { at: [3.8, 476.5], r: 10, fx: [['tilt', -90, .015], ['tilt', 0, .004], ['bowl', -7, 5, 4, -.25]] }, // owner's heat map: high back and right, falls to a low front left towards the pond
+  green: { at: [3.8, 476.5], r: 10, fx: [['tilt', -90, .0142], ['tilt', 0, .0038], ['bowl', -7, 5, 4, -.2375]] }, // owner's heat map: high back and right, falls to a low front left towards the pond // owner 31 Oct: 5% less steep
   shaved: true, swirl: true,
   bunkers: [{ at: [-6, 489.5], r: 3, soft: 1 }, { at: [-1.5, 490.5], r: 2.2, soft: 1 }], // behind the green, clear of the creek (owner's photo)
   water: [
@@ -684,7 +684,7 @@ const HOLES = [{
   // owner's illustration: wide open right off the tee, a left tree band that bulges in at the landing area, then a gentle bend left
   fairway: { half_width: 15, line: [[0, 0], [59.8, -11.4], [134.6, -12.9], [208.9, -9.5], [282.9, -3.6], [343.7, 8.3], [401.6, 24.8]] },
   elevation: [[0, 3], [200, 0], [320, 1], [370, 4.5], [400, 6], [440, 6.5]], // heat map: a steep bank short of the green
-  green: { at: [24.8, 401.6], r: 15, fx: [['ff', .3], ['tilt', 70, .02], ['bowl', -7, -8, 5, -.35]] }, // owner's heat map: high left, falls smoothly left to right to a steep low front right; no bunkers
+  green: { at: [24.8, 401.6], r: 15, fx: [['ff', .255], ['tilt', 70, .017], ['bowl', -7, -8, 5, -.2975]] }, // owner's heat map: high left, falls smoothly left to right to a steep low front right; no bunkers // owner 31 Oct: 15% less steep
   bunkers: [],
   water: [],
   trees: [[1, 95, 200, 26, 22], [1, 200, 300, 15, 22], [1, 300, 365, 22, 22], [-1, 160, 260, 45, 20], [-1, 260, 405, 24, 20]],
@@ -744,7 +744,7 @@ const HOLES = [{
   wind: { mph: 6, toward_deg: 250 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 14, line: [[0, 0], [155.4, -6]] },
   elevation: [[0, 4], [40, 1], [120, 0], [150, 1.2], [190, 2.5]],
-  green: { at: [1, 154], r: 6.5, long: [24, 2.6], fx: [['tilt', -35, .025]] }, // ~13 m wide, ~34 m long; owner's heat map: high back and right, falls to a low front
+  green: { at: [1, 154], r: 6.5, long: [24, 2.6], fx: [['tilt', -35, .0238]] }, // ~13 m wide, ~34 m long; owner's heat map: high back and right, falls to a low front // owner 31 Oct: 5% less steep
   shaved: true,
   garden: { // azaleas under the trees, still water
     water: ['#2b4a41', '#122219'],
@@ -798,20 +798,23 @@ const HOLES = [{
 }, {
   // owner (photo from the tee): iconic because it's a really tight tunnel. Trees stand right on the edge of a ~22 m chute
   // the whole way to the landing area, where it opens a little round the bend, past the fairway bunkers on the left.
-  name: 'Polly', par: 4, si: 10,
+  name: 'Polly', par: 4, si: 10, gallery: true, // roped tee and empty chairs (owner, 31 Oct: was no gallery)
   tee: [0, 0], pin: [-88.6, 415.9],            // 465 yd tee to pin (back tee, aerial scale 0.341 m/px), uphill chute, dogleg right
   wind: { mph: 16, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 11, line: [[0, 0], [94.5, 5.3], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
+  fairway: { half_width: 11, line: [[0, 0], [110, 0], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
   elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
-  green: { at: [-91.8, 415.1], r: 11, plateau: 1, drop: [-90, 3], fx: [['tilt', -20, .02], ['bowl', -9, 4, 4, -.25]] }, // owner's heat map: high back half (back right highest), a bank through the pin to a low front (front left lowest); a massive drop off the right
+  green: { at: [-91.8, 415.1], r: 11, plateau: 1, drop: [-90, 3], fx: [['tilt', -20, .017], ['bowl', -9, 4, 4, -.2125]] }, // owner's heat map: high back half (back right highest), a bank through the pin to a low front (front left lowest); a massive drop off the right // owner 31 Oct: 15% less steep
   bunkers: [
     { at: [-77.5, 411.6], r: 3.4, soft: 1 }, { at: [-74.8, 408.2], r: 3, soft: 1 },  // front-left, a big kidney
     { at: [-104.9, 408.1], r: 3.2, soft: 1 }, { at: [-104, 412.6], r: 2.8, soft: 1 }, // back-right
     { at: [-5.3, 312.7], r: 4.5, soft: 1 }, { at: [2.7, 294], r: 4, soft: 1 }],         // fairway bunkers, left of the landing area
   water: [],
-  trees: [[1, -10, 250, 11, 30], [-1, -10, 250, 11, 30], [1, 250, 370, 26, 20], [-1, 250, 385, 18, 20], [1, 370, 470, 28, 15], [-1, 385, 470, 26, 15]],
-  treeClusters: [{ at: [24, 161], r: 15 }, { at: [24, 241], r: 12 }, { at: [18.6, 307], r: 6 }, { at: [42.6, 272.8], r: 6 }, { at: [10.6, 25], r: 4 },
-    { at: [-40, 161], r: 15 }, { at: [-40, 241], r: 14 }, { at: [-50.6, 81], r: 12 }, { at: [-29, 14.6], r: 8 }, { at: [-82.5, 339], r: 10 }, { at: [-74.5, 318], r: 5 }],
+  trees: [[1, -10, 227, 11, 30], [-1, -10, 227, 11, 30], [1, 227, 370, 26, 20], [-1, 227, 385, 18, 20], // owner 31 Oct: the tunnel opens 25 yd sooner (was 250 m)
+     [1, 370, 470, 28, 15], [-1, 385, 470, 26, 15]],
+  // owner 31 Oct: the same trees either side of the tunnel, mirrored about the straight first 120 yd
+  treeClusters: [{ at: [32, 161], r: 15 }, { at: [33, 216], r: 13 }, { at: [36, 81], r: 12 }, { at: [26, 22], r: 8 },
+    { at: [-32, 161], r: 15 }, { at: [-33, 216], r: 13 }, { at: [-36, 81], r: 12 }, { at: [-26, 22], r: 8 },
+    { at: [18.6, 307], r: 6 }, { at: [42.6, 272.8], r: 6 }, { at: [-82.5, 339], r: 10 }, { at: [-74.5, 318], r: 5 }],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
       ],
@@ -1931,7 +1934,7 @@ function refresh() {
   const onGreen = lie === 'green'; // golf standard: yards until you're on the putting surface, then feet
   $('dist').textContent = onGreen ? Math.round(d / 0.3048) : Math.round(d / YD);
   $('distUnit').textContent = onGreen ? 'ft' : 'yd';
-  $('windMph').textContent = HOLE.wind.mph; $('windMph').parentElement.classList.add(HOLE.wind.mph < 10 ? 'calm' : HOLE.wind.mph < 19 ? 'breeze' : 'strong'); if (HOLE.swirl) { $('windMph').nextElementSibling.textContent = 'mph · swirl'; $('windMph').parentElement.classList.add('swirl'); }
+  $('windMph').textContent = HOLE.wind.mph; $('windMph').parentElement.classList.add(HOLE.wind.mph < 10 ? 'calm' : HOLE.wind.mph < 19 ? 'breeze' : 'strong'); if (HOLE.swirl) { $('windMph').nextElementSibling.innerHTML = 'mph<span class="swl"><span class="dot"> · </span>swirl</span>'; $('windMph').parentElement.classList.add('swirl'); }
   // arrow shows where the wind blows relative to the current aim (up = with you). World +x is screen-left from behind the ball.
   $('wind').style.transform = `rotate(${-90 - (HOLE.wind.toward_deg * Math.PI / 180 - state.aim) * 180 / Math.PI}deg)`;
   const off = (state.autoAim - state.aim) * 180 / Math.PI;
@@ -2096,6 +2099,7 @@ function endShot() {
     $('doneScore').textContent = state.strokes;
     $('doneTitle').textContent = state.strokes === 1 ? 'Hole in one' : (names[diff] || `+${diff}`);
     if (!PRACTICE && ROUND.scores.length === HOLE_NO - 1) { ROUND.scores.push(state.strokes); saveRound(); }
+    if (!PRACTICE && roundDone()) return void openScorecard(); // owner 31 Oct: the round's last putt drops, the scorecard opens straight away
     $('doneSub').textContent = PRACTICE ? `Practice · Hole ${HOLE_NO} · ${HOLE.name}` : `Round · ${roundTotal()}`;
     $('again').hidden = !PRACTICE; // a round hole counts once
     $('next').textContent = PRACTICE ? (roundDone() ? 'Scorecard' : 'Back to round') : (roundDone() ? 'Scorecard' : 'Next hole');
