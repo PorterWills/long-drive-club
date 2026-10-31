@@ -1288,7 +1288,8 @@ const carryAt = (ci, power, lie) => {
 
 // ---------- 3D ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const QS = new URLSearchParams(location.search); // test switches: ?fps shows a frame meter, ?pr=1 renders at a lower resolution (stutter hunt, 31 Oct 2026)
+renderer.setPixelRatio(QS.has('pr') ? +QS.get('pr') || 1 : Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
@@ -2381,8 +2382,13 @@ addEventListener('keydown', e => {
 
 // ---------- loop ----------
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), _spinAxis = new THREE.Vector3();
+const FPS = QS.has('fps') && Object.assign(document.body.appendChild(document.createElement('div')), { style: 'position:fixed;top:8px;left:8px;z-index:99;background:#000c;color:#fff;font:12px monospace;padding:4px 6px;pointer-events:none' });
+let fpsLast = 0, fpsN = 0, fpsT = 0, fpsLong = 0, fpsWorst = 0;
 function frame(now) {
   requestAnimationFrame(frame);
+  if (FPS) { const dt = now - fpsLast; fpsLast = now;
+    if (dt < 500) { fpsN++; fpsT += dt; fpsWorst = Math.max(fpsWorst, dt); if (dt > 22) fpsLong++; } // >22 ms = a missed 60 Hz frame
+    if (fpsT > 1000) { FPS.textContent = `${Math.round(fpsN * 1000 / fpsT)} fps · worst ${fpsWorst.toFixed(0)} ms · missed ${fpsLong} · ${renderer.info.render.calls} draws · ${(renderer.info.render.triangles / 1000).toFixed(0)}k tris · pr ${renderer.getPixelRatio()}`; fpsN = fpsT = fpsLong = fpsWorst = 0; } }
   let ball = state.ball;
   if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
   if (state.phase === 'swinging' && (now - state.swingT0) / 1000 >= swingBack() + SWING.hold + SWING.down) launch();
