@@ -2293,6 +2293,7 @@ function frame(now) {
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight;
   // portrait phones: widen the view (up to 80°) so it isn't a narrow slit; landscape/desktop stay at the signed-off 55°
   camera.fov = Math.max(55, Math.min(80, 2 * Math.atan(Math.tan(Math.PI / 6) / camera.aspect) * 180 / Math.PI));
+  if (innerWidth <= 520) camera.fov = 2 * Math.atan(Math.tan(camera.fov * Math.PI / 360) * .8) * 180 / Math.PI; // owner: phones zoomed in 20%
   // owner: on phones the ball sits lower, with grass between it and the controls (shifts the picture, not the camera)
   if (innerWidth <= 520) camera.setViewOffset(innerWidth, innerHeight, 0, -innerHeight * .12, innerWidth, innerHeight); else camera.clearViewOffset();
   camera.updateProjectionMatrix(); }
