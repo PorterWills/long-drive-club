@@ -1238,7 +1238,7 @@ const LIGHT = (() => {
   let pick = new URLSearchParams(location.search).get('sky');
   if (pick === 'evening') pick = 'dusk';
   if (!SKIES[pick]) { try { pick = localStorage.getItem(SKY_KEY); } catch {} }
-  if (!SKIES[pick]) pick = 'day'; // owner's default
+  if (!SKIES[pick]) pick = 'dawn'; // owner's default (was day; a saved choice still wins)
   const k = SKIES[pick], az = r() * 6.283, el = k.el * Math.PI / 180;
   return { ...k, name: pick, dawn: pick === 'dawn', dir: new THREE.Vector3(Math.cos(el) * Math.sin(az), Math.sin(el), Math.cos(el) * Math.cos(az)) };
 })();
