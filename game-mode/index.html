@@ -822,10 +822,11 @@ const roundHole = () => Math.min(ROUND.scores.length + 1, HOLES.length);
 const roundDone = () => ROUND.scores.length >= HOLES.length;
 const askedHole = parseInt(new URLSearchParams(location.search).get('hole'));
 const HOLE_NO = clamp(askedHole || roundHole(), 1, HOLES.length), HOLE = HOLES[HOLE_NO - 1];
-// ?loblolly: test of Augusta's real pines (owner, 31 Oct 2026, trying it on hole 5): tall bare trunks, a ragged crown in the top
+// loblolly pines: Augusta's real pines (owner, 31 Oct 2026, first trialled on hole 5): tall bare trunks, a ragged crown in the top
 // third, an edge layer of small trees, real pine straw lies. Practice only while on trial, so it never touches round scores.
-const LOB = new URLSearchParams(location.search).has('loblolly');
-const PRACTICE = LOB || roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
+// owner approved the design (31 Oct 2026) and now on for all 18; ?oldtrees shows the old cones for comparison (practice only)
+const LOB = !new URLSearchParams(location.search).has('oldtrees');
+const PRACTICE = !LOB || roundDone() || HOLE_NO !== roundHole() || new URLSearchParams(location.search).has('practice');
 if (HOLE.par === 3) HOLE.cars[HOLE.cars.findIndex(c => c.at[1] < 0)] = { at: [HOLE.tee[0] + (HOLE.gallery ? 15 : 12), HOLE.tee[1] + 8], heading: 124, colour: '#EDE9DF', kind: 'hyper', display: true } // 124°: square side-on to the tee camera; // hole-in-one prize car
 document.getElementById('holeNo').textContent = HOLE_NO; document.getElementById('holeName').textContent = HOLE.name;
 document.getElementById('holePar').textContent = `Par ${HOLE.par}`; document.getElementById('hole').classList.toggle('prac', PRACTICE);
@@ -1170,6 +1171,13 @@ if (location.search.includes('test')) {
     ['driver carry 200-290 yd at 92%', c0 > 200 && c0 < 290, c0.toFixed(0)],
     ['headwind shortens carry', flat(rHead.landing, v(0, 0, 0)) < flat(r0.landing, v(0, 0, 0)), (flat(rHead.landing, v(0,0,0)) / YD).toFixed(0)],
     ['crosswind toward +x pushes ball +x', rCross.landing.x > r0.landing.x + 3, rCross.landing.x.toFixed(1)],
+    (() => { // the tree lines must not swallow a sensible tee shot: a drive down the middle of the fairway (par 3: a 5 iron at the pin)
+      // lands as far as it would in open air (the tall loblolly crowns can catch shots that cleared the old cones)
+      const p3 = HOLE.par === 3, tz = p3 ? HOLE.pin[1] : Math.min(230, FW_END - 10), tx = p3 ? HOLE.pin[0] : centreX(tz);
+      const s = strike(p3 ? CLUBS[2] : dr, p3 ? 1 : .92, Math.atan2(tx - HOLE.tee[0], tz - HOLE.tee[1]), 'fairway', () => .5), st = v(HOLE.tee[0], heightAt(HOLE.tee[0], HOLE.tee[1]) + BALL.r, HOLE.tee[1]);
+      const dT = flat(simulate(st, s, calm).landing, st), dO = flat(simulate(st, s, calm, { noTrees: true }).landing, st);
+      return ['a tee shot down the middle clears the trees', dT > dO * .9, `${(dT / YD).toFixed(0)} of ${(dO / YD).toFixed(0)} yd`];
+    })(),
     (() => { // a drive-speed ball fired through a canopy must drop well short of where it would fly in open air
       const t = TREES.find(t => !t.pine && !t.under) || TREES[0], st = v(t.x, t.h + canopyMid(t), t.z - 6), shot = { vel: v(0, 4, 55), spin: v(0, 0, 0) };
       const d = flat(simulate(st, shot, calm).landing, st); // in open air this ball carries 60 m+
