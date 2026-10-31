@@ -1251,7 +1251,7 @@ if (location.search.includes('test')) {
 // putter: preset speed so the ball rolls the distance on a green (v^2 = 2·mu·g·d), plus a little extra
 function puttPower(from, pin) {
   // v² = 2g(μ·d + Δh): friction over the distance plus the climb (negative downhill), as Golf Slate's preset does
-  const d = flat(from, pin) + 0.4, dh = heightAt(pin.x, pin.z) - heightAt(from.x, from.z);
+  const d = flat(from, pin) + 0.4, dh = clamp(heightAt(pin.x, pin.z) - heightAt(from.x, from.z), -GREEN_CAP * d, GREEN_CAP * d); // the climb as the capped green plays it
   return clamp(Math.sqrt(Math.max(0.05, 2 * G * (SURF.green.roll * d + dh))) / CLUBS[7].speed, 0.01, 1);
 }
 
