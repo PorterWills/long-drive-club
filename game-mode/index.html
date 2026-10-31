@@ -1288,7 +1288,8 @@ const carryAt = (ci, power, lie) => {
 
 // ---------- 3D ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const QS = new URLSearchParams(location.search); // test switches: ?fps shows a frame meter, ?pr=1 renders at a lower resolution (stutter hunt, 31 Oct 2026)
+renderer.setPixelRatio(QS.has('pr') ? +QS.get('pr') || 1 : Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
@@ -1545,6 +1546,17 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
       m.setColorAt(i, t.lob ? lc.copy(col).offsetHSL(0, 0, (lr() - .5) * .06) : col);
     });
   });
+  // the outer forest (out of bounds, never between camera and ball) drawn without the see-through: any 'discard' in a shader stops
+  // the GPU skipping hidden pixels, so thousands of tall overlapping crowns were all fully shaded every frame. That dropped a frame
+  // every ~0.35 s in flight, pines only (owner tests, 31 Oct 2026). Inner trees come first in every list, outer ones after.
+  const split = (m, nIn) => {
+    const nOut = m.count - nIn; if (nOut <= 0) return;
+    const o = new THREE.InstancedMesh(m.geometry, new THREE.MeshLambertMaterial({ color: m.material.color, vertexColors: m.material.vertexColors }), nOut);
+    o.instanceMatrix.array.set(m.instanceMatrix.array.subarray(nIn * 16, m.count * 16));
+    if (m.instanceColor) { o.setColorAt(0, col); o.instanceColor.array.set(m.instanceColor.array.subarray(nIn * 3, m.count * 3)); }
+    m.count = nIn; m.computeBoundingSphere(); o.computeBoundingSphere(); o.renderOrder = 1; scene.add(o); // after the near trees, so hidden pixels are skipped
+  };
+  split(trunks, TREES.length); for (const g of groups) { const nIn = g.list.filter(t => !t.outer).length; for (const { m } of g.meshes) split(m, nIn); }
   scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
 }
 // garden holes (opt in with `garden`, owner: make 12 feel like the real thing): banked azalea beds, feature trees
@@ -2381,8 +2393,13 @@ addEventListener('keydown', e => {
 
 // ---------- loop ----------
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), _spinAxis = new THREE.Vector3();
+const FPS = QS.has('fps') && Object.assign(document.body.appendChild(document.createElement('div')), { style: 'position:fixed;top:8px;left:8px;z-index:99;background:#000c;color:#fff;font:12px monospace;padding:4px 6px;pointer-events:none' });
+let fpsLast = 0, fpsN = 0, fpsT = 0, fpsLong = 0, fpsWorst = 0;
 function frame(now) {
   requestAnimationFrame(frame);
+  if (FPS) { const dt = now - fpsLast; fpsLast = now;
+    if (dt < 500) { fpsN++; fpsT += dt; fpsWorst = Math.max(fpsWorst, dt); if (dt > 22) fpsLong++; } // >22 ms = a missed 60 Hz frame
+    if (fpsT > 1000) { FPS.textContent = `${Math.round(fpsN * 1000 / fpsT)} fps · worst ${fpsWorst.toFixed(0)} ms · missed ${fpsLong} · ${renderer.info.render.calls} draws · ${(renderer.info.render.triangles / 1000).toFixed(0)}k tris · pr ${renderer.getPixelRatio()}`; fpsN = fpsT = fpsLong = fpsWorst = 0; } }
   let ball = state.ball;
   if (state.phase === 'settle' || state.phase === 'water') ball = state.shot.r.pts[state.shot.r.pts.length - 1]; // ball has stopped; state.ball still holds the old lie until endShot
   if (state.phase === 'swinging' && (now - state.swingT0) / 1000 >= swingBack() + SWING.hold + SWING.down) launch();
