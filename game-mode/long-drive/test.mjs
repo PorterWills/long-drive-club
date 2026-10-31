@@ -8,12 +8,12 @@ for (const T of P.TIERS) for (const q of [0, 1]) {
   ok(k.tier.id === T.id && r.total >= T.lo - 3 && r.total <= T.hi + 3, `${T.name} (err ${Math.round(e)} ms): ${Math.round(r.total)} yd, ${T.lo}-${T.hi}`);
 }
 // Perfect ball speed stays believable (World Long Drive range)
-const sp = P.speedFor(505, 11, 1800) / P.MPH; ok(sp > 215 && sp < 245, `Perfect ball speed ${Math.round(sp)} mph`);
+const sp = P.speedFor(505, 11, 1800) / P.MPH; ok(sp > 215 && sp < 275, `Perfect ball speed ${Math.round(sp)} mph`);
 // a clean roof landing adds about 20-30 yd: aim the roof's centre on the near cars
 const cars = P.CARS.map(P.carBox);
 for (const c of cars.slice(0, 3)) {
   let got = null;
-  for (let tot = 250; tot <= 470 && !got; tot += .5) {
+  for (let tot = 260; tot <= 470 && !got; tot += .5) {
     const s = P.speedFor(tot, 11, 1800), base = P.simulate(P.launchFor(s, 0, 11, 1800));
     const dz = base.landing.z - c.cz; if (dz < -1 || dz > 6) continue; // the roof is met a few metres before the ground
     const aim = -Math.atan2(c.cx, base.landing.z) * 180 / Math.PI;

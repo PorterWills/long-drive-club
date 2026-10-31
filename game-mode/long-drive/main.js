@@ -277,7 +277,7 @@ camPos.copy(want.set(0, 1.5, -5)); camLook.set(0, .7, 40);
 
 // ---------- loop ----------
 let last = performance.now(), contactsShown = 0;
-const SPEED_UP = 1.35; // playback a touch quicker than real time; a 7 s hang feels long on a screen
+const SPEED_UP = 1.15; // the course game's playback speed
 function tick(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if (phase === 'hold') {
@@ -286,8 +286,7 @@ function tick(now) {
     if (held > SWING.T + SWING.grace) release(holdStart + (SWING.T + SWING.grace) * 1000, true);
   }
   if (phase === 'fly' && shot) {
-    const rolling = shot.landing && play / 120 > shot.hang;
-    play += dt * 120 * SPEED_UP * (rolling ? 4 : 1); // the roll plays at 4x; slow roll-outs dragged
+    play += dt * 120 * SPEED_UP;
     const i = Math.min(shot.pts.length - 1, Math.floor(play)), f = Math.min(1, play - i), a = shot.pts[i], b = shot.pts[Math.min(shot.pts.length - 1, i + 1)];
     ball.position.set(a.x + (b.x - a.x) * f, a.y + (b.y - a.y) * f, a.z + (b.z - a.z) * f);
     const n = Math.min(TRAIL_N, i + 1); for (let j = 0; j < n; j++) { const p = shot.pts[j]; trailPos[j * 3] = p.x; trailPos[j * 3 + 1] = p.y; trailPos[j * 3 + 2] = p.z; }

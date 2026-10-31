@@ -8,7 +8,8 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 
 **Built differently from the plan (31 Oct 2026):**
 - **Aim added** (arrow keys or the buttons, 0.5° steps, 4° either way). Without it the cars, parked off centre, could only be hit by accident.
-- **Cars sit where drives land, not where they finish.** Totals include 60 to 80 yd of roll, so a car at 490 yd only ever met a rolling ball. Placed by carry: Good 200 to 240 yd, Great 265 to 305, Monster 335 to 370, Perfect 400 to 425. The two far cars (estate at 404, Redline coupe at 421) are the Perfect targets.
+- **Cars sit where drives land, not where they finish.** Totals include about 35 yd of roll, so a car placed by total only ever met a rolling ball. Placed by carry: Good 260 to 295 yd, Great 320 to 355, Monster 385 to 420, Perfect 448 to 468. The two far cars (estate at 452, Redline coupe at 466) are the Perfect targets.
+- **Landing and roll match the course game (owner, 31 Oct 2026):** the grid uses the course's fairway surface exactly (`SURF.fairway`: bounce .38, keeps 58%, roll friction .14, spin grip .55) and plays back at the course's 1.15x with no fast roll. The first build had a firmer, faster surface and a 4x roll that looked nothing like the course. With shorter roll, the tiers need more carry, so ball speeds run high: Perfect leaves at 253 to 266 mph, Monster at about 214 to 234.
 - **Daily best is per browser for now** (`localStorage` key `ldc.longdrive`, which also keeps the status date). A shared daily board needs a new sheet and endpoint in the Apps Script.
 - **No beam haze cones.** They read as hard triangles across the sky; the pools of light on the strip carry the look.
 - **The dial mark moves** a little each swing (80% to 90% of the dial), so the timing can't be learnt by rote.
@@ -42,7 +43,7 @@ At 60 fps one frame is about 17 ms. The windows are measured from the mark. All 
 
 - Inside each tier, how close the release is sets where in the range you land. The gaps between tiers are deliberate, so each tier reads as a clear step up.
 - Wind nudges every drive on top of this.
-- The game works backwards from the target distance to the launch (ball speed, launch angle, spin), so the real flight engine produces the distance. Launch is 11° at 1,800 rpm (15° at 3,300 rpm for a mishit). Perfect drives leave at 225 to 237 mph, Monster at about 190 to 210. Drag is a little lower than the course's (`cd` from .17) so these speeds carry like real long drive hitters.
+- The game works backwards from the target distance to the launch (ball speed, launch angle, spin), so the real flight engine produces the distance. Launch is 11° at 1,800 rpm (15° at 3,300 rpm for a mishit). Drag is a little lower than the course's (`cd` from .17).
 - **Timing:** the needle takes 1.5 s to reach the end, speeding up (`(t/1.5)^1.7`). Held .12 s past the end, the swing comes apart (a mishit that hooks). Release time comes from the key or pointer event's timestamp, not the frame.
 
 ## Cars
@@ -59,7 +60,7 @@ The cars are both targets and hazards. They're built in code (like `clubs.js`) f
 | Coupe | 1.05 × 1.15 m | 1.22 m | smallest roof, the hero car in Redline |
 
 - **Placement:** spread through the tiers so every level of player has something to aim at. The easy roofs sit nearer the tee and the hard ones further out, including at least two cars at 470–500 yd, where Perfect drives land.
-- **Roof hit:** real bounce physics off a hard, springy roof (`ROOF`: bounce .55, keeps 80% of the forward speed), tuned so a clean hit adds about **+24 yd** (checked in `test.mjs`). A glancing hit off an edge can lose distance.
+- **Roof hit:** real bounce physics off a hard, springy roof (`ROOF`: bounce .55, keeps 80% of the forward speed), tuned so a clean hit adds about **+28 to 30 yd** (checked in `test.mjs`). A glancing hit off an edge can lose distance.
 - **Hazards:** the windscreen, bonnet and sides kill the ball or deflect it, which costs distance.
 - **The jackpot:** a Perfect drive that lands flat on a far roof can carry past 515 yd. That's the rare way to beat the record and top the day's or week's board.
 

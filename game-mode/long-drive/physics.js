@@ -13,7 +13,7 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 // the strip: +z is down the grid from the tee, x is across. The grid is 40 m wide (x within ±20)
 export const GRID = { half: 20, endYd: 525 };
 export const ROOF = { bounce: .55, keep: .8 }; // hard and springy: a clean landing gives about +20-30 yd
-const GROUND = { bounce: .36, keep: .74, roll: .055 }; // firm, short grass laid on the strip
+const GROUND = { bounce: .38, keep: .58, roll: .14, grip: .55 }; // the course game's fairway (SURF.fairway), so landings and roll-outs match it
 
 // cars: heading 0 = parked along the strip. Body to `belt`, cabin from belt to h (roof inset by `rake` front and back)
 export const CAR_TYPES = {
@@ -24,12 +24,12 @@ export const CAR_TYPES = {
   suv:    { name: 'SUV', l: 4.8, w: 1.95, h: 1.8, belt: 1.15, roofL: 2.1, roofW: 1.4, rake: .5 },
   coupe:  { name: 'Coupe', l: 4.5, w: 1.9, h: 1.22, belt: .8, roofL: 1.05, roofW: 1.15, rake: .85 },
 };
-// placement by where each tier's drives land (carry, not total): Good 200-240 yd, Great 265-305,
-// Monster 335-370, Perfect 400-425. Easy roofs near, small ones far, two where Perfect drives land (yards, metres across)
+// placement by where each tier's drives land (carry, not total), on the course's fairway roll: Good 260-295 yd,
+// Great 320-355, Monster 385-420, Perfect 448-468. Easy roofs near, small ones far, two where Perfect drives land (yards, metres across)
 export const CARS = [
-  { type: 'van', yd: 228, x: -7 }, { type: 'pickup', yd: 262, x: 8 }, { type: 'estate', yd: 292, x: -3 },
-  { type: 'saloon', yd: 322, x: 6 }, { type: 'suv', yd: 356, x: -9 },
-  { type: 'estate', yd: 404, x: 5 }, { type: 'coupe', yd: 421, x: -3 },
+  { type: 'van', yd: 242, x: -7 }, { type: 'pickup', yd: 280, x: 8 }, { type: 'estate', yd: 326, x: -3 },
+  { type: 'saloon', yd: 350, x: 6 }, { type: 'suv', yd: 402, x: -9 },
+  { type: 'estate', yd: 452, x: 5 }, { type: 'coupe', yd: 466, x: -3 },
 ];
 export const carBox = c => { const t = CAR_TYPES[c.type]; return { ...t, type: c.type, cx: c.x, cz: c.yd * YD }; };
 
@@ -106,7 +106,7 @@ export function simulate(shot, wind = v(0, 0, 0), opts = {}) {
       np.y = BALL.r;
       if (!landing) landing = { ...np, t };
       const vn = -nv.y, ts = Math.hypot(nv.x, nv.z);
-      const bite = clamp(len(spin) * BALL.r * .3 * .5, 0, ts * .85), keep = Math.max(0, ts * GROUND.keep - bite);
+      const bite = clamp(len(spin) * BALL.r * .3 * GROUND.grip, 0, ts * .85), keep = Math.max(0, ts * GROUND.keep - bite);
       const k = ts > 1e-6 ? keep / ts : 0;
       nv = v(nv.x * k, vn * GROUND.bounce, nv.z * k); spin = mul(spin, .3);
       if (nv.y < .55) { nv.y = 0; rolling = true; }
