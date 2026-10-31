@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LDC Long Drive</title>
+<meta name="description" content="One driver, a floodlit strip, 525 yd of grid. A perfect strike earns Long Drive Club status.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=Source+Serif+4:ital,opsz,wght@1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  /* LDC Design System, as the course game uses it. Calm: Chalk, Tarmac, Moss, Redline sparingly */
+  :root {
+    --ldc-green: #0E2A1C; --ldc-tarmac: #1B1916; --ldc-chalk: #EDE9DF; --ldc-redline: #C1121F; --ldc-moss: #7FA88F;
+    --ldc-chalk-dim: #CFC9BB; --ldc-tarmac-up: #262320;
+    --hairline: rgba(237, 233, 223, 0.18); --hairline-strong: rgba(237, 233, 223, 0.34);
+    --font: "Archivo", sans-serif; --voice: "Source Serif 4", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #050807; color: var(--ldc-chalk);
+    font: 400 15px/1.55 var(--font); user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas { display: block; }
+  .display { font-weight: 800; font-variation-settings: "wdth" 122; text-transform: uppercase; letter-spacing: .02em; line-height: 1.04; font-feature-settings: "tnum" 1; }
+  .eyebrow { font-size: 11px; letter-spacing: .32em; text-transform: uppercase; font-weight: 600; font-variation-settings: "wdth" 112; color: var(--ldc-chalk-dim); }
+  .voice { font-family: var(--voice); font-style: italic; font-weight: 400; }
+  .roundel { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--ldc-chalk); color: var(--ldc-tarmac);
+    border: 3px solid var(--ldc-tarmac); box-shadow: 0 0 0 2px var(--ldc-chalk); display: grid; place-items: center; font-size: 12px; }
+  .roundel.logo { background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='2 2 96 96'><circle cx='50' cy='50' r='46.5' fill='%230E2A1C'/><circle cx='50' cy='50' r='40' fill='%23EDE9DF'/><circle cx='50' cy='50' r='46.5' fill='none' stroke='%23EDE9DF' stroke-width='3'/><circle cx='50' cy='50' r='40' fill='none' stroke='%231B1916' stroke-width='4'/><g transform='translate(25.8469 56.5428) scale(0.016113 -0.016113)'><path d='M85 0L85 688L288 688L288 164L730 164L730 0L85 0Z' fill='%231B1916' transform='translate(0 0)'/><path d='M85 0L85 688L469 688Q596 688 687.5 648Q779 608 828.5 531Q878 454 878 344Q878 233 828.5 156.5Q779 80 687.5 40Q596 0 469 0L85 0ZM288 151L457 151Q552 151 610.5 199Q669 247 669 333L669 356Q669 441 610.5 489Q552 537 457 537L288 537L288 151Z' fill='%231B1916' transform='translate(754 0)'/><path d='M487 -12Q270 -12 162.5 79Q55 170 55 344Q55 515 165.5 607.5Q276 700 488 700Q606 700 696 664.5Q786 629 836.5 564.5Q887 500 887 412L689 412Q689 476 632.5 512.5Q576 549 485 549Q377 549 320.5 495.5Q264 442 264 357L264 332Q264 247 320.5 193Q377 139 482 139Q581 139 637.5 174Q694 209 694 272L888 272Q888 187 839 123Q790 59 700.5 23.5Q611 -12 487 -12Z' fill='%231B1916' transform='translate(1687 0)'/><path d='M66 0L66 183L284 183L284 0L66 0Z' fill='%23C1121F' transform='translate(2629 0)'/></g></svg>") center / contain no-repeat; border: 0; box-shadow: none; color: transparent; overflow: hidden; } /* the master file from the LDC Design System (roundel-avatar.svg) */
+  .hud { position: fixed; background: rgba(27,25,22,.78); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--hairline); }
+  #top { top: 20px; left: 14px; right: 14px; display: flex; align-items: center; gap: 18px; padding: 10px 14px; }
+  #top .title { display: flex; flex-direction: column; gap: 2px; margin-right: auto; }
+  #top .title b { font-size: 22px; }
+  .stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .stat b { font-size: 18px; }
+  #dialWrap { position: fixed; right: 28px; bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: opacity .45s, transform .45s; }
+  #dial { width: 168px; height: 168px; border-radius: 50%; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; }
+  #dial:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 4px; }
+  #hint { max-width: 220px; font-size: 13px; color: var(--ldc-chalk-dim); text-align: center; text-shadow: 0 1px 4px #000; }
+  #aim { display: flex; align-items: center; gap: 10px; }
+  #aim button { width: 44px; height: 44px; background: rgba(27,25,22,.78); color: var(--ldc-chalk); border: 1px solid var(--hairline-strong); font: 600 18px var(--font); cursor: pointer; }
+  #aimTxt { min-width: 110px; text-align: center; }
+  body.flying #dialWrap, body.done #dialWrap { opacity: 0; transform: translateY(30px); pointer-events: none; }
+  #card { position: fixed; right: 14px; top: 100px; width: min(400px, calc(100% - 28px)); padding: 0; opacity: 0; transform: translateY(10px); transition: opacity .45s, transform .45s; pointer-events: none; }
+  body.done #card { opacity: 1; transform: none; pointer-events: auto; }
+  #card .stripe { display: flex; height: 6px; } #card .stripe i:nth-child(1) { flex: 7; background: var(--ldc-green); }
+  #card .stripe i:nth-child(2) { flex: 1.4; background: var(--ldc-chalk); } #card .stripe i:nth-child(3) { flex: .5; background: var(--ldc-redline); }
+  #card .in { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+  #total { font-size: 72px; } #total small { font-size: 22px; margin-left: 8px; }
+  #tier { font-size: 13px; letter-spacing: .32em; }
+  #tier.perfect { color: var(--ldc-moss); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: #0F0E0D; }
+  .grid2 div { background: var(--ldc-tarmac-up); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .grid2 b { font-size: 20px; }
+  #lines { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+  #lines .status { font-size: 22px; color: var(--ldc-chalk); }
+  #lines .muted { color: var(--ldc-chalk-dim); }
+  #again { height: 48px; background: var(--ldc-chalk); color: var(--ldc-tarmac); border: 0; font: 700 13px var(--font); letter-spacing: .24em; text-transform: uppercase; cursor: pointer; }
+  #again:focus-visible { outline: 2px solid var(--ldc-moss); outline-offset: 2px; }
+  #flash { position: fixed; left: 0; right: 0; top: 38%; text-align: center; font-size: 15px; letter-spacing: .5em; opacity: 0; transition: opacity .3s; pointer-events: none; text-shadow: 0 1px 8px #000; }
+  #flash.on { opacity: 1; }
+  #fps { position: fixed; left: 14px; bottom: 14px; font: 12px monospace; color: var(--ldc-chalk-dim); }
+  @media (max-width: 640px) {
+    #top { gap: 12px; } #top .title b { font-size: 17px; } .stat b { font-size: 15px; } #top .hide-sm { display: none; }
+    #card { top: auto; bottom: 14px; } #top .title .eyebrow { display: none; } #dialWrap { right: 14px; bottom: 16px; } #dial, #dial svg { width: 136px; height: 136px; } #hint { display: none; } #total { font-size: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) { #dialWrap, #card, #flash { transition: none; } }
+</style>
+</head>
+<body>
+<div id="top" class="hud">
+  <a class="roundel logo display" href="/" aria-label="Long Drive Club home" style="text-decoration:none"></a>
+  <div class="title"><span class="eyebrow">Long Drive Club</span><b class="display">The long drive</b></div>
+  <div class="stat"><span class="eyebrow">Wind</span><b class="display" id="wind">0 mph</b></div>
+  <div class="stat"><span class="eyebrow">Today</span><b class="display" id="best">None yet</b></div>
+  <div class="stat hide-sm"><span class="eyebrow">Record</span><b class="display">515 yd</b></div>
+</div>
+
+<div id="dialWrap">
+  <button id="dial" aria-label="Swing. Hold for the backswing, let go on the mark.">
+    <svg viewBox="0 0 200 200" width="168" height="168" aria-hidden="true">
+      <circle cx="100" cy="100" r="96" fill="rgba(27,25,22,.82)" stroke="rgba(237,233,223,.22)" stroke-width="1.5"/>
+      <path id="track" fill="none" stroke="rgba(237,233,223,.14)" stroke-width="6"/>
+      <path id="fill" fill="none" stroke="#EDE9DF" stroke-width="6"/>
+      <path id="mark" fill="none" stroke="#7FA88F" stroke-width="10"/>
+      <g id="ticks" stroke="rgba(237,233,223,.4)" stroke-width="1.5"></g>
+      <line id="needle" x1="100" y1="100" x2="100" y2="22" stroke="#EDE9DF" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="100" cy="100" r="7" fill="#1B1916" stroke="rgba(237,233,223,.4)"/>
+      <text id="dialTxt" x="100" y="140" text-anchor="middle" fill="#CFC9BB" font-family="Archivo, sans-serif" font-size="11" letter-spacing="3">HOLD</text>
+    </svg>
+  </button>
+  <div id="aim">
+    <button id="aimL" aria-label="Aim left">&larr;</button>
+    <span class="eyebrow" id="aimTxt">Straight</span>
+    <button id="aimR" aria-label="Aim right">&rarr;</button>
+  </div>
+  <div id="hint">Hold Space for the backswing. Let go on the mark.</div>
+</div>
+
+<div id="flash" class="display"></div>
+
+<section id="card" class="hud" aria-live="polite" aria-label="Drive result">
+  <div class="stripe"><i></i><i></i><i></i></div>
+  <div class="in">
+    <div id="tier" class="display">Perfect</div>
+    <div id="total" class="display">0<small>YD</small></div>
+    <div id="lines"></div>
+    <div class="grid2">
+      <div><span class="eyebrow">Ball speed</span><b class="display" id="rSpeed"></b></div>
+      <div><span class="eyebrow">Carry</span><b class="display" id="rCarry"></b></div>
+      <div><span class="eyebrow">Roll</span><b class="display" id="rRoll"></b></div>
+      <div><span class="eyebrow">Roof</span><b class="display" id="rRoof"></b></div>
+    </div>
+    <button id="again">Drive again</button>
+  </div>
+</section>
+
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }</script>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

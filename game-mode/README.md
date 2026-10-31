@@ -232,7 +232,7 @@ Lessons from hole 2:
 1. **Done:** all 18 holes, the scorecard and a global 18-hole leaderboard (Google Sheet). The owner wants **brand fun, not lead capture**.
 2. **Leaderboard hardening (open):** scores are trusted as sent. To reject faked scores, send the seed and each shot's inputs so the server can rerun the round.
 3. **Live page (29 Oct 2026):** the game is live at **longdriveclub.com/game-mode/** (was `/gamer/`, which now redirects). It lives in the `game-mode/` folder of github.com/PorterWills/long-drive-club, served by GitHub Pages from `main`, and that folder is now the copy that's edited. Keep the `noindex` line. **Never upload to the repo root**: on 28 Oct an upload there replaced the home page for about 15 minutes before it was reverted.
-4. **Long drive mini game (agreed 31 Oct 2026, not built):** a night long drive strip with a hold-and-release swing, five strike tiers and cars as roof targets. The spec is in `LONG-DRIVE.md`.
+4. **Long drive mini game (v1 built 31 Oct 2026):** a night long drive strip with a hold-and-release swing, five strike tiers and cars as roof targets, at `/game-mode/long-drive/` (not linked from the site yet). Spec and build notes in `LONG-DRIVE.md`.
 5. **Polish still open:**
    - hiding the slope arrows nearest the low putting camera, if they distract
    - a golfer character (currently just the ball; the old ring marker was removed at the owner's request)
