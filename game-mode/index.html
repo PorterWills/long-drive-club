@@ -1886,7 +1886,10 @@ const greenLines = (() => {
   scene.add(lines); return lines;
 })();
 const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#EDE9DF', vertexColors: true, transparent: true })); scene.add(aimLine);
-const trail = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(trail);
+// one fixed buffer filled in place: rebuilding the trail each frame (new points, new GPU buffer) churned memory and dropped a frame every ~0.3 s in flight (owner video, 31 Oct 2026)
+const TRAIL_MAX = 45 * 120 / 3 + 2, trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_MAX * 3), 3).setUsage(THREE.DynamicDrawUsage);
+const trail = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', trailPos), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(trail);
+trail.geometry.setDrawRange(0, 0);
 aimLine.frustumCulled = trail.frustumCulled = false; // geometry is rewritten every frame, so its cached bounds go stale and hide the line
 
 // ---------- UI ----------
@@ -2134,7 +2137,7 @@ function endShot() {
 function playOn(ball) {
   $('water').style.display = 'none';
   state.ball = ball;
-  trail.geometry.setFromPoints([]);
+  trail.geometry.setDrawRange(0, 0);
   state.phase = 'aim'; document.body.classList.remove('flying');
   setClub(suggestClub(flat(state.ball, PIN) / YD));
 }
@@ -2150,7 +2153,7 @@ function reset() {
   state.ball = v(HOLE.tee[0], heightAt(...HOLE.tee) + BALL.r, HOLE.tee[1]);
   state.strokes = 0; state.phase = 'aim'; state.seed = (Math.random() * 1e9) | 0;
   $('done').style.display = 'none'; $('stats').style.display = 'none'; $('side').classList.remove('has');
-  trail.geometry.setFromPoints([]);
+  trail.geometry.setDrawRange(0, 0);
   setClub(suggestClub(flat(state.ball, PIN) / YD));
 }
 
@@ -2390,7 +2393,10 @@ function frame(now) {
     ball = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
     while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); }
     // the trail ends exactly where the ball is drawn: ending on every 3rd whole sample left its tip up to ~2 m behind a driver, read as a second ball
-    trail.geometry.setFromPoints([...sh.r.pts.slice(0, i + 1).filter((_, k) => k % 3 === 0), ball].map(p => new THREE.Vector3(p.x, p.y, p.z)));
+    { let n = 0; const A = trailPos.array;
+      for (let k = 0; k <= i && n < TRAIL_MAX - 1; k += 3, n++) { const p = sh.r.pts[k]; A[n * 3] = p.x; A[n * 3 + 1] = p.y; A[n * 3 + 2] = p.z; }
+      A[n * 3] = ball.x; A[n * 3 + 1] = ball.y; A[n * 3 + 2] = ball.z; n++;
+      trailPos.needsUpdate = true; trail.geometry.setDrawRange(0, n); }
     if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); } if (sh.r.outcome === 'water') sfx.splash(); }
   }
   let bs = BALL_NEAR + (1 - BALL_NEAR) * clamp((flat(ball, PIN) - 20) / 20, 0, 1); // true size near the cup so what you see is what drops; eases by distance only so it never pops mid-roll
