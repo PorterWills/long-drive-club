@@ -2,7 +2,7 @@
 
 A browser golf game for the Long Drive Club website. It plays like golfslate.com (whose mechanics were reverse engineered with REA on 28 Oct 2026). Cars are parked on the course, and it's branded with the LDC Design System.
 
-**Status (30 Oct 2026):** session 12 polish live (smooth ball flight, faster hole 13, smoother green and rough edges). **Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *LDC Arcade*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
+**Status (31 Oct 2026):** session 14 live: **Augusta's loblolly pines on all 18 holes** (tall bare trunks, ragged high crowns, an edge layer of small trees, orange pine straw with its own lie, wind shelter in the corridors, sound under the pines, dappled tree shadows), a first-visit intro (How to play alone) and the power bar no longer selects text on Mac. Leaderboard reset the same day. The trees thread is closed. **Status (30 Oct 2026):** session 12 polish live (smooth ball flight, faster hole 13, smoother green and rough edges). **Status (29 Oct 2026):** all **18 holes** are built and playable: a full round with a printed-style scorecard (front nine, back nine, Out / In / Total, birdie and bogey marks), practice mode, and a global leaderboard. Live at **longdriveclub.com/game-mode/** (tab title *LDC Arcade*), promoted from the home page. Par 72, 7,555 yd (Out 3,775, In 3,780).
 
 Stroke index follows the owner's official card (29 Oct 2026). Yards are the game's own, measured tee to pin. Five holes differ from the card (1: 445 vs 455, 2: 585 vs 575, 11: 520 vs 505, 13: 545 vs 510, 15: 550 vs 530), and the owner chose to keep them (29 Oct 2026), so don't move tees to match.
 
@@ -105,7 +105,7 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. **Course design pass** (re-
 - **Owner testing in Claude (session 7):** the owner plays new holes in a private Claude artifact, not the live site. Make a copy of `index.html` with `askedHole` hard-set to the hole (artifact links drop `?hole=`), `LB_URL` set to `''` (keeps tests off the real leaderboard), and publish it to the same artifact link each time. Hole switching and the roundel image don't work there.
 - **Headless checks in the cloud sandbox:** jsDelivr is blocked there, so serve the repo over http and have Playwright serve a local `three@0.160.0` for `three.module.js` (SwiftShader WebGL works). To screenshot any viewpoint, swap in a fixed `camera.position`/`lookAt` just before `renderer.render` in the copy you serve.
 - **Play:** double-click `index.html` (needs internet for Three.js and fonts).
-- **Self-checks:** open with `?test` on the end of the address. The tab title shows `TEST PASS` or `TEST FAIL`, and the results go to the console (`window.__test`). It checks driver carry, headwind, crosswind, the ball coming to rest, putt distance (uphill aware), and firm short putts dropping.
+- **Self-checks:** open with `?test` on the end of the address. The tab title shows `TEST PASS` or `TEST FAIL`, and the results go to the console (`window.__test`). It checks driver carry, headwind, crosswind, the ball coming to rest, putt distance (uphill aware), firm short putts dropping, that the canopy stops a ball, that a tee shot down the middle clears the trees, and that the pines shelter low shots from the wind. All 18 holes pass (31 Oct 2026). The carry and wind drives fly with trees off (`noTrees`), so they test physics, not layout.
   - `?test` doesn't survive a `file://` preview. Serve the file over http instead.
   - **macOS blocks local servers from reading `~/Documents`**, so copy `index.html` to the session scratchpad and serve it from there (a tiny Node server works; Python's `http.server` fails on `getcwd`).
 - **Claude's browser pane can't reload a `file://` tab**, so *Next hole* and the Holes card do nothing there. In the pane, play from an http address instead (same Node server as above).
@@ -115,11 +115,11 @@ Holes 1 and 2 are modelled on Augusta's 1st and 2nd. **Course design pass** (re-
 | Section in `index.html` | What it holds |
 |---|---|
 | `// vectors` | maths helpers, `rng(seed)` |
-| `// hole (our own format)` | `HOLE` (the course data), `materialAt`, `heightAt`, `TREES` |
-| `// physics` | ball, surface and lie tables, `CLUBS`, `accel`/`rk4`, collisions (cars and tree trunks), `strike`, `simulate` |
+| `// hole (our own format)` | `HOLE` (the course data), `materialAt` (incl. `straw`), `strawAt`, `heightAt`, `TREES` (loblollies `lob`, edge layer `under`), `LOB` |
+| `// physics` | ball, surface and lie tables, `CLUBS`, `accel`/`rk4`, collisions (cars and tree trunks), `canopyMid`/`inCanopy`, `shelter` (wind), `strike`, `simulate` |
 | `// self-check` | the `?test` checks |
 | `// state` | pin, wind, the simulated carry table `carryAt` |
-| `// 3D` | terrain mesh, trees, look-alike cars, flag, green contours and animated slope arrows, lines |
+| `// 3D` | terrain mesh, `SHADE`/`drawShade` (tree shadows), trees (`LOBP` crown parts), look-alike cars, flag, green contours and animated slope arrows, lines |
 | `// UI` | club suggestion, auto-aim, power presets, HUD, shot stats, result card, input |
 | `// loop` | animation and the camera |
 
@@ -166,15 +166,16 @@ Lessons from hole 2:
 
 ## Decisions the owner made (don't undo them)
 **Mechanics**
-- **Wind:** fixed per hole in the hole data (`wind: { mph, toward_deg }`, 5–20 mph; holes 8 and 15 are 19 and 20 mph so the red band appears). Some holes `swirl`. It changes drag and spin via airflow relative to the ball. **Auto-aim ignores the wind**: aiming into it is the core skill.
+- **Wind:** fixed per hole in the hole data (`wind: { mph, toward_deg }`, 5–20 mph; holes 8 and 15 are 19 and 20 mph so the red band appears). Some holes `swirl`. It changes drag and spin via airflow relative to the ball. **Shelter:** in the pine corridors a ball near the ground feels 45% of the wind, rising smoothly to 100% at 20 m (the treetops); the HUD shows the full wind. **Auto-aim ignores the wind**: aiming into it is the core skill.
 - **Aim:** dragging the mouse right swings the aim **left**, at 0.0011 rad per pixel. Arrow keys work but aren't shown on screen. No ◀ ▶ buttons and no "drag to aim" label (the hint reads "Set the power · swing").
 - **Aim readout:** "At pin aim", or e.g. "2.4° L aim". Always shown (owner's call).
 - **Wind display:** the speed, "mph" and arrow are coloured by strength: **under 10 mph chalk, 10–18 amber (`#E8A33D`), 19+ red (`#F0444E`)**. No ring around the arrow (owner: it added nothing).
-- **Power:** **no penalty for full power from the tee, fairway or fringe.** Only rough and sand add seeded wobble.
+- **Power:** **no penalty for full power from the tee, fairway or fringe.** Only rough, pine straw and sand add seeded wobble.
 - **Power (changed 30 Oct 2026):** the game suggests the club; **every shot except putts starts at 100%**, chips included (owner, 30 Oct: the player picks the distance; it used to start chips at 50%, and before that preset the carry to the pin, which made chips free); the **putter starts at a rough strength**, 70–130% of the flat distance, seeded per stroke (it used to start at the exact distance, which holed flat putts with no input). The player judges the power, the wind and the break. Owner's next lever if it's still too easy: club choice (`suggestClub` picks the club that just reaches the pin).
 - **Distance units:** golf standard: yards to the pin, feet only once the ball is on the green.
 - **Cup:** drops a ball moving under 3 m/s, with a 6.6–7.4 cm catch radius, checked along the ball's path (Golf Slate's rule).
-- **Trees:** trunks block shots, and canopies (shaped like the drawn cone or ball) soak up 10% of the ball's speed every 1/120 s, so a few metres of branches knocks a drive down.
+- **Trees (31 Oct 2026, loblollies):** 90% loblolly pines: bare trunks (18–33 m tall) up into a ragged crown, about 14.5–22.5 × s up, so the space under the crowns is open between trunks. An edge layer of small hardwoods and dogwoods (in loose clumps, with gaps) lines the corridors. Trunks block shots, and crowns (a flattened ellipsoid for loblollies, a ball for broadleaf) soak up 10% of the ball's speed every 1/120 s, so a drive into the crowns drops. Doglegs can no longer be cut over the trees. `?oldtrees` shows the old cones (practice only).
+- **Pine straw:** the orange beds under the trees are their own lie (`straw`): it sits up but slips (speed .9, spin .7, wobble, no extra launch), so a low punch with a long iron stays under the crowns. Landings are springy and skid a little.
 
 **Lines and putting**
 - **Full-shot aim line:** a short 14 m pointer, straight, ignoring wind.
@@ -221,6 +222,8 @@ Lessons from hole 2:
    - better car placement (the owner says "fine for now")
    - a test option that forces a strong wind
    - checking the result card's layout in a browser
+   - the hole name overlaps the yardage in the top bar at medium widths (seen on 18, Polly, ~960 px; pre-existing)
+   - trees: shadows fall on the ground only (not on trees, cars or the ball); shadow length is capped as if the sun were 30° up (one number in `drawShade` if the owner wants the real ~85 m shadows)
 
 ## Working with the owner
 - **Never give time estimates in days or weeks.** Describe scope and complexity instead.
