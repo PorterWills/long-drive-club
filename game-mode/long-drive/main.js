@@ -178,7 +178,7 @@ function placeMark() {
 }
 
 // ---------- state ----------
-const STORE = 'ldc.longdrive';
+const STORE = 'ldc.longdrive.v2'; // v2: distances changed on 31 Oct 2026, so bests from the first build don't carry over
 const load = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } };
 const save = s => { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch {} };
 const today = () => new Date().toISOString().slice(0, 10);
@@ -249,6 +249,9 @@ function finish() {
   if (ranOut) L.push('Held too long. The swing came apart.');
   if (roofHit) L.push(`Off the roof of the ${roofHit.name.toLowerCase()} at ${Math.round(roofHit.z / YD)} yd.`);
   if (hazard) L.push(`Into ${PART[hazard.part]} of the ${hazard.name.toLowerCase()}.`);
+  // the wind's share: this drive against the same strike in still air, no cars
+  const calm = simulate(launchFor(speed, k.tilt, k.launch, k.rpm, aim), v(0, 0, 0)).total, wd = Math.round(free.total - calm);
+  if (Math.abs(wd) >= 3) L.push(wd < 0 ? `The wind took ${-wd} yd off a ${Math.round(calm)} yd strike.` : `The wind added ${wd} yd to a ${Math.round(calm)} yd strike.`);
   L.push(run.inGrid ? 'Inside the grid.' : 'Outside the grid. It doesn\'t count.');
   let status = false;
   if (run.inGrid) {

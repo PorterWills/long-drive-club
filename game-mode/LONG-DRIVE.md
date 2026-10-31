@@ -15,6 +15,7 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 - **The dial mark moves** a little each swing (80% to 90% of the dial), and the needle's pace changes too (1.3 to 1.7 s to the end), so the timing can't be learnt by rote.
 - **Perfect tightened to ±8 ms** (owner, 31 Oct 2026: ±1 frame was fairly easy). Monster is ±45 ms.
 - **The record needs the conditions.** At a real 234 mph the flight model tops out near 455 yd in still air, like real long drive hitters (the 515 yd record had help). About 1 swing in 6 now has a strong wind, 10 to 18 mph. A Perfect drive with a 15 mph helping wind goes about 508 yd; add a roof and it passes 515.
+- **The result card shows the wind's share** (owner, 31 Oct 2026: a Perfect into an 8 mph headwind went 416 yd and read as worse than a Perfect, which it wasn't). The card compares the drive with the same strike in still air. Stored bests moved to `ldc.longdrive.v2` so the first build's longer distances don't linger.
 
 ## Look and tone
 
