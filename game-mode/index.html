@@ -1244,12 +1244,13 @@ const LIGHT = (() => {
   const k = SKIES[pick], az = (r() < .5 ? -1 : 1) * (1.9 + r() * .6); // owner: never in your eyes. Holes play towards +z, so the sun sits 110-145 degrees off the line: over a shoulder, side-lit, long shadows across the fairway
   return { ...k, name: pick, az, dir: new THREE.Vector3().setFromSphericalCoords(1, Math.PI / 2 - k.el * Math.PI / 180, az) };
 })();
-scene.fog = new THREE.Fog(LIGHT.horizon, ...LIGHT.fog); // haze: far trees melt into the sky
+const farOf = h => new THREE.Color(h).lerp(new THREE.Color('#3e5a3b'), .45); // distant hazy woodland: the horizon colour pulled towards the trees
+scene.fog = new THREE.Fog(farOf(LIGHT.horizon), ...LIGHT.fog); // haze: far trees melt into a distant treeline, not into white
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
+  uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, far: { value: scene.fog.color }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
   vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-  fragmentShader: `varying vec3 vDir; uniform vec3 sunDir, zenith, mid, horizon, sun, cloudLit, cloudShade; uniform float time;
+  fragmentShader: `varying vec3 vDir; uniform vec3 sunDir, zenith, mid, horizon, sun, cloudLit, cloudShade, far; uniform float time;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -1272,7 +1273,8 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
       vec3 cc = mix(cloudShade, cloudLit, lit);
       cc += sun * pow(s, 5.) * (1. - smoothstep(.44, .56, den)) * 1.2; // silver lining on thin edges near the sun
       c = mix(c, cc, cl * .95);
-      if (h < 0.) c = horizon; // below the horizon the haze takes over (same colour as the fog), no painted backdrop
+      float a = atan(d.x, d.z), ridge = .012 + noise(vec2(a * 40., 0.)) * .012 + noise(vec2(a * 160., 1.)) * .006; // a ragged line of far-off tree tops
+      if (h < ridge) c = mix(far, mix(far, horizon, .35), smoothstep(-.02, ridge, h)); // below it, distant woods in the fog colour, so the course's fogged edge meets it seamlessly
       gl_FragColor = vec4(c, 1.);
     }`,
 }));
@@ -2137,7 +2139,7 @@ const relight = name => {
     LIGHT.fog = from.fog.map((v, i) => THREE.MathUtils.lerp(v, to.fog[i], t));
     LIGHT.dir.setFromSphericalCoords(1, Math.PI / 2 - LIGHT.el * Math.PI / 180, LIGHT.az);
     for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]);
-    scene.fog.color.set(LIGHT.horizon); [scene.fog.near, scene.fog.far] = LIGHT.fog;
+    scene.fog.color.copy(farOf(LIGHT.horizon)); [scene.fog.near, scene.fog.far] = LIGHT.fog;
     hemi.color.set(LIGHT.mid); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
     sun.color.set(LIGHT.sun); sun.intensity = LIGHT.sunI;
     if (t < 1) return requestAnimationFrame(step);
