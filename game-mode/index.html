@@ -553,6 +553,8 @@ const HOLES = [{
     { at: [-1.5, 373.7], r: 5, soft: 1 }, { at: [1.5, 378.7], r: 4, soft: 1 }],
   water: [],
   trees: [[1, 0, 408.4, 75, 20], [-1, 18.6, 157.8, 45, 20], [-1, 278.5, 408.4, 45, 20]],
+  linksHand: [[1, 140, 340, 44, 26]], // extra bands [side, z0, z1, inner, depth] built with the Links trees: our line swings right to -65 m and back, and Links
+  // leaves the left rough open, so a straight drive could go behind the left clusters along the tee-to-green line (owner 1 Nov)
   treeClusters: [
     { at: [13.9, 26.3], r: 13 }, { at: [9.2, 60.6], r: 13 }, { at: [0, 100.6], r: 15 }, { at: [-6.2, 135], r: 14 }, // the long island, left
     { at: [-18.5, 163.5], r: 13 }, { at: [-26.2, 200.7], r: 13 }, { at: [-27.7, 235], r: 14 }, { at: [-18.5, 266.4], r: 12 },
@@ -917,10 +919,24 @@ const GFX = (() => {
 const shavedBank = (x, z) => HOLE.shaved && waterD(x, z) < 5; // short grass running into the water, so a ball that lands wrong rolls in
 
 const wob = (x, z) => Math.sin(x * .37 + z * .11) * .9 + Math.sin(z * .23 - x * .19) * .7; // ragged bed edges, metres
-function strawAt(x, z) { // pine straw under the tree lines and clusters, 0..1
+function woodsAt(x, z) { // the woods behind the tree lines and round the clusters, 0..1 (open-ended: the forest floor beyond the straw)
   let a = 0;
   for (const [side, z0, z1, inner] of HOLE.trees) if (z > z0 - 4 && z < z1 + 4) a = Math.max(a, clamp((side * (x - centreX(Math.min(z, GZ))) - inner + 3 + wob(x, z)) / 2, 0, 1) * clamp(Math.min(z - z0 + 4, z1 + 4 - z) / 3, 0, 1));
   for (const t of HOLE.treeClusters) a = Math.max(a, clamp((t.r + 2 + wob(x, z) - Math.hypot(x - t.at[0], z - t.at[1])) / 2, 0, 1));
+  return a;
+}
+const STRAW_R = 9; // owner 1 Nov, matching Links: pine straw lies only within ~9 m of a trunk; beyond it, shaded forest floor
+let STRAW_CELLS = null; // Links trees by 10 m cell, set once the hole's Links trees load
+function strawAt(x, z) { // pine straw in beds under the trees, 0..1
+  let a = 0;
+  for (const [side, z0, z1, inner, depth] of STRAW_CELLS ? HOLE.linksHand || [] : HOLE.trees) if (z > z0 - 4 && z < z1 + 4) {
+    const o = side * (x - centreX(Math.min(z, GZ))) + wob(x, z);
+    a = Math.max(a, clamp((o - inner + 3) / 2, 0, 1) * clamp((inner + depth + STRAW_R - o) / 2, 0, 1) * clamp(Math.min(z - z0 + 4, z1 + 4 - z) / 3, 0, 1));
+  }
+  if (STRAW_CELLS) {
+    const cx = Math.floor(x / 10), cz = Math.floor(z / 10), w = wob(x, z);
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const [tx, tz] of STRAW_CELLS.get(`${cx + i},${cz + j}`) || []) a = Math.max(a, clamp((STRAW_R + w - Math.hypot(x - tx, z - tz)) / 2, 0, 1));
+  } else for (const t of HOLE.treeClusters) a = Math.max(a, clamp((t.r + 2 + wob(x, z) - Math.hypot(x - t.at[0], z - t.at[1])) / 2, 0, 1));
   return a;
 }
 function materialAt(x, z) {
@@ -990,7 +1006,9 @@ function heightRaw(x, z) {
 // the outer forest), and the outer forest fills in only where Links has no trees. Built by links-trees/export_trees.py.
 const LINKS_TREES = LOB && HOLE_NO !== 18 && !new URLSearchParams(location.search).has('handtrees')
   ? await fetch(`links-trees/${HOLE_NO}.json`).then(r => r.json()).catch(() => null) : null;
+let FAR_TREES = []; // the drawn-only trees the thinning leaves out
 const LINKS_OUTER = [], LINKS_CELLS = new Set(), linksCell = (x, z) => `${Math.floor(x / 10)},${Math.floor(z / 10)}`;
+if (LINKS_TREES) { STRAW_CELLS = new Map(); for (let i = 0; i < LINKS_TREES.length; i += 4) { const x = LINKS_TREES[i] / 2, z = LINKS_TREES[i + 1] / 2, k = linksCell(x, z); if (!STRAW_CELLS.has(k)) STRAW_CELLS.set(k, []); STRAW_CELLS.get(k).push([x, z]); } }
 
 // tree positions: seeded, generated once, used for drawing and for trunk and canopy collisions
 const TREES = (() => {
@@ -1011,6 +1029,12 @@ const TREES = (() => {
       if (offLine(x, z) < (lob ? 3.6 : 2.3) * t.s + 1.5) continue; // crown radius plus 1.5 m
       out.push({ ...t, h: heightAt(x, z) });
     }
+    const hr = rng(1934), hl = rng(1937); // linksHand: our own tree bands kept alongside the Links trees where Links leaves a shortcut open
+    for (const [side, z0, z1, inner, depth] of HOLE.linksHand || [])
+      for (let z = z0; z < z1; z += 3.2) for (let k = 0; k < 2; k++) {
+        const x = centreX(Math.min(z, GZ)) + side * (inner + hr() * depth), zz = z + hr() * 3, s = .7 + hl() * hl() * .95 + hl() * .1;
+        if (!outOfBounds(x, zz) && !nearCar(x, zz) && !open.has(materialAt(x, zz))) out.push({ x, z: zz, s, pine: true, lob: true, h: heightAt(x, zz) });
+      }
     return out;
   }
   const r = rng(1934), pr = rng(7), lr = rng(1937), out = [], nearCar = (x, z) => HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 5);
@@ -1463,7 +1487,7 @@ function drawShade() {
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, W = Math.ceil(Math.max(...xs) + 80 - X0), D = GZ + 110, seg = [W * 2, D * 2]; // half-metre grid so bunker and green edges read cleanly
   const geo = new THREE.PlaneGeometry(W, D, seg[0], seg[1]); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, col = [], rough = [], haz = [], gEdge = [], c = new THREE.Color();
-  const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color(LOB ? '#a3592a' : '#6e4a2f'); // loblolly test: the rusty orange beds of the references
+  const FW = new THREE.Color(COLOURS.fairway), FC = new THREE.Color(COLOURS.firstcut), RO = new THREE.Color(COLOURS.rough), TEE = new THREE.Color('#5e8c4d'), STRAW = new THREE.Color(LOB ? '#5c3b22' : '#6e4a2f'), FLOOR = new THREE.Color('#25331d'); // owner 1 Nov: a deeper, darker straw; beyond it the shaded forest floor
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + X0 + W / 2, z = pos.getZ(i) + D / 2 - 40;
     const m = turfAt(x, z);
@@ -1484,7 +1508,8 @@ function drawShade() {
       c.copy(FW).lerp(FC, a).lerp(RO, b); rg = a * .35 + b * .65;
     }
     const tp = teePad(x, z); if (tp > 0) { c.lerp(TEE, tp); rg *= 1 - tp; }
-    const st = m === 'rough' || m === 'straw' || oob ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, LOB ? clamp(st * 2 - .5, 0, 1) * .95 : st * .85); rg = Math.max(rg, st); } // loblolly: a crisper bed edge
+    const wd = m === 'rough' || m === 'straw' || oob ? (oob ? 1 : woodsAt(x, z)) : 0; if (wd > 0) { c.lerp(FLOOR, wd * .85); rg = Math.max(rg, wd); } // the forest floor under and behind the woods
+    const st = (m === 'rough' || m === 'straw') && !oob ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, LOB ? clamp(st * 2 - .5, 0, 1) * .95 : st * .85); rg = Math.max(rg, st); } // loblolly: a crisper bed edge
     if (!oob && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
     if (tp > .9 && Math.floor((x - HOLE.tee[0] + 4) / 1.6) % 2) c.offsetHSL(0, 0, 0.025); // tee pad: crisp stripes
     col.push(c.r, c.g, c.b); rough.push(rg); haz.push(bunkerD(x, z), waterD(x, z)); gEdge.push(ge);
@@ -1605,7 +1630,10 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   const DRAWN = TREES.concat(!LINKS_TREES ? OUTER : (() => { // Links trees: our forest only where Links has none, and the drawn-only trees
     // thinned evenly so the total matches today's (our ~3,200 on hole 1), keeping the triangle count and frame rate where they were
     const pool = OUTER.filter(t => !LINKS_CELLS.has(linksCell(t.x, t.z))).concat(LINKS_OUTER), room = Math.max(0, OUTER.length + 480 - TREES.length);
-    return pool.length <= room ? pool : Array.from({ length: room }, (_, i) => pool[Math.floor(i * pool.length / room)]);
+    if (pool.length <= room) return pool;
+    const pick = Array.from({ length: room }, (_, i) => Math.floor(i * pool.length / room)), kept = new Set(pick);
+    FAR_TREES = pool.filter((_, i) => !kept.has(i)); // ?lush brings these back as flat camera-facing images
+    return pick.map(i => pool[i]);
   })());
   SHADE.trees = DRAWN; drawShade();
   const pines = DRAWN.filter(t => t.pine && !t.lob), lobs = DRAWN.filter(t => t.lob), leaves = DRAWN.filter(t => !t.pine);
@@ -1649,6 +1677,54 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   for (const m of [trunks, ...groups.flatMap(g => g.meshes.map(x => x.m))]) {
     const see = m.material, plain = new THREE.MeshLambertMaterial({ color: see.color, vertexColors: see.vertexColors });
     TREE_SEE.mats.push([m, see, plain]); // starts see-through: the first frame compiles that shader, so turning it on later never hitches
+  }
+}
+// ?lush (trial, 1 Nov 2026; not on 18, which keeps its hand-built look): a dark canopy wall behind the woods so no sky shows
+// between the trunks, the thinned far trees back as flat camera-facing images, and low shrub clumps (some in azalea bloom)
+// along the inner edge of the tree rows. Decoration only: no collisions, so play and ?test are unchanged.
+if (LOB && HOLE_NO !== 18 && QS.has('lush')) {
+  const r = rng(4242), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
+  { // canopy wall: one ribbon down the left, across behind the green and back up the right, with a ragged top
+    const path = [];
+    for (let z = -60; z <= GZ + 100; z += 6) path.push([centreX(Math.min(z, GZ)) + 115, z]);
+    for (let k = 1; k < 40; k++) path.push([centreX(GZ) + 115 - 230 * k / 40, GZ + 100]);
+    for (let z = GZ + 100; z >= -60; z -= 6) path.push([centreX(Math.min(z, GZ)) - 115, z]);
+    const v = [], idx = [];
+    path.forEach(([x, z], i) => { const y = heightAt(x, z); v.push(x, y - 4, z, x, y + 34 + 6 * Math.sin(i * 1.7) + 6 * r(), z); if (i) { const b = 2 * i; idx.push(b - 2, b - 1, b, b - 1, b + 1, b); } });
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); geo.setIndex(idx);
+    scene.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#142116', side: THREE.DoubleSide, fog: false }))); // unfogged, or the haze turns it back into a pale gap
+  }
+  if (FAR_TREES.length) { // far trees: one quad each, turned to face the camera in the vertex shader
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128; const g = cv.getContext('2d');
+    g.fillStyle = '#2b2117'; g.fillRect(30, 40, 4, 88);
+    for (let k = 0; k < 6; k++) { const y = 6 + k * 13, w = 10 + k * 4; g.fillStyle = ['#1d3320', '#22392a', '#1a2e1c'][k % 3]; g.beginPath(); g.ellipse(32, y + 10, w, 11, 0, 0, 6.3); g.fill(); }
+    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+    const mat = new THREE.MeshBasicMaterial({ map: tex, alphaTest: .5, side: THREE.DoubleSide });
+    mat.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', `
+      vec3 cw = (modelMatrix * instanceMatrix * vec4(0., 0., 0., 1.)).xyz, rt = normalize(vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]));
+      vec4 mvPosition = viewMatrix * vec4(cw + rt * position.x * length(instanceMatrix[0].xyz) + vec3(0., position.y * length(instanceMatrix[1].xyz), 0.), 1.);
+      gl_Position = projectionMatrix * mvPosition;`); };
+    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), mat, FAR_TREES.length);
+    FAR_TREES.forEach((t, i) => { const h = t.pine ? 22 * t.s : 7.5 * t.s; im.setMatrixAt(i, m4.compose(at.set(t.x, (t.h ?? heightAt(t.x, t.z)) - .3, t.z), q.identity(), sc.set(h * .45, h, 1))); });
+    im.frustumCulled = false; scene.add(im);
+  }
+  { // shrub clumps just in front of the innermost tree on each side, every ~7 m, about half the time; a third in bloom
+    const BLOOM = ['#e0287a', '#c0174f', '#d93a5e', '#b8245c', '#f25c9a'], LEAF = ['#2f5a2a', '#3a6a30', '#28482a'], spots = [];
+    for (const side of [1, -1]) for (let z = 8; z < GZ - 6; z += 7) {
+      let best = null;
+      for (const t of TREES) if (Math.abs(t.z - z) < 3.5) { const o = side * (t.x - centreX(t.z)); if (o > 0 && (!best || o < best[0])) best = [o, t]; }
+      if (!best || r() < .45) continue;
+      const bloom = r() < .35 ? BLOOM[Math.floor(r() * BLOOM.length)] : null;
+      for (let k = 0, n = 3 + Math.floor(r() * 3); k < n; k++) {
+        const zz = best[1].z + (r() - .5) * 4, x = centreX(zz) + side * (best[0] - 2.5 - r() * 2.5);
+        if (outOfBounds(x, zz) || ['fairway', 'firstcut', 'green', 'fringe', 'sand', 'water'].includes(materialAt(x, zz)) || greenD(x, zz) < 1.6) continue;
+        spots.push([x, zz, bloom && r() < .8 ? bloom : LEAF[Math.floor(r() * LEAF.length)]]);
+      }
+    }
+    const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.7, 0), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#1f1418', flatShading: true })), spots.length);
+    spots.forEach(([x, z, c], i) => { const s = .9 + r() * 1.1; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+      bush.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z) + .25 * s, z), q, sc.set(s * (1 + r() * .5), s * .7, s))); bush.setColorAt(i, col.set(c)); });
+    scene.add(bush);
   }
 }
 // garden holes (opt in with `garden`, owner: make 12 feel like the real thing): banked azalea beds, feature trees
