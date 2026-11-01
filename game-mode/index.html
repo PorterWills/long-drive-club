@@ -1418,10 +1418,10 @@ const scene = new THREE.Scene();
 // The sun's side (left or right shoulder) still changes daily (UTC). ?sky=dawn | day | golden | dusk previews one.
 // el: sun height in degrees (low enough to sit on the horizon, not mid-sky). fog: [near, far] metres. sunI / hemiI: light strengths. ground: bounce colour off the turf.
 const SKIES = {
-  dawn:   { zenith: '#7b97ba', mid: '#e6c3b4', horizon: '#f6e6d2', sun: '#ffe1bd', cloudLit: '#ffeadb', cloudShade: '#a49cad', el: 5,  fog: [40, 360],  sunI: 1.5, hemiI: 1.15, ground: '#4c5a3c' }, // soft and misty
-  day:    { zenith: '#3f78bd', mid: '#9cc4e8', horizon: '#e4eef3', sun: '#fff6e6', cloudLit: '#f7f5f0', cloudShade: '#a7b3c2', el: 52, fog: [140, 650], sunI: 2.1, hemiI: 1.25, ground: '#4a5a32' },
-  golden: { zenith: '#4f7fb5', mid: '#e9cfa2', horizon: '#ffdea0', sun: '#ffcc78', cloudLit: '#ffe4b5', cloudShade: '#a8977f', el: 8,  fog: [110, 560], sunI: 2.4, hemiI: 1.0,  ground: '#5a5a30' }, // warm, long shadows
-  dusk:   { zenith: '#2e4168', mid: '#8b93b4', horizon: '#dcb79c', sun: '#ffd3a6', cloudLit: '#e4c6b8', cloudShade: '#666b86', el: 3,  fog: [90, 480],  sunI: 1.2, hemiI: 1.0,  ground: '#3e4a3a' }, // cool blue hour, a last warm edge low down
+  dawn:   { sunL: '#ffe1bd', amb: '#e6c3b4', alto: 0, zenith: '#7b97ba', mid: '#e6c3b4', horizon: '#f6e6d2', sun: '#ffe1bd', cloudLit: '#ffeadb', cloudShade: '#a49cad', el: 5,  fog: [40, 360],  sunI: 1.5, hemiI: 1.15, ground: '#4c5a3c' }, // soft and misty
+  day:    { sunL: '#fff6e6', amb: '#9cc4e8', alto: 0, zenith: '#3f78bd', mid: '#9cc4e8', horizon: '#e4eef3', sun: '#fff6e6', cloudLit: '#f7f5f0', cloudShade: '#a7b3c2', el: 52, fog: [140, 650], sunI: 2.1, hemiI: 1.25, ground: '#4a5a32' },
+  golden: { sunL: '#ffa552', amb: '#e6d0a0', alto: 1, zenith: '#c2573f', mid: '#f0843a', horizon: '#ffd977', sun: '#fff4d2', cloudLit: '#ffb27a', cloudShade: '#a9566a', el: 6,  fog: [110, 540], sunI: 2.5, hemiI: 1.2,  ground: '#5e4526' }, // owner 1 Nov: vivid coastal sunset. Coral-to-orange sky, a white-yellow glow at the sun, rippled altocumulus lit orange/pink/gold from below, orange sunlight with warm shadows (amb: a softer peach than the sky, so the grass stays green)
+  dusk:   { sunL: '#ffd3a6', amb: '#8b93b4', alto: 0, zenith: '#2e4168', mid: '#8b93b4', horizon: '#dcb79c', sun: '#ffd3a6', cloudLit: '#e4c6b8', cloudShade: '#666b86', el: 3,  fog: [90, 480],  sunI: 1.2, hemiI: 1.0,  ground: '#3e4a3a' }, // cool blue hour, a last warm edge low down
 };
 const SKY_KEY = 'ldc.light';
 const LIGHT = (() => {
@@ -1440,9 +1440,9 @@ const fogOf = h => farOf(h).convertSRGBToLinear();
 scene.fog = new THREE.Fog(fogOf(LIGHT.horizon), ...LIGHT.fog); // haze: far trees melt into a distant treeline, not into white
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
-  uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, far: { value: farOf(LIGHT.horizon) }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])) },
+  uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, far: { value: farOf(LIGHT.horizon) }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])), alto: { value: LIGHT.alto } },
   vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-  fragmentShader: `varying vec3 vDir; uniform vec3 sunDir, zenith, mid, horizon, sun, cloudLit, cloudShade, far; uniform float time;
+  fragmentShader: `varying vec3 vDir; uniform vec3 sunDir, zenith, mid, horizon, sun, cloudLit, cloudShade, far; uniform float time, alto;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
       return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -1459,10 +1459,12 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
       // cumulus: domain-warped so they billow; sampled again a step towards the sun to shade their far sides
       vec2 uv = d.xz / (h + .12) * 1.2 + vec2(time * .004, time * .0015);
       vec2 q = uv + vec2(fbm(uv * .6 + time * .002), fbm(uv * .6 + 4.7)) * .9;
-      float den = fbm(q), den2 = fbm(q + normalize(sunDir.xz + 1e-4) * .12);
+      float den = fbm(q) + alto * .09 * sin(q.x * 13. + q.y * 4. + fbm(q * 3.) * 4.), den2 = fbm(q + normalize(sunDir.xz + 1e-4) * .12); // alto: rippled bands (altocumulus)
       float cl = smoothstep(.44, .64, den) * smoothstep(0., .18, h);
       float lit = clamp(.55 + (den - den2) * 5. + pow(s, 3.) * .4 - smoothstep(.6, .85, den) * .35, 0., 1.); // bright tops, darker thick bellies
+      lit = mix(lit, clamp(1.15 - lit * .7 - h * 1.5, 0., 1.), alto * .7); // alto: a low sun lights the clouds from below
       vec3 cc = mix(cloudShade, cloudLit, lit);
+      cc = mix(cc, mix(vec3(1., .62, .7), vec3(1., .86, .6), lit), alto * .35 * smoothstep(.0, .5, lit)); // pink and pale gold
       cc += sun * pow(s, 5.) * (1. - smoothstep(.44, .56, den)) * 1.2; // silver lining on thin edges near the sun
       c = mix(c, cc, cl * .95);
       float a = atan(d.x, d.z), ridge = .012 + noise(vec2(a * 40., 0.)) * .012 + noise(vec2(a * 160., 1.)) * .006; // a ragged line of far-off tree tops
@@ -1472,8 +1474,8 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
 }));
 sky.renderOrder = -1; scene.add(sky);
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1500);
-const hemi = new THREE.HemisphereLight(LIGHT.mid, LIGHT.ground, LIGHT.hemiI); scene.add(hemi);
-const sun = new THREE.DirectionalLight(LIGHT.sun, LIGHT.sunI);
+const hemi = new THREE.HemisphereLight(LIGHT.amb, LIGHT.ground, LIGHT.hemiI); scene.add(hemi);
+const sun = new THREE.DirectionalLight(LIGHT.sunL, LIGHT.sunI);
 sun.position.set(-80, 120, 60); sun.castShadow = true;
 Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, far: 500 });
 sun.shadow.bias = -0.0005; // low sun grazes the ground; stops shadow acne
@@ -2483,14 +2485,14 @@ const relight = name => {
   const step = now => {
     if (id !== skyFade) return; // a newer pick took over
     const t = THREE.MathUtils.smootherstep(Math.min((now - t0) / 1000, 1), 0, 1);
-    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade', 'ground']) LIGHT[k] = lerpC(from[k], to[k], t);
-    for (const k of ['el', 'sunI', 'hemiI']) LIGHT[k] = THREE.MathUtils.lerp(from[k], to[k], t);
+    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade', 'ground', 'sunL', 'amb']) LIGHT[k] = lerpC(from[k], to[k], t);
+    for (const k of ['el', 'sunI', 'hemiI', 'alto']) LIGHT[k] = THREE.MathUtils.lerp(from[k], to[k], t);
     LIGHT.fog = from.fog.map((v, i) => THREE.MathUtils.lerp(v, to.fog[i], t));
     LIGHT.dir.setFromSphericalCoords(1, Math.PI / 2 - LIGHT.el * Math.PI / 180, LIGHT.az);
-    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]);
+    for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]); sky.material.uniforms.alto.value = LIGHT.alto;
     sky.material.uniforms.far.value.copy(farOf(LIGHT.horizon)); scene.fog.color.copy(fogOf(LIGHT.horizon)); [scene.fog.near, scene.fog.far] = LIGHT.fog;
-    hemi.color.set(LIGHT.mid); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
-    sun.color.set(LIGHT.sun); sun.intensity = LIGHT.sunI;
+    hemi.color.set(LIGHT.amb); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
+    sun.color.set(LIGHT.sunL); sun.intensity = LIGHT.sunI;
     if (t < 1) return requestAnimationFrame(step);
     drawShade(); // the sun moved: recast the tree shadows
     const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground);
@@ -2699,7 +2701,7 @@ function frame(now) {
   if (frame.shown) treeSee(camera.position, ballMesh.position);
   renderer.render(scene, camera);
   if (FPS) fpsCpu = Math.max(fpsCpu, performance.now() - cpu0); // worst JS + draw-submit time this second (GPU work isn't in it)
-  if (!frame.shown) { frame.shown = true; const l = document.getElementById('loading'); l.classList.add('done'); setTimeout(() => l.remove(), 600); }
+  if (!frame.shown) { frame.shown = true; const l = document.getElementById('loading'); l.classList.add('done'); setTimeout(() => { l.remove(); sndStart(); }, 600); } // sound built here, not on the first key or tap (it stalled the first aim ~11 ms: noise buffer, clip decoding); the first gesture only resumes it
 }
 function resize() { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight;
   // portrait phones: widen the view (up to 80°) so it isn't a narrow slit; landscape/desktop stay at the signed-off 55°
