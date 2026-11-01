@@ -76,6 +76,10 @@ The cars are both targets and hazards. They're built in code (like `clubs.js`) f
 - **Leaderboard (v1):** longest drive of the day, roof bonus included, and in the grid only. Week and all-time boards come later.
 - **Format:** unlimited swings in v1.
 
+## The ball
+
+No glow on ordinary shots (owner, 1 Nov 2026). A **Perfect** strike sends a soft Moss-white ring out from the tee, then the ball glows and pulses (1.8 a second) all the way out, shedding a fading ring every half second.
+
 ## Result card
 
 Total (large), in or out of the grid, ball speed, carry, roll, roof bonus (with the car and its distance, if any) and the strike tier. Buttons: *Drive again* and *See the board*. The copy is short and plain, in the LDC voice.
