@@ -8,7 +8,7 @@ const QS = new URLSearchParams(location.search);
 const RECORD = 515;
 
 // ---------- renderer, camera ----------
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true }); // owner: the lit ground flickered in flight. The grass, strip, grid and lines are stacked a few mm apart and fought for depth once the camera was far out
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
@@ -16,7 +16,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x070b09, 0.0021);
-const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 3000);
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 3000);
 addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
 
 const rng = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(20261031);
@@ -57,17 +57,17 @@ function noiseTex(base, amp, size = 256, rep = 1) {
 }
 const grassTex = noiseTex('#16211a', 26, 256); grassTex.repeat.set(160, 160);
 const grass = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshStandardMaterial({ map: grassTex, roughness: .95 }));
-grass.rotation.x = -Math.PI / 2; grass.position.set(0, -.02, LEN / 2); scene.add(grass);
+grass.rotation.x = -Math.PI / 2; grass.position.set(0, -.06, LEN / 2); scene.add(grass);
 const tarTex = noiseTex('#2a2824', 34, 256); tarTex.repeat.set(10, 80);
 const strip = new THREE.Mesh(new THREE.PlaneGeometry(68, LEN + 40), new THREE.MeshStandardMaterial({ map: tarTex, roughness: .42, metalness: .05 }));
-strip.rotation.x = -Math.PI / 2; strip.position.set(0, -.01, LEN / 2 - 20); scene.add(strip);
+strip.rotation.x = -Math.PI / 2; strip.position.set(0, -.03, LEN / 2 - 20); scene.add(strip);
 // the grid: a finer, short grass surface laid inside the lines
 const gridTex = noiseTex('#24302a', 18, 256); gridTex.repeat.set(4, 60);
 const gridSurf = new THREE.Mesh(new THREE.PlaneGeometry(GRID.half * 2, END), new THREE.MeshStandardMaterial({ map: gridTex, roughness: .8 }));
 gridSurf.rotation.x = -Math.PI / 2; gridSurf.position.set(0, -.005, END / 2); scene.add(gridSurf);
 // painted lines
 const lineMat = new THREE.MeshBasicMaterial({ color: 0xede9df, transparent: true, opacity: .75 });
-const line = (x, z, w, l, o = 1) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, l), o === 1 ? lineMat : new THREE.MeshBasicMaterial({ color: 0xede9df, transparent: true, opacity: o })); m.rotation.x = -Math.PI / 2; m.position.set(x, .002, z); scene.add(m); };
+const line = (x, z, w, l, o = 1) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, l), o === 1 ? lineMat : new THREE.MeshBasicMaterial({ color: 0xede9df, transparent: true, opacity: o })); m.rotation.x = -Math.PI / 2; m.position.set(x, .006, z); scene.add(m); };
 line(GRID.half, END / 2, .15, END); line(-GRID.half, END / 2, .15, END);
 for (let yd = 25; yd <= GRID.endYd; yd += 25) line(0, yd * YD, GRID.half * 2, yd % 100 ? .08 : .14, yd % 100 ? .4 : .75);
 for (let z = 8; z < END; z += 9) line(0, z, .08, 3.5, .25);
