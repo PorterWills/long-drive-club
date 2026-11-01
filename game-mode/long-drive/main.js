@@ -15,27 +15,35 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x070b09, 0.0021);
+scene.fog = new THREE.FogExp2(0x2b2a33, 0.0017); // dawn haze, warm grey-blue
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 3000);
 addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
 
 const rng = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(20261031);
 const END = GRID.endYd * YD, LEN = END + 60; // strip runs a little past the last board
 
-// ---------- sky: night, a faint glow on the horizon, stars ----------
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(2000, 32, 16), new THREE.ShaderMaterial({
-  side: THREE.BackSide, depthWrite: false, fog: false,
+// ---------- sky: first light before sunrise (owner, 1 Nov 2026). The sun sits just under the horizon, ahead and a little left,
+// throwing a warm halo along the skyline; overhead is still deep blue, and the last stars are fading ----------
+const SUN = new THREE.Vector3(.32, -.012, 1).normalize();
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(2000, 48, 24), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false, uniforms: { sun: { value: SUN } },
   vertexShader: 'varying vec3 p; void main(){ p = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-  fragmentShader: `varying vec3 p; void main(){
-    float h = max(p.y, 0.);
-    vec3 c = mix(vec3(.075,.095,.08), vec3(.012,.018,.022), pow(h, .45));
-    c += vec3(.16,.13,.09) * exp(-abs(p.y) * 28.) * .5;
+  fragmentShader: `uniform vec3 sun; varying vec3 p; void main(){
+    float h = max(p.y, 0.), s = max(dot(normalize(vec3(p.x, 0., p.z)), normalize(vec3(sun.x, 0., sun.z))), 0.); // s: facing the sun's bearing
+    vec3 zenith = vec3(.025,.04,.085), mid = vec3(.12,.15,.26), band = vec3(.62,.44,.36);
+    vec3 c = mix(mid, zenith, smoothstep(0., .55, h));
+    float glowH = exp(-h * mix(9., 3.2, pow(s, 6.)));               // the warm band hugs the skyline, standing taller toward the sun
+    c = mix(c, band, glowH * (.35 + .65 * pow(s, 2.)));
+    vec3 hot = vec3(1.,.62,.3);
+    c += hot * pow(s, 24.) * exp(-h * 5.) * .9;                     // the halo over the rising sun
+    c += vec3(1.,.8,.55) * pow(max(dot(p, sun), 0.), 700.) * 1.4;   // the bright core, right on the skyline
+    if (p.y < 0.) c = mix(c, vec3(.05,.05,.07), smoothstep(0., .06, -p.y)); // below the horizon: dark land
     gl_FragColor = vec4(c, 1.); }`,
 })));
 { const n = 900, pos = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) { const a = rng() * 6.283, e = .08 + Math.pow(rng(), .7) * 1.4; pos.set([Math.cos(a) * Math.cos(e) * 1800, Math.sin(e) * 1800, Math.sin(a) * Math.cos(e) * 1800], i * 3); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xcfc9bb, size: 1.6, sizeAttenuation: false, transparent: true, opacity: .55, fog: false }))); }
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xcfc9bb, size: 1.6, sizeAttenuation: false, transparent: true, opacity: .3, fog: false }))); }
 // distant lights on the horizon: warm, a few Redline
 { const n = 260, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
@@ -97,7 +105,8 @@ const boardsToDraw = () => { for (let yd = 50; yd <= GRID.endYd; yd += 25) for (
 document.fonts.ready.then(boardsToDraw);
 
 // ---------- floodlights: towers down both sides, pools of light, dark gaps ----------
-scene.add(new THREE.HemisphereLight(0x2a3a44, 0x0a0c0a, .5));
+scene.add(new THREE.HemisphereLight(0x51607e, 0x1a1612, .9)); // dawn sky light: cool from above
+{ const d = new THREE.DirectionalLight(0xffb27a, .55); d.position.copy(SUN).multiplyScalar(500).setY(12); d.target.position.set(0, 0, 200); scene.add(d, d.target); } // low warm light off the skyline, catching car roofs
 const towerMat = new THREE.MeshStandardMaterial({ color: 0x2e2b26, roughness: .8 });
 const headMat = new THREE.MeshBasicMaterial({ color: 0xfff6e4 });
 const TOWERS = []; for (let z = 10, i = 0; z < END + 30; z += 62, i++) TOWERS.push([i % 2 ? 40 : -40, z]);

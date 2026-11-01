@@ -23,6 +23,7 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 
 - **Calm, not loud.** It should have the same quiet, premium feel as the course game: understated copy, a Chalk/Tarmac/Moss palette and Redline used sparingly. No racing language: no "boost", "redline", "limiter", "over-rev" or "shift".
 - **Real 3D, not cartoon.** It's built in the same engine and materials as the course, with the same soft shadows, haze and sky shader. The Claude Design canvas (*Long Drive Club: Night Drive*) is a layout and composition reference only. Don't copy its flat 2D style or its copy.
+- **Sky (owner, 1 Nov 2026): first light.** The sun sits just under the skyline ahead and a little left, throwing a warm halo along the horizon; overhead is still deep blue and the last stars are fading. A cool sky light and a low warm light off the horizon lift the strip; the floodlights stay on.
 - **Setting:** night, on a long, straight strip of tarmac (runway or racetrack), with floodlight towers down both sides throwing pools of light, and dark gaps between them. Cars are parked on the strip. Distant hazy lights sit on the horizon, and the far end fades to dark. There is no Augusta theming or naming.
 - **The grid:** a 40 m wide landing zone with fine painted lines, and quiet yardage boards every 25 yd out to 525 yd. A ball that finishes outside the lines doesn't count.
 
