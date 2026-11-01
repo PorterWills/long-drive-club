@@ -54,6 +54,44 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(2000, 48, 24), new THREE.Shade
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 2.2, sizeAttenuation: false, vertexColors: true, fog: false }))); }
 
+// ---------- the city: skyscraper silhouettes against the dawn, lit windows, red lights on the tallest (owner, 1 Nov 2026: the scene had no depth) ----------
+const BEACONS = [];
+{
+  // a downtown cluster ahead under the sunrise, lower districts spreading round the sides. Distances in metres from the tee
+  const towers = [], cluster = (cx, cz, n, spread, hMin, hMax) => { for (let i = 0; i < n; i++) {
+    const x = cx + (rng() - .5) * spread * 2, z = cz + (rng() - .5) * spread * .8, core = 1 - Math.min(1, Math.hypot(x - cx, (z - cz) * 1.6) / spread);
+    towers.push({ x, z, w: 18 + rng() * 34, d: 18 + rng() * 30, h: hMin + (hMax - hMin) * Math.pow(rng(), 1.6) * (.35 + .65 * core) }); } };
+  cluster(300, 1450, 70, 420, 40, 260);   // downtown, slightly left of the strip, toward the sun
+  cluster(-650, 1250, 40, 380, 25, 120);  // right side district
+  cluster(1000, 1050, 35, 350, 25, 110);  // left side district
+  cluster(-1150, 450, 30, 300, 20, 80);   // far right, low
+  cluster(1200, 350, 30, 300, 20, 80);    // far left, low
+  const geo = new THREE.BoxGeometry(1, 1, 1); geo.translate(0, .5, 0);
+  // silhouettes: unlit, a touch lighter with distance so the layers read against each other (no scene fog on these)
+  const mat = new THREE.MeshBasicMaterial({ vertexColors: false, fog: false }), inst = new THREE.InstancedMesh(geo, mat, towers.length), M = new THREE.Matrix4(), C = new THREE.Color();
+  towers.forEach((t, i) => { M.compose(new THREE.Vector3(t.x, 0, t.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), (rng() - .5) * .3), new THREE.Vector3(t.w, t.h, t.d)); inst.setMatrixAt(i, M);
+    const far = Math.min(1, (Math.hypot(t.x, t.z) - 800) / 900); inst.setColorAt(i, C.setRGB(.004 + .008 * far, .005 + .009 * far, .009 + .014 * far)); });
+  scene.add(inst);
+  // windows: a scatter of small warm and cool points on the faces toward the strip; most are dark at this hour
+  const pos = [], col = [];
+  for (const t of towers) {
+    const n = Math.floor(t.h * t.w / 120);
+    for (let k = 0; k < n; k++) {
+      if (rng() < .7) continue;
+      const side = rng() < .5 ? -1 : 1, onFront = rng() < .6;
+      const x = onFront ? t.x + (rng() - .5) * t.w * .9 : t.x + side * t.w / 2 * 1.01, z = onFront ? t.z - t.d / 2 * 1.01 : t.z + (rng() - .5) * t.d * .9;
+      pos.push(x, 3 + rng() * (t.h - 6), z);
+      const warm = rng() < .75; col.push(...(warm ? [1, .78, .5] : [.7, .82, 1]).map(v => v * (.45 + rng() * .55)));
+    }
+    if (t.h > 150) BEACONS.push(new THREE.Vector3(t.x, t.h + 2, t.z));
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.3, sizeAttenuation: false, vertexColors: true, fog: false })));
+  // red aircraft lights on the tallest towers, blinking slowly (driven in the loop)
+  const bg = new THREE.BufferGeometry().setFromPoints(BEACONS);
+  BEACONS.mesh = new THREE.Points(bg, new THREE.PointsMaterial({ color: 0xff2a2a, size: 3, sizeAttenuation: false, transparent: true, fog: false })); scene.add(BEACONS.mesh);
+}
+
 // ---------- ground and strip ----------
 function noiseTex(base, amp, size = 256, rep = 1) {
   const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d');
@@ -356,6 +394,7 @@ function tick(now) {
     } else { ballLight.color.copy(BLUE); ballGlow.material.color.copy(BLUE); ballGlow.material.opacity = .4; }
     ballGlow.scale.setScalar(s * DRAWN * 3.2); // a tight bloom just past the ball's edge, so it reads as a light, not a halo
   }
+  BEACONS.mesh.material.opacity = (now / 1000) % 2 < .35 ? 1 : .15; // slow blink
   frameCamera(dt);
   renderer.render(scene, camera);
   if (FPS) FPS(dt);
