@@ -1381,7 +1381,7 @@ const carryAt = (ci, power, lie) => {
 // ---------- 3D ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
 const QS = new URLSearchParams(location.search);
-const LUSH = LOB && HOLE_NO !== 18 && QS.has('lush'); // ?lush trial (not on 18)
+const LUSH = LOB && HOLE_NO !== 18 && !QS.has('nolush'); // lush (default since 1 Nov 2026 on 1-17; 18 keeps its hand-built look): ?nolush turns it off
 const clumpy = (d, seed = 0) => Math.sin(d * .55 + seed) + Math.sin(d * .21 + seed * 2.3) > .5; // ?lush: runs of shrubs broken into clumps (~4-6 m) with gaps // test switches: ?fps shows a frame meter, ?pr=1 renders at a lower resolution (stutter hunt, 31 Oct 2026)
 renderer.setPixelRatio(QS.has('pr') ? +QS.get('pr') || 1 : Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
@@ -1681,7 +1681,7 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
     TREE_SEE.mats.push([m, see, plain]); // starts see-through: the first frame compiles that shader, so turning it on later never hitches
   }
 }
-// ?lush (trial, 1 Nov 2026; not on 18, which keeps its hand-built look): the thinned far trees back as flat camera-facing images, and low shrub clumps (some in azalea bloom)
+// lush (default on 1-17, ?nolush turns it off; not on 18, which keeps its hand-built look): the thinned far trees back as flat camera-facing images, and low shrub clumps (some in azalea bloom)
 // along the inner edge of the tree rows. Decoration only: no collisions, so play and ?test are unchanged.
 if (LUSH) {
   const r = rng(4242), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
