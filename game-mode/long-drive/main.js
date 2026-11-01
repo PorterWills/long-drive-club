@@ -1,5 +1,6 @@
 // The long drive: a floodlit strip at night, one driver, hold and release. Spec: ../LONG-DRIVE.md
 import * as THREE from 'three';
+import { DRIVE } from './sounds.js';
 import { simulate, launchFor, speedFor, strike, CARS, CAR_TYPES, carBox, GRID, YD, MPH, BALL, v } from './physics.js';
 
 const $ = id => document.getElementById(id);
@@ -152,8 +153,16 @@ scene.add(new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0xf4f1ea
 let AC; const ac = () => (AC = AC || new (window.AudioContext || window.webkitAudioContext)());
 function tone(type, freq, dur, gain, at = 0) { const a = ac(), o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(gain, a.currentTime + at); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + at + dur); o.connect(g).connect(a.destination); o.start(a.currentTime + at); o.stop(a.currentTime + at + dur); }
 function noise(dur, gain, lp, at = 0) { const a = ac(), b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3); const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(); s.buffer = b; f.type = 'lowpass'; f.frequency.value = lp; g.gain.value = gain; s.connect(f).connect(g).connect(a.destination); s.start(a.currentTime + at); }
+// the driver strike: the course game's recorded clip. Pure strikes play it full and crisp; mishits lower and duller
+let driveBuf = null, driveLoad = null;
+const loadDrive = () => driveLoad = driveLoad || ac().decodeAudioData(Uint8Array.from(atob(DRIVE), c => c.charCodeAt(0)).buffer).then(b => driveBuf = b).catch(() => {});
+function playDrive(q) {
+  const a = ac(), src = a.createBufferSource(), g = a.createGain();
+  src.buffer = driveBuf; src.playbackRate.value = (.9 + .1 * q) * (.98 + Math.random() * .04); g.gain.value = .9 + .9 * q;
+  src.connect(g).connect(a.destination); src.start();
+}
 const SND = {
-  strike: q => { noise(.12, .9, 6000 + q * 4000); tone('triangle', 1100 + q * 500, .09, .25); },
+  strike: q => { if (driveBuf) return playDrive(q); loadDrive().then(() => driveBuf ? playDrive(q) : (noise(.12, .9, 6000 + q * 4000), tone('triangle', 1100 + q * 500, .09, .25))); },
   roof: () => { tone('square', 340, .25, .06); tone('sine', 680, .4, .08); noise(.06, .4, 3000); },
   glass: () => { noise(.3, .5, 8000); tone('triangle', 2200, .2, .05); },
   land: s => noise(.08, Math.min(.5, s / 30), 1400),
@@ -197,7 +206,7 @@ function ready() {
   placeMark(); drawDial(0); $('dialTxt').textContent = 'HOLD';
   ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; trailGeo.setDrawRange(0, 0);
 }
-function press(t) { if (phase !== 'ready') return; ac(); phase = 'hold'; holdStart = t; $('dialTxt').textContent = ''; }
+function press(t) { if (phase !== 'ready') return; ac(); loadDrive(); phase = 'hold'; holdStart = t; $('dialTxt').textContent = ''; }
 function release(t, ranOut = false) {
   if (phase !== 'hold') return;
   const held = (t - holdStart) / 1000, err = ranOut ? 999 : (held - tAt(MARK)) * 1000;

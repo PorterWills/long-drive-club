@@ -4,7 +4,7 @@ A long drive mini game for the Long Drive Club site. One driver, one strip, as f
 
 It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and the same three.js version, fonts and palette.
 
-**Files:** `long-drive/index.html` (page and HUD), `long-drive/main.js` (scene, dial, flight, result), `long-drive/physics.js` (pure physics, no three.js), `long-drive/test.mjs` (self-check: `node game-mode/long-drive/test.mjs`). Switches: `?debug` logs each release, `?fps` shows a frame meter.
+**Files:** `long-drive/index.html` (page and HUD), `long-drive/sounds.js` (the course game's recorded driver strike, `CLIPS.drive`, played full for a pure strike and lower and duller for a mishit), `long-drive/main.js` (scene, dial, flight, result), `long-drive/physics.js` (pure physics, no three.js), `long-drive/test.mjs` (self-check: `node game-mode/long-drive/test.mjs`). Switches: `?debug` logs each release, `?fps` shows a frame meter.
 
 **Built differently from the plan (31 Oct 2026):**
 - **Aim added** (arrow keys or the buttons, 0.5° steps, 4° either way). Without it the cars, parked off centre, could only be hit by accident.
@@ -28,7 +28,7 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 
 - **Hold Space** (or hold the swing button on a phone) to start the backswing. A dial needle climbs, faster as it rises.
 - **Release** to start the downswing. How close the release is to the **mark** (the ideal point, a thin Moss band near the top of the dial) sets the strike.
-- **Early** releases lose distance but fly straight. **Late** ones (past the mark) curve more offline the later they are, so they also risk finishing out of the grid. If you hold too long, the dial runs out and you get a weak mishit.
+- Off the mark, the ball curves: **late** releases to the right, **early** ones to the left, more the further off they are, so both risk finishing out of the grid. (The first build curved only late releases; the owner found every miss went right.) If you hold too long, the dial runs out and you get a weak mishit.
 - The dial is a slim round gauge in the style of the course's power bar, with no rpm numbers or car-dash styling.
 - There's no aim control in v1: you always hit straight down the grid.
 

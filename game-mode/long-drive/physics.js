@@ -139,8 +139,8 @@ export function strike(errMs, ranOut = false) {
   const T = TIERS[i], inner = i ? TIERS[i - 1].win : 0;
   const q = ranOut ? 0 : T.win === Infinity ? clamp(1 - (e - 180) / 320, 0, 1) : 1 - (e - inner) / (T.win - inner); // 1 = closest edge of the tier
   const total = T.lo + (T.hi - T.lo) * q;
-  // late releases curve: the later, the more. Early ones fly straight. A run-out swing hooks
-  const tilt = ranOut ? -9 : errMs > 0 ? Math.min(14, errMs * .045) : 0;
+  // off the mark, the ball curves: late releases right, early ones left (owner: everything pulled right). The further off, the more. A run-out swing hooks left
+  const tilt = ranOut ? -9 : Math.max(-14, Math.min(14, errMs * .045));
   const launch = i === 4 ? 15 : 11, rpm = i === 4 ? 3300 : 1800;
   return { tier: T, total, tilt, launch, rpm };
 }
