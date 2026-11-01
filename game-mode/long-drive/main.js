@@ -207,6 +207,63 @@ for (const c of CAR_BOXES) {
   scene.add(g);
 }
 
+// ---------- the verges (owner, 1 Nov 2026: finishing touches between the course and the city, golf and car themed) ----------
+// Each side, between the floodlights (40 m) and the towers (72 m): rows of members' cars parked (50 m), a clipped hedge behind them (64 m),
+// nose to the strip with their lights on, and Redline pin flags every 50 yd by the boards. Instanced, so it's cheap to draw
+{
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(), V = new THREE.Vector3(), C = new THREE.Color(), up = new THREE.Vector3(0, 1, 0);
+  // hedge: a broken line of clipped box hedge, with gaps at the floodlight towers
+  const hedges = [];
+  for (const side of [-1, 1]) for (let z = -30; z < LEN + 40; z += 6) {
+    if (TOWERS.some(([tx, tz]) => Math.sign(tx) === side && Math.abs(tz - z) < 6)) continue;
+    hedges.push([side * 64, z]);
+  }
+  const hedge = new THREE.InstancedMesh(new THREE.BoxGeometry(1.4, 1.1, 5.8), new THREE.MeshStandardMaterial({ color: 0x1d3a26, roughness: .95 }), hedges.length);
+  hedges.forEach(([x, z], i) => { M.compose(V.set(x, .55, z), Q.identity(), S.set(1, .9 + rng() * .2, 1)); hedge.setMatrixAt(i, M); }); scene.add(hedge);
+  // parked cars: body, glass cabin, four wheels and two headlights per car, as instanced parts
+  const PAINTS = [0x1b1916, 0xede9df, 0xc1121f, 0x0e2a1c, 0x5e594f, 0x2b3a55, 0x8a8f96, 0x101012, 0xb9b7b0, 0x4a463f, 0x6b1218];
+  const spots = [];
+  for (const side of [-1, 1]) for (let z = 15; z < LEN; z += 3.4) {
+    if (TOWERS.some(([tx, tz]) => Math.sign(tx) === side && Math.abs(tz - z) < 7)) continue; // room round each tower
+    if ((Math.floor(z / 70) + (side > 0 ? 1 : 0)) % 3 === 2) continue; // gaps between the rows
+    if (rng() < .12) continue; // the odd empty bay
+    spots.push({ x: side * 50, z, side, paint: PAINTS[Math.floor(rng() * PAINTS.length)], len: 4.3 + rng() * .6, h: 1.25 + rng() * .35 });
+  }
+  const n = spots.length;
+  const paintMat = new THREE.MeshPhysicalMaterial({ roughness: .3, metalness: .55, clearcoat: .8 });
+  const body = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0), paintMat, n);
+  const cabin = new THREE.InstancedMesh(cabinGeo({ w: 1.85, h: 1, belt: .55, roofL: 1.6, roofW: 1.3, rake: .6 }).translate(0, .225, 0), glassMat, n);
+  const wheels = new THREE.InstancedMesh(new THREE.CylinderGeometry(.33, .33, .22, 14).rotateZ(Math.PI / 2), tyreMat, n * 4);
+  const lights = new THREE.InstancedMesh(new THREE.BoxGeometry(.35, .1, .05), new THREE.MeshBasicMaterial({ color: 0xfff1d8 }), n * 2);
+  spots.forEach((c, i) => {
+    Q.setFromAxisAngle(up, c.side > 0 ? -Math.PI / 2 + .5 : Math.PI / 2 - .5); // nose angled toward the strip and the tee
+    const base = new THREE.Matrix4().compose(V.set(c.x, 0, c.z), Q, S.set(1, 1, 1)), part = (x, y, z, sx, sy, sz) => M.compose(V.set(x, y, z), new THREE.Quaternion(), S.set(sx, sy, sz)).premultiply(base);
+    body.setMatrixAt(i, part(0, .22, 0, 1.85, c.h * .55, c.len)); body.setColorAt(i, C.set(c.paint));
+    cabin.setMatrixAt(i, part(0, .22 + c.h * .55 - .55 + .5 * (c.h - c.h * .55), -.15, 1, c.h - c.h * .55, 1));
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz], k) => wheels.setMatrixAt(i * 4 + k, part(sx * .85, .33, sz * (c.len / 2 - .8), 1, 1, 1)));
+    [-1, 1].forEach((sx, k) => lights.setMatrixAt(i * 2 + k, part(sx * .6, .22 + c.h * .55 - .15, c.len / 2 + .01, 1, 1, 1)));
+  });
+  scene.add(body, cabin, wheels, lights);
+  // car park lamps: a post every 28 m behind the cars, each throwing a warm pool on the verge (painted on, not a real light, so it's cheap)
+  const lamps = []; for (const side of [-1, 1]) for (let z = 0; z < LEN; z += 28) lamps.push([side * 57, z + (side > 0 ? 14 : 0)]);
+  const post = new THREE.InstancedMesh(new THREE.CylinderGeometry(.08, .1, 7, 6).translate(0, 3.5, 0), new THREE.MeshStandardMaterial({ color: 0x2e2b26 }), lamps.length);
+  const head = new THREE.InstancedMesh(new THREE.BoxGeometry(.9, .18, .5), new THREE.MeshBasicMaterial({ color: 0xfff0d6 }), lamps.length);
+  const poolTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,214,160,.55)'); r.addColorStop(.5, 'rgba(255,214,160,.2)'); r.addColorStop(1, 'rgba(255,214,160,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
+  const pool = new THREE.InstancedMesh(new THREE.PlaneGeometry(22, 22).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }), lamps.length);
+  lamps.forEach(([x, z], i) => { post.setMatrixAt(i, M.makeTranslation(x, 0, z)); head.setMatrixAt(i, M.makeTranslation(x - Math.sign(x) * .3, 7, z)); pool.setMatrixAt(i, M.makeTranslation(x - Math.sign(x) * 4, .03, z)); });
+  scene.add(post, head, pool);
+  // a soft fill so the parked cars' paint reads under the lamps
+  for (const side of [-1, 1]) { const f = new THREE.DirectionalLight(0xffd9a8, .5); f.position.set(side * 70, 20, LEN / 2); f.target.position.set(side * 45, 0, LEN / 2); scene.add(f, f.target); }
+  // pin flags: Redline, on a white pole, every 50 yd on both verges by the boards
+  const flagMat = new THREE.MeshStandardMaterial({ color: 0xc1121f, side: THREE.DoubleSide, roughness: .8, emissive: 0x3a0508 });
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0xede9df, roughness: .5 });
+  for (let yd = 50; yd <= GRID.endYd; yd += 50) for (const side of [-1, 1]) {
+    const z = yd * YD + 4, x = side * 27;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 2.4, 8), poleMat); pole.position.set(x, 1.2, z); scene.add(pole);
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(.75, .5), flagMat); flag.position.set(x + .38, 2.15, z); flag.rotation.y = .4; scene.add(flag);
+  }
+}
+
 // ---------- ball and trail ----------
 const DRAWN = .07; // drawn radius: the real ball is a speck at this range, so it's drawn bigger (as on the course)
 const ball = new THREE.Mesh(new THREE.SphereGeometry(DRAWN, 24, 16), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: .35, emissive: 0x333333 }));
@@ -374,6 +431,7 @@ const camPos = new THREE.Vector3(0, 2.4, -8), camLook = new THREE.Vector3(0, 1, 
 const want = new THREE.Vector3(), wantLook = new THREE.Vector3();
 function frameCamera(dt) {
   const b = ball.position;
+  if (QS.has('cam')) { const c = QS.get('cam').split(',').map(Number); camera.position.set(c[0], c[1], c[2]); camera.lookAt(c[3], c[4], c[5]); return; } // test switch: a fixed camera, x,y,z,lookX,lookY,lookZ
   if (phase === 'ready' || phase === 'hold') { want.set(0, 1.5, -5); wantLook.set(-aim * 1.2, .7, 40); }
   else if (phase === 'fly') { want.set(b.x * .6, Math.max(2.4, b.y * .55 + 3), b.z - 22); wantLook.set(b.x, b.y * .8 + 1, b.z + 30); }
   else { want.set(b.x + 9, 4, b.z - 14); wantLook.set(b.x, .5, b.z + 4); }
