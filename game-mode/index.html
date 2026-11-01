@@ -395,7 +395,7 @@ const HOLES = [{
   tee: [0, 0], pin: [-18.9, 534.6],            // 585 yd tee to pin
   wind: { mph: 14, toward_deg: 95 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 17, line: [[0, 0], [76, -3.8], [170, -84], [289, -108], [383, -103], [454, -61], [502, -32], [532, -19]] },
-  elevation: [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]],      // downhill all the way
+  elevation: [[0, 9], [42, 8.2], [85, 6.2], [127, 3.6], [170, 1.7], [212, 0.2], [255, -1.4], [297, -4.1], [340, -8.4], [382, -12.4], [425, -15.0], [467, -17.0], [535, -18.0], [580, -17.6]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]]
   green: { at: [-19, 532], r: 10.5, fx: [['tilt', 90, .025], ['tilt', 180, .015], ['bowl', -7, 8, 4, .2]] }, // owner's heat map: high front left, falls hard left to right and away to the back right
   // fairway bunker (owner, from a photo): one big smooth peanut ~30 m long on the right of the landing area, its far end
   // reaching in towards the middle. Owner: it must catch drives, so it sits at full-driver carry (~250 m, 275 yd)
@@ -451,7 +451,7 @@ const HOLES = [{
   tee: [0, 0], pin: [-5.8, 219.38],            // 240 yd tee to pin
   wind: { mph: 12, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 18, line: [[0, 0], [66, 5.8], [148, 0.8], [219.4, -5.8]] },
-  elevation: [[0, 4], [120, 2], [220, 1], [270, 1.5]],
+  elevation: [[0, 4], [39, 0.9], [77, -2.9], [116, -6.1], [155, -6.9], [193, -6.8], [219, -4.8], [270, -4.3]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 4], [120, 2], [220, 1], [270, 1.5]]
   green: { at: [-5.8, 219.4], r: 10.5, fx: [['tilt', -50, .02], ['bowl', -8, 4, 4, -.3]] }, // owner's heat map: high back right, falls diagonally to a low front left, steepest at the front-left tip
   bunkers: [
     { at: [6.5, 214], r: 3, soft: 1 }, { at: [5.6, 209.3], r: 3.2, soft: 1 }, { at: [5.2, 204.6], r: 4, soft: 1 },                                       // front-left
@@ -571,7 +571,7 @@ const HOLES = [{
   wind: { mph: 10, toward_deg: 160 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   // owner's illustration: steeply downhill, bowing right then swinging left; drive left-centre for the angle in
   fairway: { half_width: 13.6, line: [[0, 0], [61.8, -26.9], [159.2, -21.2], [240.8, -7.4], [320.9, 14.4], [372.8, 36.2], [410, 60.7], [445.7, 79.2]] },
-  elevation: [[0, 22], [150, 14], [300, 4], [380, 0], [420, 1.5], [450, 2.5], [490, 3]], // the green sits on the rise beyond the big bunker
+  elevation: [[0, 22], [40, 20.0], [80, 16.6], [120, 12.5], [160, 8.0], [200, 5.7], [240, 3.4], [280, -1.9], [320, -5.0], [360, -6.8], [401, -9.3], [446, -8.7], [490, -8.2]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 22], [150, 14], [300, 4], [380, 0], [420, 1.5], [450, 2.5], [490, 3]]
   green: { at: [79.2, 445.7], r: 8, long: [11, 1.8], fx: [['tilt', -40, .017]] }, // owner's heat map: high back right, falls diagonally to a low front (a touch left) // owner 31 Oct: 15% less steep
   bunkers: [ // the big centre bunker well short of the green (~55 m, with fingers), and a kidney front-right of the green
     { at: [27.0, 345.0], r: 4.5, soft: 1 }, { at: [30.2, 351.1], r: 6, soft: 1 }, { at: [33.5, 357.2], r: 6.5, soft: 1 }, { at: [36.8, 363.4], r: 7, soft: 1 }, { at: [40.0, 369.5], r: 7, soft: 1 }, { at: [43.2, 375.6], r: 6.5, soft: 1 }, { at: [46.5, 381.8], r: 6, soft: 1 }, { at: [49.8, 387.9], r: 5, soft: 1 }, { at: [53.0, 394.0], r: 4, soft: 1 },
@@ -593,7 +593,7 @@ const HOLES = [{
   tee: [0, 0], pin: [3.8, 475.5],              // 520 yd tee to pin
   wind: { mph: 12, toward_deg: 300 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 17, line: [[0, 0], [84.6, 7.3], [172.1, 13.1], [245, 27.7], [318, 17.5], [390.9, -11.7], [475.5, 3.8]] },
-  elevation: [[0, 12], [250, 6], [440, 0.5], [490, 0.5], [530, 0]],
+  elevation: [[0, 12], [39, 9.3], [78, 4.7], [116, 2.9], [155, 3.0], [194, 3.2], [233, 3.2], [272, 2.2], [310, 1.3], [349, -1.0], [388, -3.5], [427, -5.8], [476, -7.2], [490, -7.2], [530, -7.7]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 12], [250, 6], [440, 0.5], [490, 0.5], [530, 0]]
   green: { at: [3.8, 476.5], r: 10, fx: [['tilt', -90, .0142], ['tilt', 0, .0038], ['bowl', -7, 5, 4, -.2375]] }, // owner's heat map: high back and right, falls to a low front left towards the pond // owner 31 Oct: 5% less steep
   shaved: true, swirl: true,
   bunkers: [{ at: [-6, 489.5], r: 3, soft: 1 }, { at: [-1.5, 490.5], r: 2.2, soft: 1 }], // behind the green, clear of the creek (owner's photo)
@@ -683,7 +683,7 @@ const HOLES = [{
   wind: { mph: 13, toward_deg: 220 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   // owner's illustration: wide open right off the tee, a left tree band that bulges in at the landing area, then a gentle bend left
   fairway: { half_width: 15, line: [[0, 0], [59.8, -11.4], [134.6, -12.9], [208.9, -9.5], [282.9, -3.6], [343.7, 8.3], [401.6, 24.8]] },
-  elevation: [[0, 3], [200, 0], [320, 1], [370, 4.5], [400, 6], [440, 6.5]], // heat map: a steep bank short of the green
+  elevation: [[0, 3], [40, 3.0], [80, 3.5], [120, 4.2], [160, 4.5], [200, 5.2], [240, 6.3], [280, 6.9], [320, 7.2], [370, 10.7], [402, 12.2], [440, 12.7]], // Links 2003 Augusta profile (+9.2 m tee to green), climb eased to keep the owner's 5 m heat-map bank short of the green (1 Nov 2026); was [[0, 3], [200, 0], [320, 1], [370, 4.5], [400, 6], [440, 6.5]]
   green: { at: [24.8, 401.6], r: 15, pinShelf: [.5, 6], fx: [['ff', .255], ['tilt', 70, .017], ['bowl', -7, -8, 5, -.2975]] }, // owner's heat map: high left, falls smoothly left to right to a steep low front right; no bunkers // owner 31 Oct: 15% less steep
   bunkers: [],
   water: [],
@@ -776,7 +776,7 @@ const HOLES = [{
   tee: [0, 0], pin: [-3, 402.2],               // 440 yd tee to pin, back-right of centre (the demanding one)
   wind: { mph: 9, toward_deg: 90 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 10, line: [[0, 0], [66.3, -8.4], [120.6, -10.6], [191.4, -10.1], [262.2, -9.7], [332.9, -5.6], [402.3, 0]] }, // owner: thin
-  elevation: [[0, 2], [200, 0], [350, 4], [420, 6]],
+  elevation: [[0, 2], [38, 2.2], [76, 2.2], [114, 1.4], [153, 1.3], [191, 3.5], [229, 6.7], [267, 9.2], [305, 10.4], [343, 10.5], [402, 11.5], [420, 11.8]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 2], [200, 0], [350, 4], [420, 6]]
   green: { at: [0, 400], r: 10, plateau: .9, fx: [['bowl', 7, -3, 5, .25], ['bowl', 0, -11, 3.5, -.3], ['bowl', -10, 3, 3, -.25], ['bowl', 5, 9, 4, -.12]] }, // owner's heat map: broad high middle, peak back right of centre; falls off right, at the front tongue and softly back left
   bunkers: [
     { at: [14, 387], r: 2.6, soft: 1 }, { at: [16.5, 391], r: 2.2, soft: 1 },  // front-left
@@ -802,7 +802,7 @@ const HOLES = [{
   tee: [0, 0], pin: [-88.6, 415.9],            // 465 yd tee to pin (back tee, aerial scale 0.341 m/px), uphill chute, dogleg right
   wind: { mph: 16, toward_deg: 200 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
   fairway: { half_width: 11, line: [[0, 0], [110, 0], [187.6, 2.7], [267.4, -8], [347.3, -29.3], [387.2, -61.2], [415.1, -91.8]] },
-  elevation: [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]],
+  elevation: [[0, 0], [40, 0.1], [80, 0.9], [121, -1.2], [161, -1.8], [201, 0.6], [241, 3.5], [282, 6.6], [322, 9.3], [362, 11.6], [416, 17.3], [450, 18.1]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 0], [150, -2], [300, 4], [400, 10], [450, 11]]
   green: { at: [-91.8, 415.1], r: 11, plateau: 1, drop: [-90, 3], fx: [['tilt', -20, .017], ['bowl', -9, 4, 4, -.2125]] }, // owner's heat map: high back half (back right highest), a bank through the pin to a low front (front left lowest); a massive drop off the right // owner 31 Oct: 15% less steep
   bunkers: [
     { at: [-77.5, 411.6], r: 3.4, soft: 1 }, { at: [-74.8, 408.2], r: 3, soft: 1 },  // front-left, a big kidney
