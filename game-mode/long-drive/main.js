@@ -54,42 +54,60 @@ scene.add(new THREE.Mesh(new THREE.SphereGeometry(2000, 48, 24), new THREE.Shade
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 2.2, sizeAttenuation: false, vertexColors: true, fog: false }))); }
 
-// ---------- the city: skyscraper silhouettes against the dawn, lit windows, red lights on the tallest (owner, 1 Nov 2026: the scene had no depth) ----------
+// ---------- the city (owner, 1 Nov 2026): a dense metropolis with the long drive carved down the middle ----------
+// Blocks of towers line both sides of the strip from behind the tee to well past the end. Straight ahead the blocks stay
+// low for a stretch, so the sunrise still shows down the canyon. All towers are one merged mesh with a window texture
+// mapped in metres, so windows stay the same size on every face. Built after the ground helpers below (see buildCity)
 const BEACONS = [];
-{
-  // a downtown cluster ahead under the sunrise, lower districts spreading round the sides. Distances in metres from the tee
-  const towers = [], cluster = (cx, cz, n, spread, hMin, hMax) => { for (let i = 0; i < n; i++) {
-    const x = cx + (rng() - .5) * spread * 2, z = cz + (rng() - .5) * spread * .8, core = 1 - Math.min(1, Math.hypot(x - cx, (z - cz) * 1.6) / spread);
-    towers.push({ x, z, w: 18 + rng() * 34, d: 18 + rng() * 30, h: hMin + (hMax - hMin) * Math.pow(rng(), 1.6) * (.35 + .65 * core) }); } };
-  cluster(300, 1450, 70, 420, 40, 260);   // downtown, slightly left of the strip, toward the sun
-  cluster(-650, 1250, 40, 380, 25, 120);  // right side district
-  cluster(1000, 1050, 35, 350, 25, 110);  // left side district
-  cluster(-1150, 450, 30, 300, 20, 80);   // far right, low
-  cluster(1200, 350, 30, 300, 20, 80);    // far left, low
-  const geo = new THREE.BoxGeometry(1, 1, 1); geo.translate(0, .5, 0);
-  // silhouettes: unlit, a touch lighter with distance so the layers read against each other (no scene fog on these)
-  const mat = new THREE.MeshBasicMaterial({ vertexColors: false, fog: false }), inst = new THREE.InstancedMesh(geo, mat, towers.length), M = new THREE.Matrix4(), C = new THREE.Color();
-  towers.forEach((t, i) => { M.compose(new THREE.Vector3(t.x, 0, t.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), (rng() - .5) * .3), new THREE.Vector3(t.w, t.h, t.d)); inst.setMatrixAt(i, M);
-    const far = Math.min(1, (Math.hypot(t.x, t.z) - 800) / 900); inst.setColorAt(i, C.setRGB(.004 + .008 * far, .005 + .009 * far, .009 + .014 * far)); });
-  scene.add(inst);
-  // windows: a scatter of small warm and cool points on the faces toward the strip; most are dark at this hour
-  const pos = [], col = [];
-  for (const t of towers) {
-    const n = Math.floor(t.h * t.w / 120);
-    for (let k = 0; k < n; k++) {
-      if (rng() < .7) continue;
-      const side = rng() < .5 ? -1 : 1, onFront = rng() < .6;
-      const x = onFront ? t.x + (rng() - .5) * t.w * .9 : t.x + side * t.w / 2 * 1.01, z = onFront ? t.z - t.d / 2 * 1.01 : t.z + (rng() - .5) * t.d * .9;
-      pos.push(x, 3 + rng() * (t.h - 6), z);
-      const warm = rng() < .75; col.push(...(warm ? [1, .78, .5] : [.7, .82, 1]).map(v => v * (.45 + rng() * .55)));
-    }
-    if (t.h > 150) BEACONS.push(new THREE.Vector3(t.x, t.h + 2, t.z));
+function windowTex() { // 16 x 16 windows, frames dark, panes faintly reflective; about a third lit, warm or cool
+  const N = 16, cw = 16, ch = 16, c = document.createElement('canvas'); c.width = N * cw; c.height = N * ch;
+  const g = c.getContext('2d'), e = document.createElement('canvas'); e.width = c.width; e.height = c.height; const ge = e.getContext('2d');
+  g.fillStyle = '#0b0c10'; g.fillRect(0, 0, c.width, c.height); ge.fillStyle = '#000'; ge.fillRect(0, 0, e.width, e.height);
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const x = i * cw + 2, y = j * ch + 3, w = cw - 4, h = ch - 6;
+    g.fillStyle = `rgb(${22 + rng() * 14},${26 + rng() * 14},${36 + rng() * 18})`; g.fillRect(x, y, w, h);
+    if (rng() < .32) { const warm = rng() < .72, k = .45 + rng() * .55; ge.fillStyle = warm ? `rgba(255,${190 + rng() * 30},${120 + rng() * 40},${k})` : `rgba(${170 + rng() * 30},${200 + rng() * 30},255,${k})`; ge.fillRect(x, y, w, h); }
   }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({ size: 1.3, sizeAttenuation: false, vertexColors: true, fog: false })));
-  // red aircraft lights on the tallest towers, blinking slowly (driven in the loop)
-  const bg = new THREE.BufferGeometry().setFromPoints(BEACONS);
-  BEACONS.mesh = new THREE.Points(bg, new THREE.PointsMaterial({ color: 0xff2a2a, size: 3, sizeAttenuation: false, transparent: true, fog: false })); scene.add(BEACONS.mesh);
+  const t1 = new THREE.CanvasTexture(c), t2 = new THREE.CanvasTexture(e);
+  for (const t of [t1, t2]) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; }
+  return [t1, t2];
+}
+function buildCity() {
+  const towers = [], CELL = 3.4, TILE = 16 * CELL; // one window cell is 3.4 m; the texture repeats every 54 m
+  const BLOCK = 46, STREET = 16, CLEAR = 72; // towers start 72 m either side of the centre line (the floodlights stand at 40)
+  for (let bz = -260; bz < 2300; bz += BLOCK + STREET) for (let bx = -1300; bx < 1300; bx += BLOCK + STREET) {
+    const cx = bx + BLOCK / 2, cz = bz + BLOCK / 2, ax = Math.abs(cx), dist = Math.hypot(cx, cz - 400);
+    if (ax - BLOCK / 2 < CLEAR) { if (cz < LEN + 60) continue; } // the strip and its verges
+    if (dist > 1700) continue;
+    const ahead = ax < 260 && cz > LEN, low = ahead && cz < 1300; // straight ahead: low blocks first, so the sunrise shows; downtown beyond
+    // one to three towers per block
+    const n = 1 + Math.floor(rng() * 3);
+    for (let k = 0; k < n; k++) {
+      const w = n === 1 ? BLOCK - 4 : 14 + rng() * (BLOCK / 1.6), d = n === 1 ? BLOCK - 4 : 14 + rng() * (BLOCK / 1.6);
+      const x = cx + (rng() - .5) * (BLOCK - w), z = cz + (rng() - .5) * (BLOCK - d);
+      const near = ax < 200 ? 1 : ax < 450 ? .8 : .55, downtown = ahead && !low ? 1.6 : 1;
+      const h = low ? 10 + rng() * 22 : (24 + Math.pow(rng(), 1.8) * 200) * near * downtown;
+      towers.push({ x, z, w, d, h });
+    }
+  }
+  const P = [], N = [], U = [];
+  const quad = (a, b, c, d, n, u0, u1, v0, v1) => { for (const [q, uv] of [[a, [u0, v0]], [b, [u1, v0]], [c, [u1, v1]], [a, [u0, v0]], [c, [u1, v1]], [d, [u0, v1]]]) { P.push(...q); N.push(...n); U.push(...uv); } };
+  for (const t of towers) {
+    const x0 = t.x - t.w / 2, x1 = t.x + t.w / 2, z0 = t.z - t.d / 2, z1 = t.z + t.d / 2, h = t.h, ox = rng() * 16, oy = rng() * 16;
+    const U_ = m => m / TILE, V = m => m / TILE;
+    quad([x1, 0, z0], [x0, 0, z0], [x0, h, z0], [x1, h, z0], [0, 0, -1], ox, ox + U_(t.w), oy, oy + V(h)); // faces the tee
+    quad([x0, 0, z1], [x1, 0, z1], [x1, h, z1], [x0, h, z1], [0, 0, 1], ox, ox + U_(t.w), oy, oy + V(h));
+    quad([x0, 0, z0], [x0, 0, z1], [x0, h, z1], [x0, h, z0], [-1, 0, 0], ox, ox + U_(t.d), oy, oy + V(h));
+    quad([x1, 0, z1], [x1, 0, z0], [x1, h, z0], [x1, h, z1], [1, 0, 0], ox, ox + U_(t.d), oy, oy + V(h));
+    quad([x0, h, z0], [x0, h, z1], [x1, h, z1], [x1, h, z0], [0, 1, 0], 0, 0, 0, 0); // roof: plain
+    if (h > 150) BEACONS.push(new THREE.Vector3(t.x, h + 2, t.z));
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2));
+  const [map, glow] = windowTex();
+  scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map, emissive: 0xffffff, emissiveMap: glow, emissiveIntensity: 1.1, roughness: .35, metalness: .4 })));
+  BEACONS.mesh = new THREE.Points(new THREE.BufferGeometry().setFromPoints(BEACONS), new THREE.PointsMaterial({ color: 0xff2a2a, size: 3, sizeAttenuation: false, transparent: true, fog: false }));
+  scene.add(BEACONS.mesh);
 }
 
 // ---------- ground and strip ----------
@@ -101,9 +119,12 @@ function noiseTex(base, amp, size = 256, rep = 1) {
   g.putImageData(im, 0, 0);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep, rep); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
-const grassTex = noiseTex('#16211a', 26, 256); grassTex.repeat.set(160, 160);
+const grassTex = noiseTex('#141516', 22, 256); grassTex.repeat.set(160, 160); // city ground: dark paving between the towers
 const grass = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshStandardMaterial({ map: grassTex, roughness: .95 }));
 grass.rotation.x = -Math.PI / 2; grass.position.set(0, -.06, LEN / 2); scene.add(grass);
+{ const vt = noiseTex('#16211a', 26, 256); vt.repeat.set(12, 90); const verge = new THREE.Mesh(new THREE.PlaneGeometry(144, LEN + 300), new THREE.MeshStandardMaterial({ map: vt, roughness: .95 }));
+  verge.rotation.x = -Math.PI / 2; verge.position.set(0, -.045, LEN / 2 - 100); scene.add(verge); } // grass verges either side of the strip, out to the towers
+buildCity();
 const tarTex = noiseTex('#2a2824', 34, 256); tarTex.repeat.set(10, 80);
 const strip = new THREE.Mesh(new THREE.PlaneGeometry(68, LEN + 40), new THREE.MeshStandardMaterial({ map: tarTex, roughness: .42, metalness: .05 }));
 strip.rotation.x = -Math.PI / 2; strip.position.set(0, -.03, LEN / 2 - 20); scene.add(strip);
