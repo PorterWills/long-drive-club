@@ -143,14 +143,10 @@ for (const c of CAR_BOXES) {
 const DRAWN = .07; // drawn radius: the real ball is a speck at this range, so it's drawn bigger (as on the course)
 const ball = new THREE.Mesh(new THREE.SphereGeometry(DRAWN, 24, 16), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: .35, emissive: 0x333333 }));
 scene.add(ball);
-const ballGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,248,232,.9)'); r.addColorStop(1, 'rgba(255,248,232,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+const ballGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,.9)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
 scene.add(ballGlow);
-// Perfect only (owner, 1 Nov 2026): no glow on ordinary shots. A Perfect strike sends out a ring at impact, then the ball glows and pulses, shedding a ring every .5 s
-const ringTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), r = g.createRadialGradient(64, 64, 40, 64, 64, 62);
-  r.addColorStop(0, 'rgba(156,203,174,0)'); r.addColorStop(.7, 'rgba(225,240,230,.9)'); r.addColorStop(1, 'rgba(156,203,174,0)'); g.fillStyle = r; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })();
-const RINGS = Array.from({ length: 6 }, () => { const m = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); m.visible = false; scene.add(m); return { m, t0: 0, size: 1 }; });
-let ringNext = 0;
-function ring(pos, size, now) { const r = RINGS.find(r => !r.m.visible) || RINGS[0]; r.m.position.copy(pos); r.t0 = now; r.size = size; r.m.visible = true; }
+// owner, 1 Nov 2026: every ball in the air glows blue. A Perfect turns the ball itself Moss green, pulsing (no extra effects)
+const BLUE = new THREE.Color(0x6aa8ff), MOSS = new THREE.Color(0x9ccbae), MOSS_HOT = new THREE.Color(0xd8f5e2), ballCol = new THREE.Color();
 let perfectT0 = 0; // when the Perfect strike happened; 0 = not a Perfect
 const TRAIL_N = 6000, trailPos = new Float32Array(TRAIL_N * 3), trailGeo = new THREE.BufferGeometry();
 trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3)); trailGeo.setDrawRange(0, 0);
@@ -242,7 +238,7 @@ let phase = 'ready', holdStart = 0, shot = null, play = 0, result = null;
 function ready() {
   phase = 'ready'; document.body.classList.remove('flying', 'done');
   placeMark(); drawDial(0);
-  ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; perfectT0 = 0; RINGS.forEach(r => r.m.visible = false); trailGeo.setDrawRange(0, 0);
+  ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; perfectT0 = 0; ball.material.color.set(0xf4f1ea); ball.material.emissive.set(0x333333); trailGeo.setDrawRange(0, 0);
 }
 function press(t) { if (phase !== 'ready') return; ac(); loadDrive(); phase = 'hold'; holdStart = t; }
 function release(t, ranOut = false) {
@@ -257,7 +253,7 @@ function release(t, ranOut = false) {
   SND.strike(k.tier.id === 'perfect' ? 1 : k.tier.id === 'mishit' ? 0 : .5);
   phase = 'fly'; play = 0; shot = run; document.body.classList.add('flying');
   flash(k.tier.id === 'perfect' ? 'Perfect' : '');
-  if (k.tier.id === 'perfect') { perfectT0 = performance.now(); ringNext = perfectT0 + 500; ring(ball.position, 3, perfectT0); }
+  if (k.tier.id === 'perfect') perfectT0 = performance.now();
 }
 let flashT; function flash(t) { clearTimeout(flashT); $('flash').textContent = t; $('flash').classList.toggle('on', !!t); if (t) flashT = setTimeout(() => $('flash').classList.remove('on'), 1600); }
 
@@ -341,13 +337,15 @@ function tick(now) {
   // the drawn ball grows with distance from the camera so it stays visible; true size at the tee
   const d = camera.position.distanceTo(ball.position), s = Math.max(BALL.r / DRAWN * 1.6, Math.min(2.2, d * .0042 / DRAWN * 1.0));
   ball.scale.setScalar(s);
-  ballGlow.visible = !!perfectT0 && (phase === 'fly' || phase === 'done');
+  ballGlow.visible = phase === 'fly' || phase === 'done';
   if (ballGlow.visible) {
-    const t = (now - perfectT0) / 1000, pulse = .5 + .5 * Math.sin(t * Math.PI * 2 * 1.8); // 1.8 pulses a second
-    ballGlow.position.copy(ball.position); ballGlow.scale.setScalar(s * DRAWN * (7 + 6 * pulse)); ballGlow.material.opacity = .55 + .45 * pulse;
-    if (phase === 'fly' && now >= ringNext) { ringNext = now + 500; ring(ball.position, s * DRAWN * 26, now); }
+    ballGlow.position.copy(ball.position);
+    if (perfectT0) { // the ball itself pulses Moss green, 1.8 times a second
+      const pulse = .5 + .5 * Math.sin((now - perfectT0) / 1000 * Math.PI * 2 * 1.8);
+      ballCol.copy(MOSS).lerp(MOSS_HOT, pulse); ball.material.color.copy(ballCol); ball.material.emissive.copy(ballCol).multiplyScalar(.6 + .4 * pulse);
+      ballGlow.material.color.copy(ballCol); ballGlow.material.opacity = .6 + .3 * pulse; ballGlow.scale.setScalar(s * DRAWN * 9);
+    } else { ballGlow.material.color.copy(BLUE); ballGlow.material.opacity = .7; ballGlow.scale.setScalar(s * DRAWN * 8); }
   }
-  for (const r of RINGS) if (r.m.visible) { const k = (now - r.t0) / 900; if (k >= 1) { r.m.visible = false; continue; } r.m.scale.setScalar(r.size * (.3 + 1.7 * k)); r.m.material.opacity = (1 - k) * (1 - k); }
   frameCamera(dt);
   renderer.render(scene, camera);
   if (FPS) FPS(dt);
