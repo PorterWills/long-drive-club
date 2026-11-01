@@ -2,6 +2,32 @@
 
 A long drive mini game for the Long Drive Club site. One driver, one strip, as far as you can hit it. A perfect drive earns Long Drive Club status. Agreed with the owner on 31 Oct 2026. **v1 built 31 Oct 2026** at `/game-mode/long-drive/` (not yet linked from the site).
 
+**Status (1 Nov 2026, end of session):** playable, **not live** and not linked from the site (owner: still needs a lot of polish before it goes out). The owner plays it in a private Claude page that mirrors these files: https://claude.ai/artifact/6FcoagG6ERNk4CmA5iLn7C (its copy of the page drops the `<!doctype>`/`<head>` wrapper; `main.js`, `physics.js` and `sounds.js` are published unchanged beside it). Work is on branch `claude/confident-ptolemy-43qsm8`; nothing is merged.
+
+**Session log (31 Oct to 1 Nov 2026), in order:**
+1. Idea and spec agreed: a long drive game, its own setting, hold-and-release swing, five strike tiers from the owner's distance table, cars as roof targets, status for a Perfect.
+2. Claude Design canvas *Long Drive Club: Night Drive* made by the owner (layouts, rev counter, car sheet). Owner: great foundation, but the copy was too *Fast and Furious* and the look too cartoony.
+3. v1 built: night strip, dial, cars, result card, physics self-check.
+4. Landing and roll switched to the course game's fairway and playback speed (the first surface rolled too far and fast).
+5. Distances: cut 10% for real ball speeds, then Perfect lifted to 470 to 490 yd so a roof can beat 515 (owner chose fun over realism there).
+6. Perfect tightened to ±8 ms; the mark and needle pace vary per swing. Wind tried and removed (owner: it's a bit of fun).
+7. Misses curve both ways (early left, late right); the course's driver strike sound.
+8. Gameplay signed off.
+9. Ground flicker in flight fixed (depth fighting). Dial replaced with the Claude Design rev counter, minus its HOLD word.
+10. Bonnet and boot lid bounce (a Perfect died on the coupe's boot); new impact sounds.
+11. Ball: in flight it is a blue light; a Perfect pulses Moss (rings tried and dropped: they read as smoke rings).
+12. Sky to first light; then a whole city of towers with the strip carved through it; then verges with parked cars, hedge, lamps and flags.
+
+**Open, for next time (owner's polish list is still to come; these are known):**
+- **Not yet seen in flight:** the city and verges were only checked from fixed cameras. Check frame rate on the owner's Mac and phone with `?fps` (the city added a lot to the screen).
+- **Flicker fix** (logarithmic depth buffer) not yet confirmed by the owner.
+- **Rev counter in motion** (needle, shift lights, POWER readout, limiter shake) not yet seen by Claude; the owner hasn't said whether the POWER readout stays.
+- **Roof bonus** reads +33 to +35 yd on the coupe and estate, a little over the agreed +20 to 30. Owner hasn't asked to change it.
+- **Copy:** the dial still carries "×1000 R/MIN" from the design (owner loved the design as is). The hint line under the dial is the only instruction text.
+- **No shared board yet:** today's best and status are per browser (`ldc.longdrive.v2`). A shared daily board needs a new sheet and endpoint in the Apps Script.
+- **Not built:** a club swing at address, replay cameras for roof hits, a grandstand by the tee, linking status to `members.html`, linking the game from the site.
+- **Testing note:** headless Chromium here renders with SwiftShader, so a full drive through the city is too slow to screenshot. Use `?cam=x,y,z,lookX,lookY,lookZ` for fixed views and `node game-mode/long-drive/test.mjs` for the physics (14 checks).
+
 It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and the same three.js version, fonts and palette.
 
 **Files:** `long-drive/index.html` (page and HUD), `long-drive/sounds.js` (the course game's recorded driver strike, `CLIPS.drive`, played full for a pure strike and lower and duller for a mishit), `long-drive/main.js` (scene, dial, flight, result), `long-drive/physics.js` (pure physics, no three.js), `long-drive/test.mjs` (self-check: `node game-mode/long-drive/test.mjs`). Switches: `?debug` logs each release, `?fps` shows a frame meter.
