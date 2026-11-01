@@ -394,12 +394,12 @@ const HOLES = [{
   name: 'Red Catbranch', par: 5, si: 1,
   tee: [0, 0], pin: [-18.9, 534.6],            // 585 yd tee to pin
   wind: { mph: 14, toward_deg: 95 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 17, line: [[0, 0], [76, -3.8], [170, -84], [289, -108], [383, -103], [454, -61], [502, -32], [532, -19]] },
+  fairway: { half_width: 17, line: [[0, 0], [76, -3.8], [170, -64], [289, -89], [383, -85], [454, -61], [502, -32], [532, -19]] }, // 1 Nov 2026: ~19 m back left through the bend to match Links 2003 (was 170 -84, 289 -108, 383 -103),
   elevation: [[0, 9], [42, 8.2], [85, 6.2], [127, 3.6], [170, 1.7], [212, 0.2], [255, -1.4], [297, -4.1], [340, -8.4], [382, -12.4], [425, -15.0], [467, -17.0], [535, -18.0], [580, -17.6]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 9], [120, 7], [260, 4], [380, 1], [470, -0.5], [520, 0], [580, 0.5]]
   green: { at: [-19, 532], r: 10.5, fx: [['tilt', 90, .025], ['tilt', 180, .015], ['bowl', -7, 8, 4, .2]] }, // owner's heat map: high front left, falls hard left to right and away to the back right
   // fairway bunker (owner, from a photo): one big smooth peanut ~30 m long on the right of the landing area, its far end
   // reaching in towards the middle. Owner: it must catch drives, so it sits at full-driver carry (~250 m, 275 yd)
-  bunkers: [{ at: [-99.5, 236.5], r: 6, soft: 1 }, { at: [-103.5, 231], r: 5, soft: 1 }, { at: [-107.5, 225.5], r: 5.5, soft: 1 }, { at: [-112.5, 219.5], r: 6.5, soft: 1 },
+  bunkers: [{ at: [-80.1, 236.5], r: 6, soft: 1 }, { at: [-84, 231], r: 5, soft: 1 }, { at: [-87.9, 225.5], r: 5.5, soft: 1 }, { at: [-92.9, 219.5], r: 6.5, soft: 1 }, // moved 19.5 m left with the line (1 Nov)
     // left greenside: a peanut running up the left front (the 1946 bunker)
     { at: [-5.4, 527.1], r: 3, soft: 1 }, { at: [-7.1, 524.3], r: 3.2, soft: 1 }, { at: [-10.6, 521.2], r: 3, soft: 1 },
     // right greenside: the big one, with a finger reaching up the right side
@@ -410,8 +410,8 @@ const HOLES = [{
     [-1, 0, 118, 30, 30], [-1, 118, 200, 16, 30], [-1, 200, 300, 30, 30], [-1, 300, 397, 40, 30], // the right-hand band
   ],
   treeClusters: [
-    { at: [24, 0], r: 14 }, { at: [45, 10], r: 12 }, { at: [25, 57], r: 6 }, { at: [-13, 61], r: 7 }, { at: [43, 38], r: 7 }, // round the tee
-    { at: [-141, 430], r: 16 }, { at: [-103, 482], r: 8 }, { at: [-150, 530], r: 10 }, { at: [-89, 577], r: 14 }, { at: [25, 596], r: 6 },
+    { at: [24, 0], r: 14 }, { at: [45, 10], r: 12 }, { at: [25, 57], r: 6 }, { at: [-7.5, 61], r: 7 }, { at: [43, 38], r: 7 }, // round the tee (1 Nov 2026: the [-13, 61] one moved 5.5 m left to keep its 12.5 m gap to the drive line after the line moved)
+    { at: [-136.4, 430], r: 16 }, { at: [-103, 482], r: 8 }, { at: [-150, 530], r: 10 }, { at: [-89, 577], r: 14 }, { at: [25, 596], r: 6 },
   ],
   cars: [
     { at: [-9, -14], heading: -20, colour: '#C1121F', kind: 'hyper' },
@@ -543,24 +543,24 @@ const HOLES = [{
   // round a long tree island on the left with a second one on the right, then up into a dip and an elevated green
   // that turns back left. Two greenside bunkers short-left; the green has a false front and three shelves.
   name: 'Texan Tangerine', par: 4, si: 7, gallery: true, // roped tee and empty chairs (owner)
-  tee: [0, 0], pin: [-5, 420.6],               // 460 yd tee to pin
+  tee: [0, 0], pin: [-5, 390.4],               yards: 460, // 460 yd along the dogleg like the card (1 Nov 2026: whole hole x 0.928 down its length; straight line now 427 yd)
   wind: { mph: 11, toward_deg: 45 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 14, line: [[0, 0], [68, -27.7], [130, -46.2], [207, -64.7], [284, -64.7], [346, -46.2], [392, -18.5], [420.6, -5]] },
-  elevation: [[0, 8], [150, 4], [300, 0], [375, -1.5], [400, 4], [440, 4.6], [470, 5]], // down to a dip, steep bank up to a gentle green (owner's heat map)
-  green: { at: [-6.5, 422], r: 10, fx: [['ff', .45], ['tilt', 50, .018], ['bowl', -4, -10, 4.5, -.27]] }, // owner's heat map: high back left, falls across to a low front-right end, steepest there // owner 31 Oct: 10% less steep
+  fairway: { half_width: 14, line: [[0, 0], [63.1, -27.7], [120.7, -46.2], [192.1, -64.7], [263.6, -64.7], [321.2, -46.2], [363.9, -18.5], [390.4, -5]] },
+  elevation: [[0, 8], [139.2, 4], [278.5, 0], [348.1, -1.5], [371.3, 4], [408.4, 4.6], [436.3, 5]], // down to a dip, steep bank up to a gentle green (owner's heat map)
+  green: { at: [-6.5, 391.7], r: 10, fx: [['ff', .45], ['tilt', 50, .018], ['bowl', -4, -10, 4.5, -.27]] }, // owner's heat map: high back left, falls across to a low front-right end, steepest there // owner 31 Oct: 10% less steep
   bunkers: [ // the two left greenside bunkers
-    { at: [11.7, 405.6], r: 5.5, soft: 1 }, { at: [13.9, 414], r: 5, soft: 1 },
-    { at: [-1.5, 402.6], r: 5, soft: 1 }, { at: [1.5, 408], r: 4, soft: 1 }],
+    { at: [11.7, 376.5], r: 5.5, soft: 1 }, { at: [13.9, 384.3], r: 5, soft: 1 },
+    { at: [-1.5, 373.7], r: 5, soft: 1 }, { at: [1.5, 378.7], r: 4, soft: 1 }],
   water: [],
-  trees: [[1, 0, 440, 75, 20], [-1, 20, 170, 45, 20], [-1, 300, 440, 45, 20]],
+  trees: [[1, 0, 408.4, 75, 20], [-1, 18.6, 157.8, 45, 20], [-1, 278.5, 408.4, 45, 20]],
   treeClusters: [
-    { at: [13.9, 28.3], r: 13 }, { at: [9.2, 65.3], r: 13 }, { at: [0, 108.4], r: 15 }, { at: [-6.2, 145.4], r: 14 }, // the long island, left
-    { at: [-18.5, 176.2], r: 13 }, { at: [-26.2, 216.2], r: 13 }, { at: [-27.7, 253.2], r: 14 }, { at: [-18.5, 287], r: 12 },
-    { at: [-101.6, 179.3], r: 12 }, { at: [-101.6, 216.2], r: 12 }, { at: [-101.6, 253.2], r: 12 }, { at: [-101.6, 293.2], r: 12 }, // the island, right
-    { at: [-126.3, 179.3], r: 12 }, { at: [-126.3, 216.2], r: 12 }, { at: [-126.3, 253.2], r: 12 }, { at: [-126.3, 293.2], r: 12 },
-    { at: [-66.2, 130], r: 3.5 },                                                                                            // the lone tree
+    { at: [13.9, 26.3], r: 13 }, { at: [9.2, 60.6], r: 13 }, { at: [0, 100.6], r: 15 }, { at: [-6.2, 135], r: 14 }, // the long island, left
+    { at: [-18.5, 163.5], r: 13 }, { at: [-26.2, 200.7], r: 13 }, { at: [-27.7, 235], r: 14 }, { at: [-18.5, 266.4], r: 12 },
+    { at: [-101.6, 166.4], r: 12 }, { at: [-101.6, 200.7], r: 12 }, { at: [-101.6, 235], r: 12 }, { at: [-101.6, 272.1], r: 12 }, // the island, right
+    { at: [-126.3, 166.4], r: 12 }, { at: [-126.3, 200.7], r: 12 }, { at: [-126.3, 235], r: 12 }, { at: [-126.3, 272.1], r: 12 },
+    { at: [-66.2, 120.7], r: 3.5 },                                                                                            // the lone tree
     { at: [-21.6, -39], r: 12 }, { at: [16.9, -17.9], r: 5 }, { at: [18.5, -39], r: 5 },                                     // round the tee
-    { at: [20, 445], r: 9 }, { at: [-25, 448], r: 8 },                                                                       // behind the green
+    { at: [20, 413], r: 9 }, { at: [-25, 415.8], r: 8 },                                                                       // behind the green
   ],
   cars: [
     { at: [-10, -14], heading: -20, colour: '#262320', kind: 'gt' },
@@ -775,7 +775,7 @@ const HOLES = [{
   name: 'Mamdani', par: 4, si: 14,
   tee: [0, 0], pin: [-3, 402.2],               // 440 yd tee to pin, back-right of centre (the demanding one)
   wind: { mph: 9, toward_deg: 90 }, // fixed per hole (4–20 mph, owner cut 20%): the hole's variable
-  fairway: { half_width: 10, line: [[0, 0], [66.3, -8.4], [120.6, -10.6], [191.4, -10.1], [262.2, -9.7], [332.9, -5.6], [402.3, 0]] }, // owner: thin
+  fairway: { half_width: 10, line: [[0, 0], [66.3, -8.4], [120.6, -14], [191.4, -15], [262.2, -16], [332.9, -16], [372, -11], [402.3, 0]] }, // owner: thin. 1 Nov 2026: holds right to 330 m like Links 2003 (was drifting to the centre); mid-hole clusters moved with it
   elevation: [[0, 2], [38, 2.2], [76, 2.2], [114, 1.4], [153, 1.3], [191, 3.5], [229, 6.7], [267, 9.2], [305, 10.4], [343, 10.5], [402, 11.5], [420, 11.8]], // Links 2003 Augusta profile, stretched to our yardage (1 Nov 2026); was [[0, 2], [200, 0], [350, 4], [420, 6]]
   green: { at: [0, 400], r: 10, plateau: .9, fx: [['bowl', 7, -3, 5, .25], ['bowl', 0, -11, 3.5, -.3], ['bowl', -10, 3, 3, -.25], ['bowl', 5, 9, 4, -.12]] }, // owner's heat map: broad high middle, peak back right of centre; falls off right, at the front tongue and softly back left
   bunkers: [
@@ -786,11 +786,11 @@ const HOLES = [{
   trees: [[1, 0, 60, 13, 15], [1, 60, 355, 12, 25], [-1, 0, 355, 12, 25], [1, 355, 440, 24, 15], [-1, 355, 440, 24, 15]],
   treeClusters: [
     { at: [-18, 43], r: 6 }, { at: [-10, 17], r: 3 },                                                      // by the tee
-    { at: [23, 214], r: 5 }, { at: [14, 233], r: 5 }, { at: [10, 252], r: 5 }, { at: [12, 273], r: 5 },    // the left band bulging in
-    { at: [12, 297], r: 6 }, { at: [14, 318], r: 6 }, { at: [16, 335], r: 5 },                              // squeezing the approach from the left
-    { at: [-46, 110], r: 3 }, { at: [-38, 140], r: 7 }, { at: [-36, 162], r: 6 },                           // a lone tree, then the first island right
-    { at: [-33, 218], r: 6 }, { at: [-38, 238], r: 7 }, { at: [-32, 282], r: 7 }, { at: [-31, 305], r: 7 }, { at: [-32, 320], r: 5 }, // the long island right
-    { at: [-30, 358], r: 3 }],                                                                              // the lone tree short right of the green
+    { at: [17.8, 214], r: 5 }, { at: [8.2, 233], r: 5 }, { at: [3.8, 252], r: 5 }, { at: [5.5, 273], r: 5 },    // the left band bulging in
+    { at: [3.7, 297], r: 6 }, { at: [4, 318], r: 6 }, { at: [5.6, 335], r: 5 },                              // squeezing the approach from the left
+    { at: [-49.1, 110], r: 3 }, { at: [-41.7, 140], r: 7 }, { at: [-40.3, 162], r: 6 },                           // a lone tree, then the first island right
+    { at: [-38.3, 218], r: 6 }, { at: [-43.9, 238], r: 7 }, { at: [-39, 282], r: 7 }, { at: [-40, 305], r: 7 }, { at: [-42.1, 320], r: 5 }, // the long island right
+    { at: [-38.4, 358], r: 3 }],                                                                              // the lone tree short right of the green
   cars: [
     { at: [10, -14], heading: 20, colour: '#EDE9DF', kind: 'gt' },
     { at: [-45, 420], heading: -80, colour: '#C1121F', kind: 'hyper' },
@@ -809,7 +809,8 @@ const HOLES = [{
     { at: [-104.9, 408.1], r: 3.2, soft: 1 }, { at: [-104, 412.6], r: 2.8, soft: 1 }, // back-right
     { at: [-5.3, 312.7], r: 4.5, soft: 1 }, { at: [2.7, 294], r: 4, soft: 1 }],         // fairway bunkers, left of the landing area
   water: [],
-  trees: [[1, -10, 227, 11, 30], [-1, -10, 227, 11, 30], [1, 227, 370, 26, 20], [-1, 227, 385, 18, 20], // owner 31 Oct: the tunnel opens 25 yd sooner (was 250 m)
+  trees: [[1, -10, 227, 9, 30], [-1, -10, 227, 9, 30], // 1 Nov 2026: chute 11 -> 9 m towards Links 2003
+     [1, 227, 370, 26, 20], [-1, 227, 385, 18, 20], // owner 31 Oct: the tunnel opens 25 yd sooner (was 250 m)
      [1, 370, 470, 28, 15], [-1, 385, 470, 26, 15]],
   // owner 31 Oct: the same trees either side of the tunnel, mirrored about the straight first 120 yd
   treeClusters: [{ at: [32, 161], r: 15 }, { at: [33, 216], r: 13 }, { at: [36, 81], r: 12 }, { at: [26, 22], r: 8 },
@@ -1757,7 +1758,7 @@ const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[
   bag.rotation.set(-.22, .5, 0); bag.position.copy(teeAt(-3.4, 2)); bag.traverse(m => { if (m.isMesh) m.castShadow = true; }); scene.add(bag);
 
   const tex = new THREE.CanvasTexture(document.createElement('canvas'));
-  const yd = Math.round(Math.hypot(HOLE.pin[0] - HOLE.tee[0], HOLE.pin[1] - HOLE.tee[1]) / 0.9144);
+  const yd = HOLE.yards ?? Math.round(Math.hypot(HOLE.pin[0] - HOLE.tee[0], HOLE.pin[1] - HOLE.tee[1]) / 0.9144);
   const drawSign = () => {
     const cv = tex.image; cv.width = 512; cv.height = 320; const g = cv.getContext('2d');
     g.fillStyle = '#0E2A1C'; g.fillRect(0, 0, 512, 320); g.strokeStyle = '#EDE9DF'; g.lineWidth = 4; g.strokeRect(14, 14, 484, 292);
@@ -2231,7 +2232,7 @@ const go = (q = '') => { location.href = location.pathname + q; };
 $('next').onclick = () => roundDone() ? openScorecard() : go();
 // the finished round as a printed LDC scorecard: front nine, back nine, Out / In / Total, golf's birdie and bogey marks
 function openScorecard() {
-  const yd = h => Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD), sum = a => a.reduce((x, y) => x + y, 0);
+  const yd = h => h.yards ?? Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD), sum = a => a.reduce((x, y) => x + y, 0);
   const mark = (sc, par) => { const d = sc - par, c = d <= -2 ? 'e' : d === -1 ? 'b' : d === 1 ? 'o' : d >= 2 ? 'd' : ''; return `<span class="m ${c}">${sc}</span>`; };
   const nine = (from, label, extra) => {
     const hs = HOLES.slice(from, from + 9), sc = ROUND.scores.slice(from, from + 9);
@@ -2294,7 +2295,7 @@ function roundTotal() {
   return n ? `${sc} (${toPar(sc - par)}) after ${n}` : 'Not started';
 }
 function openCard() {
-  const yd = h => Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD);
+  const yd = h => h.yards ?? Math.round(Math.hypot(h.pin[0] - h.tee[0], h.pin[1] - h.tee[1]) / YD);
   $('cardRows').innerHTML = HOLES.map((h, i) => {
     const no = i + 1, here = no === HOLE_NO, next = no === roundHole() && !roundDone();
     return `<button class="hrow${here ? ' here' : ''}${next ? ' next' : ''}" data-hole="${no}"><span class="no display">${no}</span>` +
