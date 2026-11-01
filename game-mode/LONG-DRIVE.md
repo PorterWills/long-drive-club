@@ -31,7 +31,7 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 - **Hold Space** (or hold the swing button on a phone) to start the backswing. A dial needle climbs, faster as it rises.
 - **Release** to start the downswing. How close the release is to the **mark** (the ideal point, a thin Moss band near the top of the dial) sets the strike.
 - Off the mark, the ball curves: **late** releases to the right, **early** ones to the left, more the further off they are, so both risk finishing out of the grid. (The first build curved only late releases; the owner found every miss went right.) If you hold too long, the dial runs out and you get a weak mishit.
-- The dial is a slim round gauge in the style of the course's power bar, with no rpm numbers or car-dash styling.
+- The dial is the rev counter from the owner's Claude Design canvas (*Component · Rev counter*): 0 to 9 round 270°, shift lights, a green window (the mark, 7.2 to 7.8), a red arc from 8 and an end stop at 9. The owner loved it as designed and only wanted its HOLD word removed (1 Nov 2026). A live POWER readout shows 100 at the mark. Held past the end, the needle shakes red and the shift lights flash.
 - There's no aim control in v1: you always hit straight down the grid.
 
 ## Strike quality and distance

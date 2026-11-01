@@ -34,7 +34,7 @@
   .stat { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
   .stat b { font-size: 18px; }
   #dialWrap { position: fixed; right: 28px; bottom: 28px; display: flex; flex-direction: column; align-items: center; gap: 10px; transition: opacity .45s, transform .45s; }
-  #dial { width: 168px; height: 168px; border-radius: 50%; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; }
+  #dial { width: 200px; height: 200px; border-radius: 50%; border: 0; padding: 0; background: none; cursor: pointer; touch-action: none; }
   #dial:focus-visible { outline: 2px solid var(--ldc-chalk); outline-offset: 4px; }
   #hint { max-width: 220px; font-size: 13px; color: var(--ldc-chalk-dim); text-align: center; text-shadow: 0 1px 4px #000; }
   #aim { display: flex; align-items: center; gap: 10px; }
@@ -62,7 +62,7 @@
   #fps { position: fixed; left: 14px; bottom: 14px; font: 12px monospace; color: var(--ldc-chalk-dim); }
   @media (max-width: 640px) {
     #top { gap: 12px; } #top .title b { font-size: 17px; } .stat b { font-size: 15px; } #top .hide-sm { display: none; }
-    #card { top: auto; bottom: 14px; } #top .title .eyebrow { display: none; } #dialWrap { right: 14px; bottom: 16px; } #dial, #dial svg { width: 136px; height: 136px; } #hint { display: none; } #total { font-size: 56px; }
+    #card { top: auto; bottom: 14px; } #top .title .eyebrow { display: none; } #dialWrap { right: 14px; bottom: 16px; } #dial, #dial svg { width: 150px; height: 150px; } #hint { display: none; } #total { font-size: 56px; }
   }
   @media (prefers-reduced-motion: reduce) { #dialWrap, #card, #flash { transition: none; } }
 </style>
@@ -77,16 +77,7 @@
 
 <div id="dialWrap">
   <button id="dial" aria-label="Swing. Hold for the backswing, let go on the mark.">
-    <svg viewBox="0 0 200 200" width="168" height="168" aria-hidden="true">
-      <circle cx="100" cy="100" r="96" fill="rgba(27,25,22,.82)" stroke="rgba(237,233,223,.22)" stroke-width="1.5"/>
-      <path id="track" fill="none" stroke="rgba(237,233,223,.14)" stroke-width="6"/>
-      <path id="fill" fill="none" stroke="#EDE9DF" stroke-width="6"/>
-      <path id="mark" fill="none" stroke="#7FA88F" stroke-width="10"/>
-      <g id="ticks" stroke="rgba(237,233,223,.4)" stroke-width="1.5"></g>
-      <line id="needle" x1="100" y1="100" x2="100" y2="22" stroke="#EDE9DF" stroke-width="3" stroke-linecap="round"/>
-      <circle cx="100" cy="100" r="7" fill="#1B1916" stroke="rgba(237,233,223,.4)"/>
-      <text id="dialTxt" x="100" y="140" text-anchor="middle" fill="#CFC9BB" font-family="Archivo, sans-serif" font-size="11" letter-spacing="3">HOLD</text>
-    </svg>
+    <svg id="rev" viewBox="0 0 300 300" width="200" height="200" aria-hidden="true"></svg>
   </button>
   <div id="aim">
     <button id="aimL" aria-label="Aim left">&larr;</button>

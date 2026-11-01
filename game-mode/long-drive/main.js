@@ -168,22 +168,52 @@ const SND = {
   land: s => noise(.08, Math.min(.5, s / 30), 1400),
 };
 
-// ---------- the dial ----------
-const ARC = 270, A0 = -135; // degrees from straight up
-const polar = (r, f) => { const a = (A0 + ARC * f) * Math.PI / 180; return [100 + r * Math.sin(a), 100 - r * Math.cos(a)]; };
-const arcPath = (r, f1, f2) => { const [x1, y1] = polar(r, f1), [x2, y2] = polar(r, f2); return `M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${ARC * (f2 - f1) > 180 ? 1 : 0} 1 ${x2.toFixed(2)},${y2.toFixed(2)}`; };
-$('track').setAttribute('d', arcPath(84, 0, 1));
-$('ticks').innerHTML = Array.from({ length: 11 }, (_, i) => { const [a, b] = polar(76, i / 10), [c, d] = polar(70, i / 10); return `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`; }).join('');
+// ---------- the dial: the rev counter from the owner's Claude Design canvas (Component · Rev counter), without the HOLD word ----------
+// 0 to 9 round 270°. The green window is the mark, the red arc from 8 is past it, 9 is the end stop
+const SVGNS = 'http://www.w3.org/2000/svg', REV = $('rev');
+const ang = u => -135 + u / 9 * 270, P = (R, u) => { const a = ang(u) * Math.PI / 180; return [150 + R * Math.sin(a), 150 - R * Math.cos(a)]; };
+const f2 = n => (Math.round(n * 100) / 100).toString();
+const arc = (R, u1, u2) => { const a = P(R, u1), b = P(R, u2); return `M${f2(a[0])},${f2(a[1])} A${R},${R} 0 ${(u2 - u1) / 9 * 270 > 180 ? 1 : 0} 1 ${f2(b[0])},${f2(b[1])}`; };
+const el = (tag, at, parent = REV) => { const e = document.createElementNS(SVGNS, tag); for (const k in at) e.setAttribute(k, at[k]); parent.append(e); return e; };
+{
+  const defs = el('defs', {}), fl = el('filter', { id: 'glow', x: '-50%', y: '-50%', width: '200%', height: '200%' }, defs); el('feGaussianBlur', { stdDeviation: 3 }, fl);
+  el('circle', { cx: 150, cy: 150, r: 147, fill: '#121110', stroke: 'rgba(237,233,223,0.22)', 'stroke-width': 1.5 });
+  el('circle', { cx: 150, cy: 150, r: 139, fill: 'none', stroke: 'rgba(237,233,223,0.07)', 'stroke-width': 1 });
+  el('path', { d: arc(134, 0, 9), stroke: 'rgba(237,233,223,0.10)', 'stroke-width': 6, fill: 'none' });
+  el('path', { d: arc(134, 8, 9), stroke: '#C1121F', 'stroke-width': 9, fill: 'none', opacity: .7 });
+  let ticks = '', red = '';
+  for (let i = 0; i <= 36; i++) { const u = i / 4, r1 = i % 4 === 0 ? 110 : i % 2 === 0 ? 118 : 122, a = P(r1, u), b = P(128, u), d = `M${f2(a[0])},${f2(a[1])} L${f2(b[0])},${f2(b[1])} `; if (u >= 8) red += d; else ticks += d; }
+  el('path', { d: ticks, stroke: 'rgba(237,233,223,0.55)', 'stroke-width': 2, fill: 'none' });
+  el('path', { d: red, stroke: '#C1121F', 'stroke-width': 2, fill: 'none' });
+  const s1 = P(104, 9), s2 = P(142, 9); el('path', { d: `M${f2(s1[0])},${f2(s1[1])} L${f2(s2[0])},${f2(s2[1])}`, stroke: '#EDE9DF', 'stroke-width': 4, fill: 'none' });
+  for (let u = 0; u <= 9; u++) { const p = P(90, u), t = el('text', { x: f2(p[0]), y: f2(p[1] + 6), 'text-anchor': 'middle', 'font-family': 'Archivo, sans-serif', 'font-weight': 800, 'font-size': 17, fill: u >= 8 ? '#E8A2A6' : '#EDE9DF', style: 'font-variation-settings:"wdth" 122' }); t.textContent = u; }
+  const t = el('text', { x: 150, y: 112, 'text-anchor': 'middle', 'font-family': 'Archivo, sans-serif', 'font-size': 9, 'letter-spacing': 2.2, fill: '#CFC9BB' }); t.textContent = '×1000 R/MIN';
+}
+const markGlow = el('path', { stroke: '#9CCBAE', 'stroke-width': 16, fill: 'none', opacity: 0, filter: 'url(#glow)' });
+const markArc = el('path', { stroke: '#7FA88F', 'stroke-width': 9, fill: 'none' });
+const LEDS = [[101, 10], [115, 10], [129, 10], [143, 14], [161, 10], [175, 10], [189, 10]].map(([x, w]) => el('rect', { x, y: 68, width: w, height: 6, fill: '#2A2723' }));
+const needle = el('polygon', { points: '147.2,166 152.8,166 151,34 149,34', fill: '#EDE9DF' });
+el('circle', { cx: 150, cy: 150, r: 14, fill: '#1B1916', stroke: 'rgba(237,233,223,0.34)', 'stroke-width': 1.5 });
+el('circle', { cx: 150, cy: 150, r: 4, fill: '#C1121F' });
+const powerTxt = el('text', { x: 150, y: 212, 'text-anchor': 'middle', 'font-family': 'Archivo, sans-serif', 'font-size': 10, 'letter-spacing': 2.6, fill: '#CFC9BB' });
+
 const SWING = { T: 1.5, pow: 1.7, grace: .12 }; // needle reaches the end in about 1.5 s (1.3 to 1.7, new each swing), speeding up; held .12 s past the end, the swing falls apart
-let MARK = .86;
+let MARK = .84; // as a fraction of the dial; 9 * MARK on the scale
 const tAt = f => SWING.T * Math.pow(f, 1 / SWING.pow); // time the needle reaches f
-function drawDial(f) {
-  $('fill').setAttribute('d', f > .001 ? arcPath(84, 0, Math.min(1, f)) : '');
-  $('needle').setAttribute('transform', `rotate(${A0 + ARC * Math.min(1, f)} 100 100)`);
+function drawDial(f, limiter = false) {
+  const u = 9 * Math.min(1, f), mu = 9 * MARK;
+  needle.setAttribute('transform', `rotate(${f2(ang(u) + (limiter ? (Math.random() - .5) * 6 : 0))} 150 150)`);
+  needle.setAttribute('fill', limiter ? '#C1121F' : '#EDE9DF');
+  // shift lights fill up over the last 3.5 on the way to the mark, all lit in the window; past the red line they turn red; on the limiter they flash
+  const lit = Math.max(0, Math.min(7, Math.floor((u - (mu - 3.5)) / .5)));
+  const col = u >= 8 ? '#E0313D' : Math.abs(u - mu) < .2 ? '#9CCBAE' : '#7FA88F';
+  LEDS.forEach((r, i) => r.setAttribute('fill', (limiter ? (i % 2 === 0) !== (Math.floor(performance.now() / 90) % 2 === 0) : i < lit) ? col : '#2A2723'));
+  markGlow.setAttribute('opacity', Math.abs(u - mu) < .25 ? .9 : 0);
+  powerTxt.textContent = f > 0 ? `POWER ${Math.round(Math.min(1, f) / MARK * 100)}` : '';
 }
 function placeMark() {
-  MARK = .8 + rng() * .1; SWING.T = 1.3 + rng() * .4; // the mark and the needle's pace change each swing, so the timing can't be learnt by rote
-  const w = .007; $('mark').setAttribute('d', arcPath(84, MARK - w, MARK + w));
+  MARK = .8 + rng() * .07; SWING.T = 1.3 + rng() * .4; // the mark (7.2 to 7.8 on the scale) and the needle's pace change each swing, so the timing can't be learnt by rote
+  const w = .012; markArc.setAttribute('d', arc(134, 9 * (MARK - w), 9 * (MARK + w))); markGlow.setAttribute('d', markArc.getAttribute('d'));
 }
 
 // ---------- state ----------
@@ -203,10 +233,10 @@ $('aimL').onclick = () => setAim(aim - .5); $('aimR').onclick = () => setAim(aim
 let phase = 'ready', holdStart = 0, shot = null, play = 0, result = null;
 function ready() {
   phase = 'ready'; document.body.classList.remove('flying', 'done');
-  placeMark(); drawDial(0); $('dialTxt').textContent = 'HOLD';
+  placeMark(); drawDial(0);
   ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; trailGeo.setDrawRange(0, 0);
 }
-function press(t) { if (phase !== 'ready') return; ac(); loadDrive(); phase = 'hold'; holdStart = t; $('dialTxt').textContent = ''; }
+function press(t) { if (phase !== 'ready') return; ac(); loadDrive(); phase = 'hold'; holdStart = t; }
 function release(t, ranOut = false) {
   if (phase !== 'hold') return;
   const held = (t - holdStart) / 1000, err = ranOut ? 999 : (held - tAt(MARK)) * 1000;
@@ -286,7 +316,7 @@ function tick(now) {
   const dt = Math.min(.05, (now - last) / 1000); last = now;
   if (phase === 'hold') {
     const held = (performance.now() - holdStart) / 1000;
-    drawDial(Math.pow(Math.min(held, SWING.T) / SWING.T, SWING.pow));
+    drawDial(Math.pow(Math.min(held, SWING.T) / SWING.T, SWING.pow), held > SWING.T);
     if (held > SWING.T + SWING.grace) release(holdStart + (SWING.T + SWING.grace) * 1000, true);
   }
   if (phase === 'fly' && shot) {
