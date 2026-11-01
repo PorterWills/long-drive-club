@@ -1054,6 +1054,33 @@ const TREES = (() => {
   for (const c of HOLE.treeClusters) for (let k = 0; k < c.r * 1.2; k++) { const a = r() * 6.283, d = Math.sqrt(r()) * c.r; add(c.at[0] + Math.cos(a) * d, c.at[1] + Math.sin(a) * d); }
   return out;
 })();
+const groundLow = (x, z, r) => Math.min(heightAt(x, z), heightAt(x + r, z), heightAt(x - r, z), heightAt(x, z + r), heightAt(x, z - r)); // a shrub sits on its downhill side, so it never floats on a slope
+// understory (owner 1 Nov: horizon showed between the bare loblolly trunks): bushes and small trees 2-8 m tall filling under the
+// crowns from just behind the first row of trees out past the boundary, sparse near the fairway, thickening towards the back.
+// Decoration only (no collisions); not on 18, which keeps its hand-built look. [x, z, h, w] per plant, drawn as two leafy puffs.
+const UNDERSTORY = !LOB || HOLE_NO === 18 ? [] : (() => {
+  const r = rng(2718), out = [], noGo = new Set(['fairway', 'firstcut', 'green', 'fringe', 'sand', 'water']), first = new Map();
+  for (const t of TREES) if (t.lob) { const k = `${Math.sign(t.x - centreX(t.z))},${Math.floor(t.z / 10)}`, o = Math.abs(t.x - centreX(t.z)); first.set(k, Math.min(first.get(k) ?? 1e9, o)); }
+  for (let z = -40; z < GZ + 70; z += 5) for (const side of [1, -1]) {
+    const f0 = first.get(`${side},${Math.floor(z / 10)}`) ?? HOLE.fairway.half_width + 12; // the first row here (or a fairway's width out)
+    for (let o = f0 - 2; o < 130; o += 5) {
+      const d = o - f0, p = clamp(.15 + d / 45, .15, .8); // sparse just behind the first row, thick by ~30 m back and out of bounds
+      if (r() > p) continue;
+      const x = centreX(Math.min(z, GZ)) + side * (o + r() * 4), zz = z + r() * 4;
+      if (noGo.has(materialAt(x, zz)) || greenD(x, zz) < 2 || bunkerD(x, zz) < 2 || teePad(x, zz) > 0 || HOLE.cars.some(c => Math.hypot(x - c.at[0], zz - c.at[1]) < 6)) continue;
+      const h = 2 + 6 * Math.pow(r(), 1.4) * clamp(.4 + d / 40, .4, 1); // taller further back
+      out.push({ x, z: zz, h, w: h * (.35 + r() * .2) });
+    }
+  }
+  for (let z = GZ + 12; z < GZ + 120; z += 5) for (let o = -60; o < 60; o += 5) { // and right across behind the green, so the view down the fairway ends in woods
+    if (r() > clamp(.3 + (z - GZ - 12) / 40, .3, .85)) continue;
+    const x = centreX(GZ) + o + r() * 4, zz = z + r() * 4, d = zz - GZ;
+    if (noGo.has(materialAt(x, zz)) || greenD(x, zz) < 2.5 || bunkerD(x, zz) < 2) continue;
+    const h = 2 + 6 * Math.pow(r(), 1.2) * clamp(.4 + d / 50, .4, 1);
+    out.push({ x, z: zz, h, w: h * (.35 + r() * .2) });
+  }
+  return out;
+})();
 function normalAt(x, z) { const e = 0.5; return norm(v(heightAt(x - e, z) - heightAt(x + e, z), 2 * e, heightAt(x, z - e) - heightAt(x, z + e))); }
 
 // ---------- physics ----------
@@ -1716,9 +1743,25 @@ if (LUSH) {
     }
     const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.7, 0), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#1f1418', flatShading: true })), spots.length);
     spots.forEach(([x, z, c], i) => { const s = .9 + r() * 1.1; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
-      bush.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z) + .25 * s, z), q, sc.set(s * (1 + r() * .5), s * .7, s))); bush.setColorAt(i, col.set(c)); });
+      const ys = s * (.85 + r() * .25); bush.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); bush.setColorAt(i, col.set(c)); });
     scene.add(bush);
   }
+}
+if (UNDERSTORY.length) { // two puffs per plant (a body and an offset top, so the top is irregular), one InstancedMesh each: two draws
+  const r = rng(31), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
+  const geo = new THREE.IcosahedronGeometry(1, 0), pa = geo.attributes.position, jr = rng(77);
+  for (let i = 0; i < pa.count; i++) { const k = .8 + jr() * .4; pa.setXYZ(i, pa.getX(i) * k, pa.getY(i) * k, pa.getZ(i) * k); } // lumpy, not a gem
+  geo.computeVertexNormals();
+  const [body, top] = [0, 1].map(() => new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ flatShading: true }), UNDERSTORY.length));
+  UNDERSTORY.forEach(({ x, z, h, w }, i) => {
+    const y = groundLow(x, z, w * .6), back = clamp((Math.abs(x - centreX(Math.min(z, GZ))) - 25) / 80, 0, 1);
+    col.set(['#2a4a26', '#33552b', '#244222', '#3b5e2e', '#2e4d2a'][Math.floor(r() * 5)]).offsetHSL(0, 0, -.06 * back - r() * .03); // darker deeper in
+    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+    body.setMatrixAt(i, m4.compose(at.set(x, y + h * .4, z), q, sc.set(w, h * .45, w * (.8 + r() * .4)))); body.setColorAt(i, col);
+    const a = r() * 6.28, d = w * .4;
+    top.setMatrixAt(i, m4.compose(at.set(x + Math.cos(a) * d, y + h * (.7 + r() * .15), z + Math.sin(a) * d), q, sc.set(w * .65, h * .3, w * .65))); top.setColorAt(i, col.offsetHSL(0, 0, .02));
+  });
+  for (const m of [body, top]) { m.computeBoundingSphere(); scene.add(m); }
 }
 // garden holes (opt in with `garden`, owner: make 12 feel like the real thing): banked azalea beds, feature trees
 // (red maples, white dogwoods) and stone arch bridges over the creek. Decoration only (no collisions).
@@ -1739,7 +1782,7 @@ if (HOLE.garden) {
   const bedMesh = new THREE.InstancedMesh(bush.geometry, bush.material, beds.length);
   beds.forEach(([x, z, row], i) => {
     const s = 1 + r() * 1.4; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
-    bedMesh.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z) + .3 * s + row * .35, z), q, sc.set(s * (1 + r() * .4), s * (.65 + row * .06), s)));
+    bedMesh.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .4 * s + row * .35, z), q, sc.set(s * (1 + r() * .3), s * (.85 + row * .06), s)));
     bedMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
   });
   scene.add(bedMesh);
@@ -1796,7 +1839,7 @@ if (HOLE.garden) {
   const shrubMesh = new THREE.InstancedMesh(bush.geometry, bush.material, shrubs.length);
   shrubs.forEach(([x, z], i) => {
     const s = 1.1 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
-    shrubMesh.setMatrixAt(i, m4.compose(at.set(x, heightAt(x, z) + .25 * s, z), q, sc.set(s * (1 + r() * .5), s * .6, s)));
+    const ys = s * (.85 + r() * .25); shrubMesh.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); // owner: round, not squashed flat
     shrubMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
   });
   scene.add(shrubMesh);
