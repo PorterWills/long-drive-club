@@ -65,7 +65,9 @@ The cars are both targets and hazards. They're built in code (like `clubs.js`) f
 
 - **Placement:** spread through the tiers so every level of player has something to aim at. The easy roofs sit nearer the tee and the hard ones further out, including at least two cars at 470–500 yd, where Perfect drives land.
 - **Roof hit:** real bounce physics off a hard, springy roof (`ROOF`: bounce .55, keeps 80% of the forward speed), tuned so a clean hit adds about **+28 to 30 yd** (checked in `test.mjs`). A glancing hit off an edge can lose distance.
-- **Hazards:** the windscreen, bonnet and sides kill the ball or deflect it, which costs distance.
+- **Bonnet and boot lid bounce too (owner, 1 Nov 2026):** a Perfect drive came down on the coupe's boot lid and died, which felt wrong. A ball landing on a flat panel now bounces forward like off a roof, a little softer (`PANEL`: bounce .45, keeps 72%): about +17 to 19 yd. Landing on the near-side bonnet usually runs the ball into the windscreen, so that one still costs distance. The card tile is now *Car bounce*.
+- **Hazards:** the windscreen, rear window, sides and the pickup's bed kill the ball (about 30 to 45 yd lost).
+- **Impact sounds (owner, 1 Nov 2026):** the old glass crash was harsh. A bounce off metal is a short, damped tonk; glass or a side is a dull thud.
 - **The jackpot:** a Perfect drive that lands flat on the Redline coupe's roof can pass 515 yd. That's the rare way to top the day's or week's board.
 
 ## Status and boards

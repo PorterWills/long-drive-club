@@ -1,7 +1,7 @@
 // The long drive: a floodlit strip at night, one driver, hold and release. Spec: ../LONG-DRIVE.md
 import * as THREE from 'three';
 import { DRIVE } from './sounds.js';
-import { simulate, launchFor, speedFor, strike, CARS, CAR_TYPES, carBox, GRID, YD, MPH, BALL, v } from './physics.js';
+import { simulate, launchFor, speedFor, strike, CARS, CAR_TYPES, carBox, GRID, YD, MPH, BALL, BOUNCES, v } from './physics.js';
 
 const $ = id => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
@@ -163,8 +163,9 @@ function playDrive(q) {
 }
 const SND = {
   strike: q => { if (driveBuf) return playDrive(q); loadDrive().then(() => driveBuf ? playDrive(q) : (noise(.12, .9, 6000 + q * 4000), tone('triangle', 1100 + q * 500, .09, .25))); },
-  roof: () => { tone('square', 340, .25, .06); tone('sine', 680, .4, .08); noise(.06, .4, 3000); },
-  glass: () => { noise(.3, .5, 8000); tone('triangle', 2200, .2, .05); },
+  // owner: the old glass crash was terrible. Metal: a short, damped tonk off a car panel. Glass or sides: a dull thud
+  roof: () => { tone('sine', 410, .22, .12); tone('sine', 1150, .08, .04); noise(.04, .25, 2200); },
+  glass: () => { tone('sine', 140, .18, .2); noise(.07, .3, 900); },
   land: s => noise(.08, Math.min(.5, s / 30), 1400),
 };
 
@@ -266,11 +267,11 @@ $('again').onclick = () => ready();
 if (matchMedia('(pointer: coarse)').matches) $('hint').textContent = 'Hold the dial for the backswing. Let go on the mark.';
 
 // ---------- result ----------
-const PART = { windscreen: 'the windscreen', 'rear glass': 'the rear window', bonnet: 'the bonnet', boot: 'the boot lid', side: 'the side', bed: 'the bed' };
+const PART = { roof: 'the roof', windscreen: 'the windscreen', 'rear glass': 'the rear window', bonnet: 'the bonnet', boot: 'the boot lid', side: 'the side', bed: 'the bed' };
 function finish() {
   const { k, run, free, speed, ranOut } = result;
   phase = 'done'; document.body.classList.remove('flying'); document.body.classList.add('done');
-  const total = run.total, roofHit = run.contacts.find(c => c.part === 'roof'), hazard = run.contacts.find(c => c.part !== 'roof');
+  const total = run.total, roofHit = run.contacts.find(c => BOUNCES.includes(c.part)), hazard = run.contacts.find(c => !BOUNCES.includes(c.part));
   const bonus = roofHit && !hazard ? Math.max(0, total - free.total) : 0;
   $('tier').textContent = k.tier.name; $('tier').className = 'display ' + k.tier.id;
   $('total').innerHTML = `${Math.round(total)}<small>YD</small>`;
@@ -280,7 +281,7 @@ function finish() {
   $('rRoof').textContent = bonus ? `+${Math.round(bonus)} yd` : 'None';
   const L = [];
   if (ranOut) L.push('Held too long. The swing came apart.');
-  if (roofHit) L.push(`Off the roof of the ${roofHit.name.toLowerCase()} at ${Math.round(roofHit.z / YD)} yd.`);
+  if (roofHit) L.push(`Off ${PART[roofHit.part]} of the ${roofHit.name.toLowerCase()} at ${Math.round(roofHit.z / YD)} yd.`);
   if (hazard) L.push(`Into ${PART[hazard.part]} of the ${hazard.name.toLowerCase()}.`);
   L.push(run.inGrid ? 'Inside the grid.' : 'Outside the grid. It doesn\'t count.');
   let status = false;
@@ -326,7 +327,7 @@ function tick(now) {
     const n = Math.min(TRAIL_N, i + 1); for (let j = 0; j < n; j++) { const p = shot.pts[j]; trailPos[j * 3] = p.x; trailPos[j * 3 + 1] = p.y; trailPos[j * 3 + 2] = p.z; }
     trailPos.set([ball.position.x, ball.position.y, ball.position.z], (n - 1) * 3);
     trailGeo.attributes.position.needsUpdate = true; trailGeo.setDrawRange(0, n);
-    for (; contactsShown < shot.contacts.length; contactsShown++) { const c = shot.contacts[contactsShown]; if (c.at.z > ball.position.z + .5) break; c.part === 'roof' ? SND.roof() : SND.glass(); }
+    for (; contactsShown < shot.contacts.length; contactsShown++) { const c = shot.contacts[contactsShown]; if (c.at.z > ball.position.z + .5) break; BOUNCES.includes(c.part) ? SND.roof() : SND.glass(); }
     if (i >= shot.pts.length - 1) { contactsShown = 0; finish(); }
   }
   // the drawn ball grows with distance from the camera so it stays visible; true size at the tee

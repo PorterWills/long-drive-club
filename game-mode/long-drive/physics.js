@@ -13,6 +13,8 @@ const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 // the strip: +z is down the grid from the tee, x is across. The grid is 40 m wide (x within ±20)
 export const GRID = { half: 20, endYd: 525 };
 export const ROOF = { bounce: .55, keep: .8 }; // hard and springy: a clean landing gives about +20-30 yd
+export const PANEL = { bounce: .45, keep: .72 }; // bonnet and boot lid: about +10-20 yd
+export const BOUNCES = ['roof', 'bonnet', 'boot']; // car parts the ball bounces on; the rest (glass, sides, the pickup's bed) kill it
 const GROUND = { bounce: .38, keep: .58, roll: .14, grip: .55 }; // the course game's fairway (SURF.fairway), so landings and roll-outs match it
 
 // cars: heading 0 = parked along the strip. Body to `belt`, cabin from belt to h (roof inset by `rake` front and back)
@@ -72,7 +74,8 @@ function hitCars(p, np, vel, cars) {
       if (Math.abs(lz) > halfL || Math.abs(lx) > c.w / 2 - .1) continue;
       return { part: lz < 0 ? 'windscreen' : 'rear glass', c, vel: v(vel.x * .2 + (Math.random() - .5) * 2, Math.abs(vel.y) * .25, -vel.z * .12) };
     }
-    if (p.y > c.belt + r && Math.abs(lz) < c.l / 2) return { part: lz < 0 ? 'bonnet' : 'boot', c, y: c.belt + r, vel: v(vel.x * .35, Math.abs(vel.y) * .3, vel.z * .3) };
+    if (p.y > c.belt + r && Math.abs(lz) < c.l / 2) // landed on the bonnet or boot lid: flat metal, bounces like a roof but a little softer (owner: a Perfect onto the coupe's boot died)
+      return { part: lz < 0 ? 'bonnet' : 'boot', c, y: c.belt + r, vel: v(vel.x * PANEL.keep, Math.abs(vel.y) * PANEL.bounce, vel.z * PANEL.keep) };
     return { part: 'side', c, vel: v(-vel.x * .2 + (Math.random() - .5) * 2, 0, -vel.z * .15) };
   }
   return null;
@@ -97,8 +100,8 @@ export function simulate(shot, wind = v(0, 0, 0), opts = {}) {
     if (hit) {
       contacts.push({ part: hit.part, type: hit.c.type, name: hit.c.name, at: { ...np }, z: hit.c.cz });
       if (hit.y !== undefined) np.y = hit.y;
-      nv = hit.vel; spin = mul(spin, hit.part === 'roof' ? .5 : .1);
-      if (hit.part !== 'roof') { np.x = p.x; np.z = p.z; }
+      nv = hit.vel; const bounce = BOUNCES.includes(hit.part); spin = mul(spin, bounce ? .5 : .1);
+      if (!bounce) { np.x = p.x; np.z = p.z; }
       if (hit.stop) stopped = true;
     }
     apex = Math.max(apex, np.y);
