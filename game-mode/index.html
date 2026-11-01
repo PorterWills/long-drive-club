@@ -983,11 +983,12 @@ function heightRaw(x, z) {
   return h;
 }
 
-// ?linkstrees (trial, 1 Nov 2026): the course's real tree positions and heights from the Links 2003 Augusta course, laid along
+// Links trees (default since 1 Nov 2026 on every hole but 18, which keeps its hand-built trees and tunnel; ?handtrees brings the
+// hand-built trees back on any hole): the course's real tree positions and heights from the Links 2003 Augusta course, laid along
 // our fairway lines (links-trees/N.json: x, z, height in half metres, 0 = tall pine → loblolly, 1 = hardwood → edge tree).
 // Trees that land on our fairway, cuts, sand, water, greens or by a car are left out; those out of bounds are drawn only (like
-// the outer forest), and the outer forest fills in only where Links has no trees. Without the switch nothing changes.
-const LINKS_TREES = LOB && new URLSearchParams(location.search).has('linkstrees')
+// the outer forest), and the outer forest fills in only where Links has no trees. Built by links-trees/export_trees.py.
+const LINKS_TREES = LOB && HOLE_NO !== 18 && !new URLSearchParams(location.search).has('handtrees')
   ? await fetch(`links-trees/${HOLE_NO}.json`).then(r => r.json()).catch(() => null) : null;
 const LINKS_OUTER = [], LINKS_CELLS = new Set(), linksCell = (x, z) => `${Math.floor(x / 10)},${Math.floor(z / 10)}`;
 
@@ -1601,7 +1602,7 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
     const zz = z + fr() * 5, x = centreX(clamp(zz, 0, GZ)) + off + fr() * 5;
     if (outOfBounds(x, zz)) { const pine = fr() < (LOB ? .9 : .6); OUTER.push({ x, z: zz, s: LOB && pine ? .9 + fr() * .5 : 1 + fr() * .8, pine, lob: LOB && pine, outer: true }); }
   }
-  const DRAWN = TREES.concat(!LINKS_TREES ? OUTER : (() => { // ?linkstrees: our forest only where Links has none, and the drawn-only trees
+  const DRAWN = TREES.concat(!LINKS_TREES ? OUTER : (() => { // Links trees: our forest only where Links has none, and the drawn-only trees
     // thinned evenly so the total matches today's (our ~3,200 on hole 1), keeping the triangle count and frame rate where they were
     const pool = OUTER.filter(t => !LINKS_CELLS.has(linksCell(t.x, t.z))).concat(LINKS_OUTER), room = Math.max(0, OUTER.length + 480 - TREES.length);
     return pool.length <= room ? pool : Array.from({ length: room }, (_, i) => pool[Math.floor(i * pool.length / room)]);
