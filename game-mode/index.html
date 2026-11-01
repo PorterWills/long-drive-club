@@ -983,8 +983,35 @@ function heightRaw(x, z) {
   return h;
 }
 
+// ?linkstrees (trial, 1 Nov 2026): the course's real tree positions and heights from the Links 2003 Augusta course, laid along
+// our fairway lines (links-trees/N.json: x, z, height in half metres, 0 = tall pine → loblolly, 1 = hardwood → edge tree).
+// Trees that land on our fairway, cuts, sand, water, greens or by a car are left out; those out of bounds are drawn only (like
+// the outer forest), and the outer forest fills in only where Links has no trees. Without the switch nothing changes.
+const LINKS_TREES = LOB && new URLSearchParams(location.search).has('linkstrees')
+  ? await fetch(`links-trees/${HOLE_NO}.json`).then(r => r.json()).catch(() => null) : null;
+const LINKS_OUTER = [], LINKS_CELLS = new Set(), linksCell = (x, z) => `${Math.floor(x / 10)},${Math.floor(z / 10)}`;
+
 // tree positions: seeded, generated once, used for drawing and for trunk and canopy collisions
 const TREES = (() => {
+  if (LINKS_TREES) {
+    const out = [], nearCar = (x, z) => HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 5), open = new Set(['fairway', 'firstcut', 'sand', 'water', 'green', 'fringe']);
+    // the drive line stays clear, as our own corridors keep it: tee to the fairway at 230 m (par 3: through the green to 230 m, as the
+    // test's 5 iron flies past a short green). Our fairway lines differ from Links by a few metres, so without this some real trees
+    // stand on it (2, 10, 12 failed ?test's tee-shot check)
+    const [tx, tz] = HOLE.tee, gl = Math.hypot(HOLE.green.at[0] - tx, HOLE.green.at[1] - tz);
+    const [ax, az] = HOLE.par === 3 ? [tx + (HOLE.green.at[0] - tx) * 230 / gl, tz + (HOLE.green.at[1] - tz) * 230 / gl] : [centreX(230), 230], ll = (ax - tx) ** 2 + (az - tz) ** 2;
+    const offLine = (x, z) => { const t = clamp(((x - tx) * (ax - tx) + (z - tz) * (az - tz)) / ll, 0, 1); return Math.hypot(x - tx - (ax - tx) * t, z - tz - (az - tz) * t); };
+    for (let i = 0; i < LINKS_TREES.length; i += 4) {
+      const x = LINKS_TREES[i] / 2, z = LINKS_TREES[i + 1] / 2, hm = LINKS_TREES[i + 2] / 2, lob = LINKS_TREES[i + 3] === 0;
+      LINKS_CELLS.add(linksCell(x, z));
+      const t = lob ? { x, z, s: clamp(hm / 22, .5, 1.6), pine: true, lob: true } : { x, z, s: clamp(hm / 7.5, .45, 2.5), pine: false, under: true }; // loblolly 22 m tall at s = 1, edge tree ~7.5 m
+      if (outOfBounds(x, z)) { LINKS_OUTER.push({ ...t, outer: true }); continue; }
+      if (nearCar(x, z) || open.has(materialAt(x, z)) || HOLE.bunkers.some(b => Math.hypot(x - b.at[0], z - b.at[1]) < b.r + 2)) continue;
+      if (offLine(x, z) < (lob ? 3.6 : 2.3) * t.s + 1.5) continue; // crown radius plus 1.5 m
+      out.push({ ...t, h: heightAt(x, z) });
+    }
+    return out;
+  }
   const r = rng(1934), pr = rng(7), lr = rng(1937), out = [], nearCar = (x, z) => HOLE.cars.some(c => Math.hypot(x - c.at[0], z - c.at[1]) < 5);
   const nearPlay = (x, z) => materialAt(x, z) === 'green' || materialAt(x, z) === 'fringe' || HOLE.bunkers.some(b => Math.hypot(x - b.at[0], z - b.at[1]) < b.r + 2);
   const add = (x, z, s = .8 + r() * .7, kind) => { if (!nearCar(x, z) && !nearPlay(x, z)) { const pine = kind ? kind === 'pine' : pr() < (LOB ? .9 : .6); if (LOB && pine) s = .7 + lr() * lr() * .95 + lr() * .1; out.push({ x, z, s, pine, lob: LOB && pine, h: heightAt(x, z) }); } };
@@ -1574,7 +1601,11 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
     const zz = z + fr() * 5, x = centreX(clamp(zz, 0, GZ)) + off + fr() * 5;
     if (outOfBounds(x, zz)) { const pine = fr() < (LOB ? .9 : .6); OUTER.push({ x, z: zz, s: LOB && pine ? .9 + fr() * .5 : 1 + fr() * .8, pine, lob: LOB && pine, outer: true }); }
   }
-  const DRAWN = TREES.concat(OUTER);
+  const DRAWN = TREES.concat(!LINKS_TREES ? OUTER : (() => { // ?linkstrees: our forest only where Links has none, and the drawn-only trees
+    // thinned evenly so the total matches today's (our ~3,200 on hole 1), keeping the triangle count and frame rate where they were
+    const pool = OUTER.filter(t => !LINKS_CELLS.has(linksCell(t.x, t.z))).concat(LINKS_OUTER), room = Math.max(0, OUTER.length + 480 - TREES.length);
+    return pool.length <= room ? pool : Array.from({ length: room }, (_, i) => pool[Math.floor(i * pool.length / room)]);
+  })());
   SHADE.trees = DRAWN; drawShade();
   const pines = DRAWN.filter(t => t.pine && !t.lob), lobs = DRAWN.filter(t => t.lob), leaves = DRAWN.filter(t => !t.pine);
   const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.22, .34, 3, 6), seeThrough(new THREE.MeshLambertMaterial({ color: '#ffffff' })), DRAWN.length); // colour per tree (setColorAt)
