@@ -146,7 +146,8 @@ scene.add(ball);
 const ballGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 0, 32, 32, 32); r.addColorStop(0, 'rgba(255,255,255,.9)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
 scene.add(ballGlow);
 // owner, 1 Nov 2026: every ball in the air glows blue. A Perfect turns the ball itself Moss green, pulsing (no extra effects)
-const BLUE = new THREE.Color(0x6aa8ff), MOSS = new THREE.Color(0x9ccbae), MOSS_HOT = new THREE.Color(0xd8f5e2), ballCol = new THREE.Color();
+const ballLit = ball.material, ballLight = new THREE.MeshBasicMaterial({ color: 0x9cc8ff }); // in the air the ball IS the light: unlit, solid colour (owner: not a grey ball with a halo)
+const BLUE = new THREE.Color(0x9cc8ff), MOSS = new THREE.Color(0x9ccbae), MOSS_HOT = new THREE.Color(0xd8f5e2), ballCol = new THREE.Color();
 let perfectT0 = 0; // when the Perfect strike happened; 0 = not a Perfect
 const TRAIL_N = 6000, trailPos = new Float32Array(TRAIL_N * 3), trailGeo = new THREE.BufferGeometry();
 trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3)); trailGeo.setDrawRange(0, 0);
@@ -238,7 +239,7 @@ let phase = 'ready', holdStart = 0, shot = null, play = 0, result = null;
 function ready() {
   phase = 'ready'; document.body.classList.remove('flying', 'done');
   placeMark(); drawDial(0);
-  ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; perfectT0 = 0; ball.material.color.set(0xf4f1ea); ball.material.emissive.set(0x333333); trailGeo.setDrawRange(0, 0);
+  ball.position.set(0, .03 + BALL.r, 0); ball.scale.setScalar(BALL.r / DRAWN * 1.0); ballGlow.visible = false; perfectT0 = 0; ball.material = ballLit; trailGeo.setDrawRange(0, 0);
 }
 function press(t) { if (phase !== 'ready') return; ac(); loadDrive(); phase = 'hold'; holdStart = t; }
 function release(t, ranOut = false) {
@@ -339,12 +340,12 @@ function tick(now) {
   ball.scale.setScalar(s);
   ballGlow.visible = phase === 'fly' || phase === 'done';
   if (ballGlow.visible) {
-    ballGlow.position.copy(ball.position);
-    if (perfectT0) { // the ball itself pulses Moss green, 1.8 times a second
+    ball.material = ballLight; ballGlow.position.copy(ball.position);
+    if (perfectT0) { // a Perfect: the ball turns Moss and pulses, 1.8 times a second
       const pulse = .5 + .5 * Math.sin((now - perfectT0) / 1000 * Math.PI * 2 * 1.8);
-      ballCol.copy(MOSS).lerp(MOSS_HOT, pulse); ball.material.color.copy(ballCol); ball.material.emissive.copy(ballCol).multiplyScalar(.6 + .4 * pulse);
-      ballGlow.material.color.copy(ballCol); ballGlow.material.opacity = .6 + .3 * pulse; ballGlow.scale.setScalar(s * DRAWN * 9);
-    } else { ballGlow.material.color.copy(BLUE); ballGlow.material.opacity = .7; ballGlow.scale.setScalar(s * DRAWN * 8); }
+      ballCol.copy(MOSS).lerp(MOSS_HOT, pulse); ballLight.color.copy(ballCol); ballGlow.material.color.copy(ballCol); ballGlow.material.opacity = .35 + .35 * pulse;
+    } else { ballLight.color.copy(BLUE); ballGlow.material.color.copy(BLUE); ballGlow.material.opacity = .4; }
+    ballGlow.scale.setScalar(s * DRAWN * 3.2); // a tight bloom just past the ball's edge, so it reads as a light, not a halo
   }
   frameCamera(dt);
   renderer.render(scene, camera);

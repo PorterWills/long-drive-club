@@ -78,7 +78,7 @@ The cars are both targets and hazards. They're built in code (like `clubs.js`) f
 
 ## The ball
 
-In the air every ball has a soft blue glow (owner, 1 Nov 2026). A **Perfect** turns the ball itself Moss green, pulsing between Moss and a pale Moss 1.8 times a second, glow included, until the next drive. No rings or other effects: the owner tried rings and they read as smoke rings.
+In the air the ball **is** a light (owner, 1 Nov 2026): an unlit, solid pale blue ball with only a tight bloom at its edge, not a grey ball inside a halo. A **Perfect** turns that light Moss green, pulsing between Moss and a pale Moss 1.8 times a second, until the next drive. No rings or other effects: the owner tried rings and they read as smoke rings.
 
 ## Result card
 
