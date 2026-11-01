@@ -6,6 +6,8 @@ It reuses the course game's air model (drag, Magnus lift, RK4 at 1/120 s) and th
 
 **Files:** `long-drive/index.html` (page and HUD), `long-drive/sounds.js` (the course game's recorded driver strike, `CLIPS.drive`, played full for a pure strike and lower and duller for a mishit), `long-drive/main.js` (scene, dial, flight, result), `long-drive/physics.js` (pure physics, no three.js), `long-drive/test.mjs` (self-check: `node game-mode/long-drive/test.mjs`). Switches: `?debug` logs each release, `?fps` shows a frame meter.
 
+**Gameplay locked by the owner (1 Nov 2026):** the swing, strike tiers, distances, landing and roll, cars, roof bonus and strike sound below are signed off. Don't retune them without asking.
+
 **Built differently from the plan (31 Oct 2026):**
 - **Aim added** (arrow keys or the buttons, 0.5° steps, 4° either way). Without it the cars, parked off centre, could only be hit by accident.
 - **Cars sit where drives land, not where they finish.** Totals include about 35 yd of roll, so a car placed by total only ever met a rolling ball. Placed by carry: Good 234 to 264 yd, Great 285 to 319, Monster 345 to 376, Perfect 433 to 452. The two far cars (estate at 437, Redline coupe at 449) are the Perfect targets.
