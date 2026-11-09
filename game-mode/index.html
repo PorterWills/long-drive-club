@@ -1406,12 +1406,13 @@ const carryAt = (ci, power, lie) => {
 };
 
 // ---------- 3D ----------
-const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true, powerPreference: 'high-performance' }); // the fast GPU on laptops with two
 const QS = new URLSearchParams(location.search);
 const LUSH = LOB && HOLE_NO !== 18 && !QS.has('nolush'); // lush (default since 1 Nov 2026 on 1-17; 18 keeps its hand-built look): ?nolush turns it off
 const clumpy = (d, seed = 0) => Math.sin(d * .55 + seed) + Math.sin(d * .21 + seed * 2.3) > .5; // ?lush: runs of shrubs broken into clumps (~4-6 m) with gaps // test switches: ?fps shows a frame meter, ?pr=1 renders at a lower resolution (stutter hunt, 31 Oct 2026)
 renderer.setPixelRatio(QS.has('pr') ? +QS.get('pr') || 1 : Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
+renderer.shadowMap.enabled = true; renderer.shadowMap.autoUpdate = false; // redrawn only when something that casts one moves (see the loop)
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // soft edges: the thin club shadow read as blocky pixels (owner)
 document.body.prepend(renderer.domElement);
 const scene = new THREE.Scene();
 // ambiance: daytime by default; the player can switch mood from the Mood button in the top bar (kept in this browser). Looks only; play is unchanged.
@@ -1441,7 +1442,7 @@ scene.fog = new THREE.Fog(fogOf(LIGHT.horizon), ...LIGHT.fog); // haze: far tree
 const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.ShaderMaterial({
   side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: { sunDir: { value: LIGHT.dir }, time: { value: 0 }, far: { value: farOf(LIGHT.horizon) }, ...Object.fromEntries(['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade'].map(k => [k, { value: new THREE.Color(LIGHT[k]) }])), alto: { value: LIGHT.alto } },
-  vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+  vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); gl_Position.z = gl_Position.w; }', // at the far plane: drawn last, hidden pixels skipped
   fragmentShader: `varying vec3 vDir; uniform vec3 sunDir, zenith, mid, horizon, sun, cloudLit, cloudShade, far; uniform float time, alto;
     float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
@@ -1469,10 +1470,13 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 24), new THREE.Sha
       c = mix(c, cc, cl * .95);
       float a = atan(d.x, d.z), ridge = .012 + noise(vec2(a * 40., 0.)) * .012 + noise(vec2(a * 160., 1.)) * .006; // a ragged line of far-off tree tops
       if (h < ridge) c = mix(far, mix(far, horizon, .35), smoothstep(-.02, ridge, h)); // below it, distant woods in the fog colour, so the course's fogged edge meets it seamlessly
+      c += (hash(gl_FragCoord.xy) - .5) / 128.; // fine grain, so the smooth gradients don't band
       gl_FragColor = vec4(c, 1.);
     }`,
 }));
-sky.renderOrder = -1; scene.add(sky);
+// the sky is the dearest pixel in the picture (clouds: ~40 noise lookups). It used to be drawn first, over the whole screen, then
+// covered by the course. Now it draws after everything solid and only where nothing else is, about half the screen or less
+sky.renderOrder = 10; sky.frustumCulled = false; scene.add(sky);
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 1500);
 const hemi = new THREE.HemisphereLight(LIGHT.amb, LIGHT.ground, LIGHT.hemiI); scene.add(hemi);
 const sun = new THREE.DirectionalLight(LIGHT.sunL, LIGHT.sunI);
@@ -1488,6 +1492,7 @@ const glsl = c => `vec3(${c.r.toFixed(4)}, ${c.g.toFixed(4)}, ${c.b.toFixed(4)})
 // tree shadows (loblollies, owner): one fixed top-down shade image over the whole course (2 px a metre), each crown and trunk
 // projected along the sun, so with the low sun they fall long across the fairway. Fixed, so nothing pops in as the ball moves
 // (why trees never cast real shadows: that shadow box follows the ball). Redrawn when the Mood (sun) changes. Off with ?oldtrees
+const WATER_U = { uTime: { value: 0 }, uSky: { value: new THREE.Color(LIGHT.mid) } }; // water: ripple clock, the sky it mirrors
 const DIAG = { trees: [], ground: null }; // ?fps test keys: T trees, G ground, S shadows, P pixel ratio
 const SHADE = { canvas: document.createElement('canvas'), trees: [], tex: null, box: new THREE.Vector4() };
 if (location.search.includes('test')) window.__shade = SHADE.canvas; // ?test: inspect the shade image
@@ -1554,11 +1559,11 @@ function drawShade() {
   SHADE.tex = new THREE.CanvasTexture(SHADE.canvas); SHADE.tex.flipY = false; SHADE.tex.colorSpace = THREE.NoColorSpace;
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   mat.onBeforeCompile = sh => {
-    sh.uniforms.uShade = { value: SHADE.tex }; sh.uniforms.uShadeBox = { value: SHADE.box }; // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
+    sh.uniforms.uTime = WATER_U.uTime; sh.uniforms.uSky = WATER_U.uSky; sh.uniforms.uShade = { value: SHADE.tex }; sh.uniforms.uShadeBox = { value: SHADE.box }; // grass detail drawn on the GPU: fine mottling, clumps in the rough; costs a few noise lookups per pixel
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float rough, gedge; attribute vec2 haz; varying float vR, vG; varying vec2 vXZ, vH;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvR = rough; vG = gedge; vXZ = position.xz; vH = haz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying float vR, vG; varying vec2 vXZ, vH; uniform sampler2D uShade; uniform vec4 uShadeBox;
+      varying float vR, vG; varying vec2 vXZ, vH; uniform sampler2D uShade; uniform vec4 uShadeBox; uniform float uTime; uniform vec3 uSky;
       float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
         return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + 1.), f.x), f.y); }`)
@@ -1568,26 +1573,46 @@ function drawShade() {
       vec3 grn = mix(${glsl(new THREE.Color(COLOURS.green))} * (1. + 5. * gp), ${glsl(LIP)}, .35 * smoothstep(${(-.07 * HOLE.green.r).toFixed(3)}, 0., vG)); // collar at the edge
       diffuseColor.rgb = mix(${glsl(new THREE.Color(COLOURS.fringe))}, diffuseColor.rgb, smoothstep(2. - ga, 2. + ga, vG));
       diffuseColor.rgb = mix(grn, diffuseColor.rgb, smoothstep(-ga, ga, vG));
-      float n = vn(vXZ * 4.) * .35 + vn(vXZ * .9) * .35 + vn(vXZ * .18) * .3;
+      float fine = 1. - smoothstep(.1, .45, fwidth(vXZ.x) + fwidth(vXZ.y));                          // far off, detail finer than a pixel fades to its average: no shimmer as the camera moves
+      float n = mix(.5, vn(vXZ * 4.), fine) * .35 + vn(vXZ * .9) * .35 + vn(vXZ * .18) * .3;
       diffuseColor.rgb *= mix(.93 + .14 * n, .66 + .62 * n, vR);
-      float bd = vH.x, wd = vH.y, ba = fwidth(bd), wa = fwidth(wd);
+      float bd = vH.x, wd = vH.y, ba = max(fwidth(bd), 1e-4), wa = max(fwidth(wd), 1e-4);                // never zero: a hole with no water has a flat distance, and a zero-width edge is undefined (water-coloured specks on some GPUs)
       diffuseColor.rgb = mix(diffuseColor.rgb, ${glsl(LIP)}, .55 * smoothstep(1.14, 1., bd));        // thin dark grass lip round each bunker
       vec3 sand = mix(${glsl(SAND)}, ${glsl(SAND_FACE)}, smoothstep(.72, 1., bd) * .75);            // bright floor, shaded face
-      sand *= 1. - .03 * step(.5, fract((vXZ.x + vXZ.y) * .9)) * step(bd, .72) - .03 * (vn(vXZ * 6.) - .5);  // rake lines, grain
+      sand *= 1. - fine * (.03 * step(.5, fract((vXZ.x + vXZ.y) * .9)) * step(bd, .72) + .03 * (vn(vXZ * 6.) - .5));  // rake lines, grain
       diffuseColor.rgb = mix(diffuseColor.rgb, sand, 1. - smoothstep(1. - ba, 1. + ba, bd));       // crisp edge
       diffuseColor.rgb *= 1. - .22 * smoothstep(.9, 0., wd);                                        // damp bank at the water's edge
       diffuseColor.rgb *= 1. - .4 * texture2D(uShade, (vXZ - uShadeBox.xy) / uShadeBox.zw).r;      // tree shadows (SHADE)
+      diffuseColor.rgb *= 1. - .08 * smoothstep(.42, .72, vn(vXZ * .011 + uTime * vec2(.006, .0025)));  // cloud shadows: broad and faint, drifting the way the clouds do
       vec3 wc = mix(${glsl(WATER)}, ${glsl(WATER_DEEP)}, smoothstep(0., -5., wd));
       #ifdef USE_FOG
       wc = mix(wc, fogColor, .35 * smoothstep(12., 140., vFogDepth));                               // sky sheen further off
       #endif
-      ${HOLE.garden ? `{ vec3 upV = normalize((viewMatrix * vec4(0., 1., 0., 0.)).xyz); float fr = pow(1. - abs(dot(normalize(vViewPosition), upV)), 3.);
-        wc = mix(wc, ${glsl(new THREE.Color('#8fa79a'))}, .4 * fr * (.85 + .3 * vn(vXZ * vec2(.6, 2.2))));  // garden water: still, mirror-like sky at a glance
-        wc *= .8 + .2 * smoothstep(-1.5, -.2, wd); }` : ''}
+      { // the surface: slow ripples tilt it, so the sky's reflection and the sun's glitter move. Garden water stays near still (owner)
+        vec2 rp = vXZ * vec2(1.1, 2.9); float amp = ${HOLE.garden ? '.012' : '.03'} * fine;
+        vec2 rip = vec2(sin(rp.x * 1.7 + uTime * .9 + sin(rp.y * .6 + uTime * .4) * 1.4), sin(rp.y * 1.3 - uTime * .7 + sin(rp.x * .5 - uTime * .3) * 1.2)) * amp;
+        vec3 nV = normalize((viewMatrix * vec4(rip.x, 1., rip.y, 0.)).xyz), vV = normalize(vViewPosition);
+        float fr = pow(1. - max(dot(vV, nV), 0.), ${HOLE.garden ? '3.' : '4.'});
+        ${HOLE.garden ? `wc = mix(wc, ${glsl(new THREE.Color('#8fa79a'))}, .4 * fr * (.85 + .3 * vn(vXZ * vec2(.6, 2.2))));  // garden water: still, mirror-like sky at a glance
+        wc *= .8 + .2 * smoothstep(-1.5, -.2, wd);` : `wc = mix(wc, uSky, .5 * fr);                             // open water mirrors the sky at a glance`}
+        #if NUM_DIR_LIGHTS > 0
+        wc += directionalLights[0].color * pow(max(dot(nV, normalize(directionalLights[0].direction + vV)), 0.), 220.) * .12; // sun glitter
+        #endif
+      }
       diffuseColor.rgb = mix(diffuseColor.rgb, wc, 1. - smoothstep(-wa, wa, wd));`);
   };
-  const mesh = new THREE.Mesh(geo, mat); DIAG.ground = mesh;
-  mesh.receiveShadow = true; scene.add(mesh);
+  // cut into strips across the hole (same vertices on the GPU once, an index list per strip): strips behind the camera are skipped,
+  // so on approaches and putts most of the half-metre grid is never sent. Looks identical
+  const ground = new THREE.Group(), ROWS = 80, perRow = seg[0] * 6, idx = geo.index.array, bb = new THREE.Box3(), v = new THREE.Vector3();
+  for (let r0 = 0; r0 < seg[1]; r0 += ROWS) {
+    const r1 = Math.min(seg[1], r0 + ROWS), g = new THREE.BufferGeometry();
+    for (const k in geo.attributes) g.setAttribute(k, geo.attributes[k]);
+    g.setIndex(new THREE.BufferAttribute(idx.subarray(r0 * perRow, r1 * perRow), 1));
+    bb.makeEmpty(); for (let i = r0 * (seg[0] + 1), e = (r1 + 1) * (seg[0] + 1); i < e; i++) bb.expandByPoint(v.fromBufferAttribute(pos, i));
+    g.boundingSphere = bb.getBoundingSphere(new THREE.Sphere());
+    const strip = new THREE.Mesh(g, mat); strip.receiveShadow = true; ground.add(strip);
+  }
+  DIAG.ground = ground; scene.add(ground);
 }
 // see-through trees: anything within a few metres of the camera, or of the line from the camera to the ball,
 // dissolves in a fine dither (no sorting, so it stays cheap). Stops the view going black when the ball lies under a tree.
@@ -1613,6 +1638,10 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
       float d = min(length(ap) - 1.5, length(ap - ab * t) - .4 - 2.2 * t); // tube widens towards the ball
       if (fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) > smoothstep(0., 3., d)) discard;`);
 }; return mat; };
+// shrubs and bushes: darker underneath, lighter on top, baked into the vertex colours (free to draw), so each reads as a rounded mass sat in its own shade
+const shadeUp = geo => { const p = geo.attributes.position, c = []; geo.computeBoundingBox(); const y0 = geo.boundingBox.min.y, h = geo.boundingBox.max.y - y0 || 1;
+  for (let i = 0; i < p.count; i++) { const k = .7 + .42 * (p.getY(i) - y0) / h; c.push(k, k, k); }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); return geo; };
 // surround: a coarse 4 m ground mesh far beyond the course (forest floor, rising banks), so there's no edge to float over.
 // Inside the course mesh it drops 2 m out of sight; it meets the course mesh exactly at its edge.
 {
@@ -1635,7 +1664,9 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   const r = rng(7), m4 = new THREE.Matrix4(), part = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color();
   const leafy = (geo, seed) => { // flat faces, each a slightly different green, so the canopy reads as leaves not plastic
     geo = geo.toNonIndexed(); const n = geo.attributes.position.count, c = [], rr = rng(seed);
-    for (let i = 0; i < n; i += 3) { const k = .75 + rr() * .45; for (let j = 0; j < 3; j++) c.push(k, k, k); }
+    geo.computeBoundingBox(); const P = geo.attributes.position, y0 = geo.boundingBox.min.y, yh = geo.boundingBox.max.y - y0 || 1;
+    for (let i = 0; i < n; i += 3) { // each clump darker underneath and lighter on top, so crowns read as volumes with their own shade (baked: free to draw)
+      const k = (.75 + rr() * .45) * (.74 + .36 * ((P.getY(i) + P.getY(i + 1) + P.getY(i + 2)) / 3 - y0) / yh); for (let j = 0; j < 3; j++) c.push(k, k, k); }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); geo.computeVertexNormals(); return geo;
   };
   // parts in tree space (unscaled); they fill the same shapes the canopy collisions use
@@ -1668,7 +1699,9 @@ const seeThrough = mat => { mat.onBeforeCompile = sh => {
   })());
   SHADE.trees = DRAWN; drawShade();
   const pines = DRAWN.filter(t => t.pine && !t.lob), lobs = DRAWN.filter(t => t.lob), leaves = DRAWN.filter(t => !t.pine);
-  const trunks = new THREE.InstancedMesh(new THREE.CylinderGeometry(.22, .34, 3, 6), seeThrough(new THREE.MeshLambertMaterial({ color: '#ffffff' })), DRAWN.length); // colour per tree (setColorAt)
+  const trunkGeo = new THREE.CylinderGeometry(.22, .34, 3, 6); // darker towards the top, where the crown shades it (baked into the vertex colours)
+  trunkGeo.setAttribute('color', new THREE.Float32BufferAttribute(Array.from(trunkGeo.attributes.position.array.filter((_, i) => i % 3 === 1), y => { const k = 1.05 - .4 * (y + 1.5) / 3; return [k, k, k]; }).flat(), 3));
+  const trunks = new THREE.InstancedMesh(trunkGeo, seeThrough(new THREE.MeshLambertMaterial({ color: '#ffffff', vertexColors: true })), DRAWN.length); // colour per tree (setColorAt)
   const groups = [[PINE, pines, '#21401f', 1.25], [LEAF, leaves, '#2f4f27', 1], [LOBP, lobs, '#2c4a26', 1]].map(([parts, list, colour, ys], gi) =>
     ({ list, ys, colour, meshes: parts.map(([g, x, y, z], pi) => ({ m: new THREE.InstancedMesh(leafy(g, 11 + gi * 7 + pi), seeThrough(new THREE.MeshLambertMaterial({ vertexColors: true })), list.length), off: new THREE.Vector3(x, y, z) })) }));
   const tm = new Map(), lr = rng(91), lc = new THREE.Color(); // tree -> its world matrix
@@ -1743,7 +1776,7 @@ if (LUSH) {
         spots.push([x, zz, bloom && r() < .8 ? bloom : LEAF[Math.floor(r() * LEAF.length)]]);
       }
     }
-    const bush = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.7, 0), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#1f1418', flatShading: true })), spots.length);
+    const bush = new THREE.InstancedMesh(shadeUp(new THREE.IcosahedronGeometry(.7, 0)), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#1f1418', flatShading: true, vertexColors: true })), spots.length);
     spots.forEach(([x, z, c], i) => { const s = .9 + r() * 1.1; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
       const ys = s * (.85 + r() * .25); bush.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); bush.setColorAt(i, col.set(c)); });
     scene.add(bush);
@@ -1753,8 +1786,8 @@ if (UNDERSTORY.length) { // two puffs per plant (a body and an offset top, so th
   const r = rng(31), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), at = new THREE.Vector3(), col = new THREE.Color();
   const geo = new THREE.IcosahedronGeometry(1, 0), pa = geo.attributes.position, jr = rng(77);
   for (let i = 0; i < pa.count; i++) { const k = .8 + jr() * .4; pa.setXYZ(i, pa.getX(i) * k, pa.getY(i) * k, pa.getZ(i) * k); } // lumpy, not a gem
-  geo.computeVertexNormals();
-  const [body, top] = [0, 1].map(() => new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ flatShading: true }), UNDERSTORY.length));
+  geo.computeVertexNormals(); shadeUp(geo);
+  const [body, top] = [0, 1].map(() => new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ flatShading: true, vertexColors: true }), UNDERSTORY.length));
   UNDERSTORY.forEach(({ x, z, h, w }, i) => {
     const y = groundLow(x, z, w * .6), back = clamp((Math.abs(x - centreX(Math.min(z, GZ))) - 25) / 80, 0, 1);
     col.set(['#2a4a26', '#33552b', '#244222', '#3b5e2e', '#2e4d2a'][Math.floor(r() * 5)]).offsetHSL(0, 0, -.06 * back - r() * .03); // darker deeper in
@@ -1780,7 +1813,7 @@ if (HOLE.garden) {
       if (waterD(x, z) > 1 && greenD(x, z) > 1.6 && bunkerD(x, z) > 1.3 && (!LUSH || clumpy(d, x0))) beds.push([x, z, row]);
     }
   }
-  const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(.7, 1), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1420' })));
+  const bush = new THREE.Mesh(shadeUp(new THREE.IcosahedronGeometry(.7, 1)), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1420', vertexColors: true })));
   const bedMesh = new THREE.InstancedMesh(bush.geometry, bush.material, beds.length);
   beds.forEach(([x, z, row], i) => {
     const s = 1 + r() * 1.4; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
@@ -1837,7 +1870,7 @@ if (HOLE.garden) {
     if (nearView(z) && clear(x, z)) shrubs.push([x, z]);
   }
   const BLOOMS = ['#f08aa8', LUSH ? '#cdc4b0' : '#f4ece0', '#c8487a', '#e86f96', '#f08aa8', '#3d6332'];
-  const bush = new THREE.Mesh(new THREE.IcosahedronGeometry(.7, 1), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1a1f' }))); // a touch of glow so blooms read in low sun
+  const bush = new THREE.Mesh(shadeUp(new THREE.IcosahedronGeometry(.7, 1)), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1a1f', vertexColors: true }))); // a touch of glow so blooms read in low sun
   const shrubMesh = new THREE.InstancedMesh(bush.geometry, bush.material, shrubs.length);
   shrubs.forEach(([x, z], i) => {
     const s = 1.1 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
@@ -1913,7 +1946,8 @@ function finishCar(g, c) {
   }
   return g;
 }
-HOLE.cars.forEach(c => scene.add(makeCar(c)));
+const CAR_MATS = []; // paint, chrome and glass: given the clubs' sky reflection below, so the metal reads as metal
+HOLE.cars.forEach(c => { const car = makeCar(c); car.traverse(o => { if (o.material?.isMeshStandardMaterial && !CAR_MATS.includes(o.material)) CAR_MATS.push(o.material); }); scene.add(car); });
 
 // the tee: white markers, golf bag on the right, hole sign behind it (+x is the player's left)
 const teeAt = (dx, dz) => new THREE.Vector3(HOLE.tee[0] + dx, heightAt(HOLE.tee[0] + dx, HOLE.tee[1] + dz), HOLE.tee[1] + dz);
@@ -2052,7 +2086,7 @@ drawBallLogo();
 const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(.08, 16, 12), new THREE.MeshStandardMaterial({ color: '#fff', roughness: .4, map: ballTex }));
 ballMesh.castShadow = true; scene.add(ballMesh);
 // the floating club: waits behind the ball at address, swings on Swing; the ball leaves at impact. No golfer (owner's sheet)
-const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground); return Object.fromEntries(Object.keys(CLUB_KIT).map(id => [id, makeClub(id, env)])); })();
+const CLUB_MESH = (() => { const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground); for (const m of CAR_MATS) { m.envMap = env; m.envMapIntensity = .8; } return Object.fromEntries(Object.keys(CLUB_KIT).map(id => [id, makeClub(id, env)])); })();
 const clubRig = new THREE.Group(), clubSwing = new THREE.Group(); clubRig.add(clubSwing); scene.add(clubRig);
 for (const m of Object.values(CLUB_MESH)) { m.visible = false; m.traverse(o => { o.castShadow = true; }); clubSwing.add(m); }
 const _aimDir = new THREE.Vector3();
@@ -2490,13 +2524,14 @@ const relight = name => {
     LIGHT.fog = from.fog.map((v, i) => THREE.MathUtils.lerp(v, to.fog[i], t));
     LIGHT.dir.setFromSphericalCoords(1, Math.PI / 2 - LIGHT.el * Math.PI / 180, LIGHT.az);
     for (const k of ['zenith', 'mid', 'horizon', 'sun', 'cloudLit', 'cloudShade']) sky.material.uniforms[k].value.set(LIGHT[k]); sky.material.uniforms.alto.value = LIGHT.alto;
-    sky.material.uniforms.far.value.copy(farOf(LIGHT.horizon)); scene.fog.color.copy(fogOf(LIGHT.horizon)); [scene.fog.near, scene.fog.far] = LIGHT.fog;
+    WATER_U.uSky.value.set(LIGHT.mid); sky.material.uniforms.far.value.copy(farOf(LIGHT.horizon)); scene.fog.color.copy(fogOf(LIGHT.horizon)); [scene.fog.near, scene.fog.far] = LIGHT.fog;
     hemi.color.set(LIGHT.amb); hemi.groundColor.set(LIGHT.ground); hemi.intensity = LIGHT.hemiI;
     sun.color.set(LIGHT.sunL); sun.intensity = LIGHT.sunI;
     if (t < 1) return requestAnimationFrame(step);
     drawShade(); // the sun moved: recast the tree shadows
     const env = clubEnv(renderer, LIGHT.mid, LIGHT.ground);
     for (const m of Object.values(CLUB_MESH)) m.traverse(o => { if (o.material?.envMap) { o.material.envMap = env; o.material.needsUpdate = true; } });
+    for (const m of CAR_MATS) m.envMap = env;
   };
   requestAnimationFrame(step);
 };
@@ -2588,7 +2623,7 @@ addEventListener('keydown', e => {
   if (FPS && !e.metaKey && !e.ctrlKey) { const k = e.key.toLowerCase(); // ?fps test keys: switch parts off live to see what costs the frames
     if (k === 't') { for (const m of DIAG.trees) m.visible = !m.visible; return; }
     if (k === 'g' && DIAG.ground) { DIAG.ground.visible = !DIAG.ground.visible; return; }
-    if (k === 's') { sun.castShadow = !sun.castShadow; return; }
+    if (k === 's') { sun.castShadow = !sun.castShadow; frame.shKey = NaN; return; }
     if (k === 'p') { const n = { 2: 1, 1: .5 }[renderer.getPixelRatio()] || 2; renderer.setPixelRatio(n); renderer.setSize(innerWidth, innerHeight); return; }
   }
   if ($('help').classList.contains('open')) { if (e.key === 'Escape') showHelp(false); return; }
@@ -2690,9 +2725,13 @@ function frame(now) {
   { // shadows freeze in flight: drawn once at the strike (without the ball), then held until the ball stops. Re-drawing the shadow
     // map every frame as the box chased a driver stuttered at the apex on the owner's Mac; with shadows off it was smooth (31 Oct 2026)
     const fly = state.phase === 'flying';
-    if (fly !== frame.shFrozen) { frame.shFrozen = fly; ballMesh.castShadow = !fly; renderer.shadowMap.autoUpdate = !fly; renderer.shadowMap.needsUpdate = true; } }
+    if (fly !== frame.shFrozen) { frame.shFrozen = fly; ballMesh.castShadow = !fly; frame.shKey = NaN; } }
   if (!frame.shFrozen) { sun.position.set(ball.x + LIGHT.dir.x * 250, ball.y + LIGHT.dir.y * 250, ball.z + LIGHT.dir.z * 250); sun.target.position.set(ball.x, ball.y, ball.z); }
-  sky.position.copy(camera.position); sky.material.uniforms.time.value = now / 1000;
+  { // and at rest they're only redrawn when something that casts one has moved: the ball, the club (aim, club, swing) or the sun (Mood).
+    // The shadow map used to be redrawn every frame while aiming, cars, chairs and all, for a picture that hadn't changed
+    const key = frame.shFrozen ? 0 : state.phase === 'swinging' ? now : ball.x * 1.13 + ball.y * 2.37 + ball.z * 3.71 + state.aim * 51.7 + state.club * 7.3 + bs * 13.1 + LIGHT.dir.x * 19.9 + LIGHT.dir.y * 17.3 + (state.phase === 'aim' ? 1 : 0) + (state.dropT0 ? 2 : 0);
+    if (key !== frame.shKey || frame.shWarm > 0) { frame.shWarm = key !== frame.shKey ? 2 : frame.shWarm - 1; frame.shKey = key; renderer.shadowMap.needsUpdate = true; } } // shWarm: two more frames after a change, so the light's own matrices have caught up
+  sky.position.copy(camera.position); sky.material.uniforms.time.value = WATER_U.uTime.value = now / 1000;
   if (greenLines.visible) greenLines.tick(now);
   cloth.rotation.y = HOLE.wind.toward_deg * Math.PI / 180 - Math.PI / 2 + Math.sin(now / 300) * 0.1;
   { const a = clothGeo.attributes.position, flap = .02 + HOLE.wind.mph * .003; // ripple grows toward the free edge and with the wind
