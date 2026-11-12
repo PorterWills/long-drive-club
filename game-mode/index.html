@@ -1409,6 +1409,15 @@ const carryAt = (ci, power, lie) => {
 const renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true, powerPreference: 'high-performance' }); // the fast GPU on laptops with two
 const QS = new URLSearchParams(location.search);
 const LUSH = LOB && HOLE_NO !== 18 && !QS.has('nolush'); // lush (default since 1 Nov 2026 on 1-17; 18 keeps its hand-built look): ?nolush turns it off
+// stutter fixes (11 Nov 2026), all on by default and meant to look the same: `ground` (the half-metre ground grid only where the ground
+// needs it), `far` (far trees as solid shapes, not see-through images), `see` (the dissolve only on the few trees near the ball's line,
+// never the whole forest) and `lean` (no shadow code in anything that never takes a shadow). ?oldperf turns them all off and
+// ?oldperf=ground,far (any of the four) turns off the ones named, so the owner can tell with ?fps which one mattered
+const PERF = (off => ({ ground: !off('ground'), far: !off('far'), see: !off('see'), lean: !off('lean') }))(k => QS.has('oldperf') && (!QS.get('oldperf') || QS.get('oldperf').split(',').includes(k)));
+// trials (11 Nov 2026), off until the owner has seen them: ?soft de-gems the trees and bushes (smooth shading, dappled light, a sunlit
+// edge, rounder crowns by the fairway), ?sway moves them with the hole's wind, ?fx adds the impact moments; ?new turns on all three
+const TRIAL = k => QS.has(k) || QS.has('new');
+const SOFT = LOB && TRIAL('soft'), SWAY = LOB && TRIAL('sway') && !matchMedia('(prefers-reduced-motion: reduce)').matches, FX = TRIAL('fx');
 const clumpy = (d, seed = 0) => Math.sin(d * .55 + seed) + Math.sin(d * .21 + seed * 2.3) > .5; // ?lush: runs of shrubs broken into clumps (~4-6 m) with gaps // test switches: ?fps shows a frame meter, ?pr=1 renders at a lower resolution (stutter hunt, 31 Oct 2026)
 renderer.setPixelRatio(QS.has('pr') ? +QS.get('pr') || 1 : Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.autoUpdate = false; // redrawn only when something that casts one moves (see the loop)
@@ -1546,7 +1555,7 @@ function drawShade() {
     const tp = teePad(x, z); if (tp > 0) { c.lerp(TEE, tp); rg *= 1 - tp; }
     const wd = m === 'rough' || m === 'straw' || oob ? (oob ? 1 : woodsAt(x, z)) : 0; if (wd > 0) { c.lerp(FLOOR, wd * .85); rg = Math.max(rg, wd); } // the forest floor under and behind the woods
     const st = (m === 'rough' || m === 'straw') && !oob ? strawAt(x, z) : 0; if (st > 0) { c.lerp(STRAW, LOB ? clamp(st * 2 - .5, 0, 1) * .95 : st * .85); rg = Math.max(rg, st); } // loblolly: a crisper bed edge
-    if (!oob && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut
+    if (!PERF.ground && !oob && rg < .3 && Math.floor(z / 12) % 2) c.offsetHSL(0, 0, 0.03 * (1 - rg / .3)); // mow stripes, fading into the first cut (coarse ground: laid per pixel in the shader, same sums)
     if (tp > .9 && Math.floor((x - HOLE.tee[0] + 4) / 1.6) % 2) c.offsetHSL(0, 0, 0.025); // tee pad: crisp stripes
     col.push(c.r, c.g, c.b); rough.push(rg); haz.push(bunkerD(x, z), waterD(x, z)); gEdge.push(ge);
   }
@@ -1568,6 +1577,8 @@ function drawShade() {
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
         return mix(mix(h2(i), h2(i + vec2(1, 0)), f.x), mix(h2(i + vec2(0, 1)), h2(i + 1.), f.x), f.y); }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
+      ${PERF.ground ? `{ float sz = vXZ.y / 12., par = mod(floor(sz), 2.), mow = mix(par, 1. - par, clamp(fract(sz) * 24. - 23., 0., 1.)) * max(0., 1. - vR / .3); // mow stripes, fading into the first cut
+        diffuseColor.rgb *= 1. + .03 * mow / max(.5 * (max(max(diffuseColor.r, diffuseColor.g), diffuseColor.b) + min(min(diffuseColor.r, diffuseColor.g), diffuseColor.b)), 1e-3); }` : ''}
       float ga = max(fwidth(vG), .12);                                                              // green and fringe: smooth curves, softened a touch
       float gp = .018 * (sin(vXZ.x * .19 + sin(vXZ.y * .13) * 1.7) + sin(vXZ.y * .23 - vXZ.x * .07 + sin(vXZ.x * .11) * 1.3)); // owner: soft patches of a few shades, no checker
       vec3 grn = mix(${glsl(new THREE.Color(COLOURS.green))} * (1. + 5. * gp), ${glsl(LIP)}, .35 * smoothstep(${(-.07 * HOLE.green.r).toFixed(3)}, 0., vG)); // collar at the edge
@@ -1602,15 +1613,60 @@ function drawShade() {
       diffuseColor.rgb = mix(diffuseColor.rgb, wc, 1. - smoothstep(-wa, wa, wd));`);
   };
   // cut into strips across the hole (same vertices on the GPU once, an index list per strip): strips behind the camera are skipped,
-  // so on approaches and putts most of the half-metre grid is never sent. Looks identical
-  const ground = new THREE.Group(), ROWS = 80, perRow = seg[0] * 6, idx = geo.index.array, bb = new THREE.Box3(), v = new THREE.Vector3();
-  for (let r0 = 0; r0 < seg[1]; r0 += ROWS) {
-    const r1 = Math.min(seg[1], r0 + ROWS), g = new THREE.BufferGeometry();
+  // so on approaches and putts most of the grid is never sent. Looks identical
+  const ground = new THREE.Group(), ROWS = 80, nx = Math.floor(seg[0]), ny = Math.floor(seg[1]), n1 = nx + 1, perRow = nx * 6, idx = geo.index.array, bb = new THREE.Box3(), v = new THREE.Vector3();
+  // coarse ground (stutter, 11 Nov 2026): the half-metre grid drew ~0.9-1.9 million triangles a frame, most of them smaller than a
+  // pixel from up with a driver. Now 4 m blocks keep it only where the ground needs it: on and round greens and sand, at the
+  // water's edge, and wherever height, shading, colour or roughness bend more than a coarser triangle can follow (cut lines,
+  // straw beds, banks). Elsewhere a block is drawn in 1, 2 or 4 m cells. Vertices are shared and blocks of different sizes are
+  // stitched edge to edge (a fan to the finer side's points), so there are no cracks and nothing moves: the same points, fewer of them
+  const lod = PERF.ground && (() => {
+    const B = 8, nbx = Math.ceil(nx / B), nby = Math.ceil(ny / B), lv = new Uint8Array(nbx * nby), P = pos.array, N = geo.attributes.normal.array;
+    const A = [P, N, N, N, col, col, col, rough], ST = [3, 3, 3, 3, 3, 3, 3, 1], OF = [1, 0, 1, 2, 0, 1, 2, 0], TOL = [.012, .025, .025, .025, .003, .003, .003, .03], REL = [0, 0, 0, 0, .04, .04, .04, 0];
+    const flat = (cx, cy, s) => { // would this cell, drawn as two triangles, land every point inside it where the fine grid has it?
+      const a = cx + cy * n1, b = a + s * n1, c = b + s, d = a + s;
+      for (let j = 0; j <= s; j++) for (let i = 0; i <= s; i++) {
+        const k = a + i + j * n1, wd = haz[k * 2 + 1];
+        if (haz[k * 2] < 1.5 || gEdge[k] < 4) return false; // sand and its lip, green and fringe: always full detail
+        const u = i / s, w = j / s, lo = u + w <= 1;
+        const fa = lo ? 1 - u - w : 0, fb = lo ? w : 1 - u, fc = lo ? 0 : u + w - 1, fd = lo ? u : 1 - w;
+        for (let q = 0; q < 8; q++) { const X = A[q], st = ST[q], o = OF[q], val = X[k * st + o];
+          if (Math.abs(val - (X[a * st + o] * fa + X[b * st + o] * fb + X[c * st + o] * fc + X[d * st + o] * fd)) > TOL[q] + REL[q] * Math.abs(val)) return false; }
+        if (wd < 1.5 && wd > -6.5 && Math.abs(wd - (haz[a * 2 + 1] * fa + haz[b * 2 + 1] * fb + haz[c * 2 + 1] * fc + haz[d * 2 + 1] * fd)) > .03) return false; // the shoreline
+      }
+      return true;
+    };
+    for (let by = 0; by < nby; by++) for (let bx = 0; bx < nbx; bx++) {
+      const x0 = bx * B, y0 = by * B; let s = 1;
+      if (x0 + B <= nx && y0 + B <= ny) for (s = B; s > 1; s >>= 1) { let ok = true;
+        for (let cy = y0; ok && cy < y0 + B; cy += s) for (let cx = x0; ok && cx < x0 + B; cx += s) ok = flat(cx, cy, s);
+        if (ok) break; }
+      lv[bx + by * nbx] = s;
+    }
+    const RB = ROWS / B, out = Array.from({ length: Math.ceil(nby / RB) }, () => []), at = (bx, by) => bx < 0 || by < 0 || bx >= nbx || by >= nby ? B : lv[bx + by * nbx];
+    for (let by = 0; by < nby; by++) for (let bx = 0; bx < nbx; bx++) {
+      const s = lv[bx + by * nbx], x0 = bx * B, y0 = by * B, o = out[Math.floor(by / RB)];
+      for (let cy = y0; cy < Math.min(ny, y0 + B); cy += s) for (let cx = x0; cx < Math.min(nx, x0 + B); cx += s) {
+        const a = cx + cy * n1, b = a + s * n1, c = b + s, d = a + s; // a side that meets a finer block takes that block's points
+        const sl = cx === x0 ? Math.min(s, at(bx - 1, by)) : s, sr = cx + s === x0 + B ? Math.min(s, at(bx + 1, by)) : s, sb = cy === y0 ? Math.min(s, at(bx, by - 1)) : s, st = cy + s === y0 + B ? Math.min(s, at(bx, by + 1)) : s;
+        if (sl === s && sr === s && sb === s && st === s) { o.push(a, b, d, b, c, d); continue; }
+        const m = a + (s >> 1) * (n1 + 1); let p = a; const fan = q => { o.push(m, p, q); p = q; }; // a fan from the cell's middle round its edge
+        for (let k = sl; k <= s; k += sl) fan(a + k * n1);
+        for (let k = st; k <= s; k += st) fan(b + k);
+        for (let k = sr; k <= s; k += sr) fan(c - k * n1);
+        for (let k = sb; k <= s; k += sb) fan(d - k);
+      }
+    }
+    return out;
+  })();
+  for (let r0 = 0; r0 < ny; r0 += ROWS) {
+    const r1 = Math.min(ny, r0 + ROWS), g = new THREE.BufferGeometry();
     for (const k in geo.attributes) g.setAttribute(k, geo.attributes[k]);
-    g.setIndex(new THREE.BufferAttribute(idx.subarray(r0 * perRow, r1 * perRow), 1));
-    bb.makeEmpty(); for (let i = r0 * (seg[0] + 1), e = (r1 + 1) * (seg[0] + 1); i < e; i++) bb.expandByPoint(v.fromBufferAttribute(pos, i));
+    g.setIndex(new THREE.BufferAttribute(lod ? new Uint32Array(lod[r0 / ROWS]) : idx.subarray(r0 * perRow, r1 * perRow), 1));
+    bb.makeEmpty(); for (let i = r0 * n1, e = (r1 + 1) * n1; i < e; i++) bb.expandByPoint(v.fromBufferAttribute(pos, i));
     g.boundingSphere = bb.getBoundingSphere(new THREE.Sphere());
     const strip = new THREE.Mesh(g, mat); strip.receiveShadow = true; ground.add(strip);
+    if (PERF.lean) strip.renderOrder = .5; // after the course trees and bushes (0), before the cup (1): ground hidden behind them is never shaded, and its shader is the dearest after the sky
   }
   DIAG.ground = ground; scene.add(ground);
 }
@@ -1628,19 +1684,109 @@ function treeSee(cam, ball) { // is any course tree near the line from the camer
   }
   if (hit !== TREE_SEE.on) { TREE_SEE.on = hit; for (const [m, see, plain] of TREE_SEE.mats) m.material = hit ? see : plain; }
 }
-const seeThrough = mat => { mat.onBeforeCompile = sh => {
-  sh.uniforms.uBall = SEE.uBall;
-  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW;')
-    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeeW = (modelMatrix * instanceMatrix * vec4(transformed, 1.)).xyz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW; uniform vec3 uBall;')
-    .replace('void main() {', `void main() {
+// every tree, bush and shrub material is made here: plain Lambert plus, as asked for, the dissolve (see), the wind (sway: [height of
+// the part's own origin above the plant's foot, how fast the rustle grows up the part, rustle in metres]) and the soft look.
+// lean: none of these ever takes a shadow, so the shadow code three.js adds to every lit material is left out of theirs
+const FOL = { uWind: { value: new THREE.Vector4(0, 1, 0, 0) } }; // xy: the way the wind blows (world x, z), z: its strength (mph / 10), w: the clock
+const foliage = (params, o = {}) => {
+  const mat = new THREE.MeshLambertMaterial(params), see = !!o.see, sway = SWAY && o.sway, soft = SOFT && !!o.soft;
+  mat.userData.fol = [params, o];
+  if (!see && !sway && !soft && !PERF.lean) return mat;
+  mat.onBeforeCompile = sh => {
+    let V = sh.vertexShader, F = sh.fragmentShader;
+    if (see) sh.uniforms.uBall = SEE.uBall;
+    if (sway || soft) sh.uniforms.uWind = FOL.uWind;
+    if (sway) sh.uniforms.uSway = { value: new THREE.Vector3(...sway) };
+    if (see && !sway && !soft) V = V.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSeeW = (modelMatrix * instanceMatrix * vec4(transformed, 1.)).xyz;');
+    else if (sway || soft) V = V.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW; uniform vec4 uWind; uniform vec3 uSway;').replace('#include <project_vertex>', `
+      #ifdef USE_INSTANCING
+      mat4 fm = modelMatrix * instanceMatrix;
+      #else
+      mat4 fm = modelMatrix;
+      #endif
+      vec4 mvPosition = fm * vec4(transformed, 1.);
+      ${sway ? `{ float sc = length(fm[1].xyz), hw = max(0., uSway.x + position.y) * sc, t = uWind.w; vec2 og = fm[3].xz; float ph = og.x * .045 + og.y * .062;
+        float gust = .6 + .4 * sin(t * .5 - dot(og, uWind.xy) * .04 + 1.7 * sin(ph));                       // gusts roll through the woods, downwind
+        float lean = .2 * uWind.z * pow(hw / 22., 1.5) * (gust + .3 * sin(t * 1.3 + ph * 7.));              // the top of a 22 m pine leans ~0.2 m in 10 mph
+        mvPosition.xz += uWind.xy * lean + vec2(-uWind.y, uWind.x) * lean * .35 * sin(t * .9 + ph * 11.);
+        float fl = uSway.z * uWind.z * gust * clamp((uSway.x + position.y) * uSway.y, 0., 1.);             // leaves and twigs: a small quick rustle
+        mvPosition.xyz += fl * vec3(sin(t * 2.3 + mvPosition.x * 1.7 + mvPosition.y * 2.1), .4 * sin(t * 1.9 + mvPosition.z * 1.3), sin(t * 2.7 + mvPosition.z * 1.9 + mvPosition.y * 1.5)); }` : ''}
+      vSeeW = mvPosition.xyz;
+      mvPosition = viewMatrix * mvPosition;
+      gl_Position = projectionMatrix * mvPosition;`);
+    if (see || soft) F = F.replace('#include <common>', '#include <common>\nvarying vec3 vSeeW; uniform vec3 uBall; uniform vec4 uWind;');
+    if (see) F = F.replace('void main() {', `void main() {
       vec3 ab = uBall - cameraPosition, ap = vSeeW - cameraPosition; float t = clamp(dot(ap, ab) / dot(ab, ab), 0., 1.);
       float d = min(length(ap) - 1.5, length(ap - ab * t) - .4 - 2.2 * t); // tube widens towards the ball
       if (fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) > smoothstep(0., 3., d)) discard;`);
-}; return mat; };
+    if (soft) F = F.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      float fNear = 1. - smoothstep(50., 170., vFogDepth); // far off, leaf detail is smaller than a pixel: it fades to its average so nothing shimmers
+      { vec3 bq = vSeeW * 4.3; // leaf clumps: the smooth surface catches the light in soft bumps, not as one polished shape
+        normal = normalize(normal + (viewMatrix * vec4(sin(bq.x + sin(bq.y * 1.3) * 1.5), sin(bq.y * 1.1 + sin(bq.z * .9) * 1.5), sin(bq.z * 1.2 + sin(bq.x * 1.4) * 1.5), 0.)).xyz * (.38 * fNear)); }`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+      { // dappled light: patches of sun and shade across the whole crown, broad ones and leaf-sized ones (they drift a little with the wind)
+        vec3 dq = vSeeW + vec3(uWind.x, 0., uWind.y) * (uWind.w * .12);
+        float d1 = sin(dq.x * 2.3 + sin(dq.z * 1.9 + dq.y * 1.1) * 1.6) * sin(dq.y * 2.9 + sin(dq.x * 1.7 - dq.z * 1.2) * 1.4);
+        float d2 = sin(dq.x * 7.1 + sin(dq.z * 6.3) * 1.3 + dq.y * 3.) * sin(dq.z * 6.7 + sin(dq.y * 7.9) * 1.2 - dq.x * 2.);
+        float dp = smoothstep(-.55, .65, d1 + .5 * d2 * fNear);
+        reflectedLight.directDiffuse *= mix(.95, mix(.45, 1.45, dp), fNear);
+        reflectedLight.indirectDiffuse *= mix(1., .84 + .32 * dp, fNear);
+        #if NUM_DIR_LIGHTS > 0
+        float rim = pow(1. - saturate(dot(normal, normalize(vViewPosition))), 2.5) * smoothstep(-.1, .45, dot(normal, directionalLights[0].direction));
+        reflectedLight.directDiffuse += directionalLights[0].color * (diffuseColor.rgb * 1.1 + vec3(.03, .04, .008)) * rim; // the sunlit edge, on the sun's side only
+        #endif
+      }`);
+    if (PERF.lean) { V = '#undef USE_SHADOWMAP\n' + V; F = '#undef USE_SHADOWMAP\n' + F; }
+    sh.vertexShader = V; sh.fragmentShader = F;
+  };
+  mat.customProgramCacheKey = () => `fol${+PERF.lean}${+see}${+!!sway}${+soft}`; // three.js shares a compiled shader between materials with the same key
+  return mat;
+};
+// the dissolve only where it's needed (stutter, 11 Nov 2026). It used to be all or nothing: one tree near the camera-to-ball line
+// put the dissolve shader on every course tree, and the 1 Nov shrub clumps wore it all the time. Any shader that can drop a pixel
+// stops the GPU skipping hidden ones. Now every mesh is plain, each has a small see-through twin, and only the few trees and bushes
+// near the line are moved across to it (and back when the line has passed), so at most a handful of plants are ever dissolvable
+const SEEP = { items: [], twins: new Map() }, ZERO16 = new THREE.Matrix4().makeScale(0, 0, 0).elements;
+function seeTwin(m, cap) {
+  const [p, o] = m.material.userData.fol, t = new THREE.InstancedMesh(m.geometry, foliage(p, { ...o, see: true }), cap);
+  for (let i = 0; i < cap; i++) t.instanceMatrix.array.set(ZERO16, i * 16);
+  if (m.instanceColor) t.setColorAt(0, new THREE.Color());
+  t.frustumCulled = false; t.free = Array.from({ length: cap }, (_, i) => cap - 1 - i); SEEP.twins.set(m, t); scene.add(t); return t;
+}
+const seeItem = (x, z, R, top, parts) => SEEP.items.push({ x, z, R, top, parts, slots: null }); // parts: [[mesh, instance], ...]
+function seeMove(a, i, b, j) { // instance i of mesh a goes to slot j of mesh b; a's is left with no size
+  const A = a.instanceMatrix, B = b.instanceMatrix; B.array.set(A.array.subarray(i * 16, i * 16 + 16), j * 16); A.array.set(ZERO16, i * 16);
+  A.addUpdateRange(i * 16, 16); B.addUpdateRange(j * 16, 16); A.needsUpdate = B.needsUpdate = true;
+  if (a.instanceColor && b.instanceColor) { const C = b.instanceColor; C.array.set(a.instanceColor.array.subarray(i * 3, i * 3 + 3), j * 3); C.addUpdateRange(j * 3, 3); C.needsUpdate = true; }
+}
+function seeNear(cam, ball) { // which plants stand near the line from the camera to the ball? (generous, as before: each as a tall cylinder)
+  const dx = ball.x - cam.x, dz = ball.z - cam.z, L2 = dx * dx + dz * dz || 1e-6;
+  for (const it of SEEP.items) {
+    const k = Math.min(1, Math.max(0, ((it.x - cam.x) * dx + (it.z - cam.z) * dz) / L2)), px = cam.x + dx * k - it.x, pz = cam.z + dz * k - it.z;
+    const near = px * px + pz * pz < it.R * it.R && cam.y + (ball.y - cam.y) * k - 3 < it.top;
+    if (near === !!it.slots) continue;
+    if (near) it.slots = it.parts.map(([m, i]) => { const t = SEEP.twins.get(m), j = t.free.pop(); if (j === undefined) return -1; seeMove(m, i, t, j); return j; });
+    else { it.parts.forEach(([m, i], n) => { const j = it.slots[n]; if (j >= 0) { const t = SEEP.twins.get(m); seeMove(t, j, m, i); t.free.push(j); } }); it.slots = null; }
+  }
+}
+// one bush mesh: see-through all the time the old way (?oldperf=see); otherwise plain, with a twin for the few near the line
+const bushSee = (mesh, spots, r = 5) => { if (!PERF.see) return; seeTwin(mesh, 96); spots.forEach(([x, z], i) => seeItem(x, z, r, heightAt(x, z) + 4, [[mesh, i]])); };
+// soft look: a rounded, lumpy mass with smooth shading (the old shapes were 20 flat faces: gems)
+const blob = (r, detail, seed, sy = 1, lump = .2) => {
+  const g = new THREE.IcosahedronGeometry(1, detail), P = g.attributes.position, acc = new Map(), key = i => `${Math.round(P.getX(i) * 500)},${Math.round(P.getY(i) * 500)},${Math.round(P.getZ(i) * 500)}`, keys = [], s = seed * 1.37;
+  for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); keys.push(key(i));
+    const k = r * (1 + lump / 2.2 * (Math.sin(x * 2.3 + s) * Math.sin(y * 2.9 + s * 1.7) + .7 * Math.sin(z * 3.3 + s * .6 + x * 1.9) + .5 * Math.sin(y * 4.1 - z * 2.3 + s * 2.1))); // lump: the most a point moves in or out, as a share of the radius
+    P.setXYZ(i, x * k, y * k * sy, z * k); }
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), N = [];
+  for (let i = 0; i < P.count; i += 3) { a.fromBufferAttribute(P, i); b.fromBufferAttribute(P, i + 1); c.fromBufferAttribute(P, i + 2); b.sub(a); c.sub(a); b.cross(c); // area-weighted face normal, shared by every corner at the same point
+    for (let j = 0; j < 3; j++) { const n = acc.get(keys[i + j]); if (n) n.add(b); else acc.set(keys[i + j], b.clone()); } }
+  for (let i = 0; i < P.count; i++) { const n = acc.get(keys[i]); a.copy(n).normalize(); N.push(a.x, a.y, a.z); }
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); return g;
+};
 // shrubs and bushes: darker underneath, lighter on top, baked into the vertex colours (free to draw), so each reads as a rounded mass sat in its own shade
-const shadeUp = geo => { const p = geo.attributes.position, c = []; geo.computeBoundingBox(); const y0 = geo.boundingBox.min.y, h = geo.boundingBox.max.y - y0 || 1;
-  for (let i = 0; i < p.count; i++) { const k = .7 + .42 * (p.getY(i) - y0) / h; c.push(k, k, k); }
+const shadeUp = (geo, lo = .7, hi = 1.12) => { const p = geo.attributes.position, c = []; geo.computeBoundingBox(); const y0 = geo.boundingBox.min.y, h = geo.boundingBox.max.y - y0 || 1;
+  for (let i = 0; i < p.count; i++) { const k = lo + (hi - lo) * (p.getY(i) - y0) / h; c.push(k, k, k); }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3)); return geo; };
 // surround: a coarse 4 m ground mesh far beyond the course (forest floor, rising banks), so there's no edge to float over.
 // Inside the course mesh it drops 2 m out of sight; it meets the course mesh exactly at its edge.
@@ -1648,6 +1794,12 @@ const shadeUp = geo => { const p = geo.attributes.position, c = []; geo.computeB
   const xs = HOLE.fairway.line.map(p => p[1]), X0 = Math.min(...xs) - 80, X1 = Math.max(...xs) + 80, Z0 = -40, Z1 = GZ + 70; // the course mesh's footprint
   const W = X1 - X0 + 800, D = Z1 - Z0 + 800, geo = new THREE.PlaneGeometry(W, D, Math.ceil(W / 4), Math.ceil(D / 4)); geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, col = [], c = new THREE.Color(), FLOOR = new THREE.Color('#3b3524'), RO = new THREE.Color('#2a4122'), CANOPY = new THREE.Color('#1c2e1c');
+  if (PERF.ground) { // coarse far out: the 4 m grid is kept to 80 m beyond the course; past that, under the forest and into the haze, every 4th line (16 m)
+    const nx = Math.ceil(W / 4), nz = Math.ceil(D / 4), n1 = nx + 1, wx = i => -W / 2 + i * W / nx + (X0 + X1) / 2, wz = j => -D / 2 + j * D / nz + (Z0 + Z1) / 2, xs = [], zs = [];
+    for (let i = 0; i <= nx; i++) if (!(i % 4) || i === nx || (wx(i) > X0 - 80 && wx(i) < X1 + 80)) xs.push(i);
+    for (let j = 0; j <= nz; j++) if (!(j % 4) || j === nz || (wz(j) > Z0 - 80 && wz(j) < Z1 + 80)) zs.push(j);
+    const ix = []; for (let j = 0; j < zs.length - 1; j++) for (let i = 0; i < xs.length - 1; i++) { const a = xs[i] + zs[j] * n1, b = xs[i] + zs[j + 1] * n1, cc = xs[i + 1] + zs[j + 1] * n1, d = xs[i + 1] + zs[j] * n1; ix.push(a, b, d, b, cc, d); }
+    geo.setIndex(ix); }
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + (X0 + X1) / 2, z = pos.getZ(i) + (Z0 + Z1) / 2, inside = x > X0 + 1 && x < X1 - 1 && z > Z0 + 1 && z < Z1 - 1;
     pos.setXYZ(i, x, heightAt(x, z) - (inside ? 2 : 0), z);
@@ -1656,7 +1808,7 @@ const shadeUp = geo => { const p = geo.attributes.position, c = []; geo.computeB
     col.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); geo.computeVertexNormals();
-  scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })));
+  scene.add(Object.assign(new THREE.Mesh(geo, foliage({ vertexColors: true })), { name: 'surround' }));
 }
 // trees: tiered pines and clumped broadleaf trees, from the seeded TREES list. Every part is one InstancedMesh
 // (a handful of draws for the whole course), and no tree casts a shadow: the shadow box follows the ball, so tree shadows popped in.
@@ -1698,13 +1850,12 @@ const shadeUp = geo => { const p = geo.attributes.position, c = []; geo.computeB
     return pick.map(i => pool[i]);
   })());
   SHADE.trees = DRAWN; drawShade();
-  const pines = DRAWN.filter(t => t.pine && !t.lob), lobs = DRAWN.filter(t => t.lob), leaves = DRAWN.filter(t => !t.pine);
-  const trunkGeo = new THREE.CylinderGeometry(.22, .34, 3, 6); // darker towards the top, where the crown shades it (baked into the vertex colours)
+  const trunkGeo = new THREE.CylinderGeometry(.22, .34, 3, 6, 1, PERF.lean); // lean: no end caps (one is in the ground, the other inside the crown) // darker towards the top, where the crown shades it (baked into the vertex colours)
   trunkGeo.setAttribute('color', new THREE.Float32BufferAttribute(Array.from(trunkGeo.attributes.position.array.filter((_, i) => i % 3 === 1), y => { const k = 1.05 - .4 * (y + 1.5) / 3; return [k, k, k]; }).flat(), 3));
-  const trunks = new THREE.InstancedMesh(trunkGeo, seeThrough(new THREE.MeshLambertMaterial({ color: '#ffffff', vertexColors: true })), DRAWN.length); // colour per tree (setColorAt)
-  const groups = [[PINE, pines, '#21401f', 1.25], [LEAF, leaves, '#2f4f27', 1], [LOBP, lobs, '#2c4a26', 1]].map(([parts, list, colour, ys], gi) =>
-    ({ list, ys, colour, meshes: parts.map(([g, x, y, z], pi) => ({ m: new THREE.InstancedMesh(leafy(g, 11 + gi * 7 + pi), seeThrough(new THREE.MeshLambertMaterial({ vertexColors: true })), list.length), off: new THREE.Vector3(x, y, z) })) }));
-  const tm = new Map(), lr = rng(91), lc = new THREE.Color(); // tree -> its world matrix
+  const treeMat = (params, o) => foliage(params, { ...o, see: !PERF.see }); // the old way (?oldperf=see): every course tree see-through, swapped to plain when none is near the line
+  const trunks = new THREE.InstancedMesh(trunkGeo, treeMat({ color: '#ffffff', vertexColors: true }, { sway: [1.5, 0, 0] }), DRAWN.length); // colour per tree (setColorAt)
+  const KINDS = [{ parts: PINE, is: t => t.pine && !t.lob, colour: '#21401f' }, { parts: LEAF, is: t => !t.pine, colour: '#2f4f27' }, { parts: LOBP, is: t => t.lob, colour: '#2c4a26' }];
+  const tm = new Map(), look = new Map(), lr = rng(91), lc = new THREE.Color(); // tree -> its world matrix, tree -> each part's size and colour
   DRAWN.forEach((t, i) => {
     q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
     const ys = t.pine && !t.lob ? 1.25 : 1, w = new THREE.Matrix4().compose(new THREE.Vector3(t.x, heightAt(t.x, t.z), t.z), q, new THREE.Vector3(t.s, t.s * ys, t.s));
@@ -1712,35 +1863,61 @@ const shadeUp = geo => { const p = geo.attributes.position, c = []; geo.computeB
     tm.set(t, w); trunks.setMatrixAt(i, t.lob ? m4.multiplyMatrices(w, part.makeTranslation(0, 10, 0).multiply(new THREE.Matrix4().makeScale(.75, 20 / 3, .75))) // bare trunk up into the crown
       : m4.multiplyMatrices(w, part.makeTranslation(0, 1.5, 0)));
   });
-  for (const g of groups) g.list.forEach((t, i) => {
-    col.set(g.colour).offsetHSL(r() * .03 - .015, 0, r() * .06 - .03 - (t.outer ? .04 : 0)); // each tree a shade apart, the outer forest darker
+  for (const K of KINDS) for (const t of DRAWN) if (K.is(t)) {
+    col.set(K.colour).offsetHSL(r() * .03 - .015, 0, r() * .06 - .03 - (t.outer ? .04 : 0)); // each tree a shade apart, the outer forest darker
     if (t.under) col.set(['#3f6c2a', '#557f33', LUSH ? '#b9b39b' : '#e9e4d6', '#2f5a28', '#4d7a2c'][Math.floor(r() * 5)]); // the edge layer: young hardwoods, a dogwood in bloom here and there
     else if (HOLE.garden && !t.pine) col.set(['#4d7a2c', '#5f8a32', '#3f6c2a', '#6a9038'][Math.floor(r() * 4)]).offsetHSL(0, 0, t.outer ? -.05 : 0); // garden holes: fresh spring broadleaf
-    g.meshes.forEach(({ m, off }, pi) => {
-      const k = LUSH && t.under && col.getHex() === 0xb9b39b ? .6 : !t.lob || pi === 0 ? 1 : lr() < .2 ? 0 : .8 + lr() * .4; // ?lush: a dogwood in bloom smaller, so it doesn't read as a boulder // loblolly: a clump missing here and there, the rest varied in size
-      m.setMatrixAt(i, m4.multiplyMatrices(tm.get(t), part.makeTranslation(off.x, off.y, off.z)).multiply(new THREE.Matrix4().makeScale(k, k, k)));
-      m.setColorAt(i, t.lob ? lc.copy(col).offsetHSL(0, 0, (lr() - .5) * .06) : col);
+    const ks = [], cs = [];
+    K.parts.forEach((_, pi) => {
+      ks.push(LUSH && t.under && col.getHex() === 0xb9b39b ? .6 : !t.lob || pi === 0 ? 1 : lr() < .2 ? 0 : .8 + lr() * .4); // ?lush: a dogwood in bloom smaller, so it doesn't read as a boulder // loblolly: a clump missing here and there, the rest varied in size
+      const c = t.lob ? lc.copy(col).offsetHSL(0, 0, (lr() - .5) * .06) : col; cs.push(c.r, c.g, c.b);
     });
+    look.set(t, { ks, cs });
+  }
+  // one InstancedMesh per crown part. ?soft: smooth, lumpy shapes; the trees by the fairway, tee and green get rounder ones with
+  // more faces (their own meshes), the rest keep 20 faces each, and the out-of-bounds forest draws 6 clumps a tree, not 10
+  const byPlay = t => !t.outer && (Math.abs(t.x - centreX(clamp(t.z, 0, GZ))) < HOLE.fairway.half_width + 26 || Math.hypot(t.x - HOLE.green.at[0], t.z - GZ) < 50 || Math.hypot(t.x - HOLE.tee[0], t.z - HOLE.tee[1]) < 50);
+  const softGeo = (K, gi, hi) => K.parts.map(([g], pi) => g.parameters.detail === undefined ? leafy(g, 11 + gi * 7 + pi)
+    : shadeUp(K.parts === LOBP ? blob(g.parameters.radius, hi && pi < 4 ? 1 : 0, 11 + gi * 7 + pi, .62, hi ? .32 : .15) : blob(g.parameters.radius, hi ? 2 : 1, 11 + gi * 7 + pi, 1, .3), .66, 1.16));
+  const sets = [];
+  KINDS.forEach((K, gi) => {
+    const list = DRAWN.filter(K.is);
+    if (!SOFT) sets.push({ K, list, geos: K.parts.map(([g], pi) => leafy(g, 11 + gi * 7 + pi)) });
+    else sets.push({ K, list: list.filter(t => !byPlay(t)), geos: softGeo(K, gi, 0) }, { K, list: list.filter(byPlay), geos: softGeo(K, gi, 1) });
+  });
+  for (const S of sets) S.meshes = !S.list.length ? [] : S.K.parts.map(([, x, y, z], pi) => {
+    const list = PERF.lean ? S.list.filter(t => look.get(t).ks[pi] > 0) : S.list; // lean: a clump its tree dropped isn't sent at all (it used to go as a clump of no size: a fifth of all the crown triangles, drawn for nothing)
+    const m = new THREE.InstancedMesh(S.geos[pi], treeMat({ vertexColors: true }, { sway: [y, 10, S.K.parts === LEAF ? .05 : .035], soft: 1 }), list.length), at = m.userData.at = new Map();
+    list.forEach((t, i) => { const L = look.get(t), k = L.ks[pi]; at.set(t, i);
+      m.setMatrixAt(i, m4.multiplyMatrices(tm.get(t), part.makeTranslation(x, y, z)).multiply(new THREE.Matrix4().makeScale(k, k, k)));
+      m.setColorAt(i, col.setRGB(L.cs[pi * 3], L.cs[pi * 3 + 1], L.cs[pi * 3 + 2])); });
+    m.userData.nIn = list.filter(t => !t.outer).length; m.userData.thin = SOFT && S.K.parts === LOBP && pi >= 6; return m;
   });
   // the outer forest (out of bounds, never between camera and ball) drawn without the see-through: any 'discard' in a shader stops
   // the GPU skipping hidden pixels, so thousands of tall overlapping crowns were all fully shaded every frame. That dropped a frame
   // every ~0.35 s in flight, pines only (owner tests, 31 Oct 2026). Inner trees come first in every list, outer ones after.
   const split = (m, nIn) => {
     const nOut = m.count - nIn; if (nOut <= 0) return;
-    const o = new THREE.InstancedMesh(m.geometry, new THREE.MeshLambertMaterial({ color: m.material.color, vertexColors: m.material.vertexColors }), nOut);
-    o.instanceMatrix.array.set(m.instanceMatrix.array.subarray(nIn * 16, m.count * 16));
-    if (m.instanceColor) { o.setColorAt(0, col); o.instanceColor.array.set(m.instanceColor.array.subarray(nIn * 3, m.count * 3)); }
-    m.count = nIn; m.computeBoundingSphere(); o.computeBoundingSphere(); o.renderOrder = 1; scene.add(o); DIAG.trees.push(o); // after the near trees, so hidden pixels are skipped
+    m.count = nIn; m.computeBoundingSphere(); if (m.userData.thin) return;
+    const [p, o] = m.material.userData.fol, out = new THREE.InstancedMesh(m.geometry, foliage(p, { ...o, see: false }), nOut);
+    out.instanceMatrix.array.set(m.instanceMatrix.array.subarray(nIn * 16, (nIn + nOut) * 16));
+    if (m.instanceColor) { out.setColorAt(0, col); out.instanceColor.array.set(m.instanceColor.array.subarray(nIn * 3, (nIn + nOut) * 3)); }
+    out.computeBoundingSphere(); out.renderOrder = 1; scene.add(out); DIAG.trees.push(out); // after the near trees, so hidden pixels are skipped
   };
-  split(trunks, TREES.length); for (const g of groups) { const nIn = g.list.filter(t => !t.outer).length; for (const { m } of g.meshes) split(m, nIn); }
-  scene.add(trunks); for (const g of groups) for (const { m } of g.meshes) scene.add(m);
-  DIAG.trees.push(trunks, ...groups.flatMap(g => g.meshes.map(x => x.m)));
-  // the course trees too: they only need the see-through when one stands between camera and ball. Otherwise they swap to a plain
-  // material (no 'discard'), so Apple GPUs can skip hidden pixels again. Owner's meter after the outer-forest fix: still 7-9 frames
-  // over 22 ms a second in flight, worst 41 ms (31 Oct 2026). Checked every frame in treeSee().
-  for (const m of [trunks, ...groups.flatMap(g => g.meshes.map(x => x.m))]) {
-    const see = m.material, plain = new THREE.MeshLambertMaterial({ color: see.color, vertexColors: see.vertexColors });
-    TREE_SEE.mats.push([m, see, plain]); // starts see-through: the first frame compiles that shader, so turning it on later never hitches
+  const inner = [trunks, ...sets.flatMap(S => S.meshes)];
+  split(trunks, TREES.length); for (const S of sets) for (const m of S.meshes) split(m, m.userData.nIn);
+  scene.add(...inner); DIAG.trees.push(...inner);
+  if (PERF.see) { // each course tree can cross to the see-through twins of its trunk and crown parts (see seeNear)
+    for (const m of inner) if (m.count) DIAG.trees.push(seeTwin(m, 24));
+    const where = new Map(); for (const S of sets) for (const t of S.list) where.set(t, S);
+    TREES.forEach((t, i) => seeItem(t.x, t.z, (t.lob ? 4 : 3) * t.s + 5, heightAt(t.x, t.z) + (t.lob ? 24 : t.pine ? 12 : 8) * t.s,
+      [[trunks, i], ...where.get(t).meshes.filter(m => m.userData.at.has(t)).map(m => [m, m.userData.at.get(t)])]));
+  } else for (const m of inner) {
+    // the old way: the course trees only need the see-through when one stands between camera and ball. Otherwise they swap to a plain
+    // material (no 'discard'), so Apple GPUs can skip hidden pixels again. Owner's meter after the outer-forest fix: still 7-9 frames
+    // over 22 ms a second in flight, worst 41 ms (31 Oct 2026). Checked every frame in treeSee().
+    const [p, o] = m.material.userData.fol;
+    TREE_SEE.mats.push([m, m.material, foliage(p, { ...o, see: false })]); // starts see-through: the first frame compiles that shader, so turning it on later never hitches
   }
 }
 // lush (default on 1-17, ?nolush turns it off; not on 18, which keeps its hand-built look): the thinned far trees back as flat camera-facing images, and low shrub clumps (some in azalea bloom)
@@ -1752,16 +1929,28 @@ if (LUSH) {
     g.fillStyle = '#2b2117'; g.fillRect(30, 40, 4, 88);
     for (let k = 0; k < 6; k++) { const y = 6 + k * 13, w = 10 + k * 4; g.fillStyle = ['#1d3320', '#22392a', '#1a2e1c'][k % 3]; g.beginPath(); g.ellipse(32, y + 10, w, 11, 0, 0, 6.3); g.fill(); }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
-    const mat = new THREE.MeshLambertMaterial({ map: tex, alphaTest: .5, side: THREE.DoubleSide, color: '#b8b8b8' }); // lit and fogged like the 3D trees, a touch darker so they sit behind them
-    mat.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <defaultnormal_vertex>', `
+    // solid shapes, not a see-through image (stutter, 11 Nov 2026): the image's clear corners were thrown away pixel by pixel, which
+    // stops the GPU skipping hidden pixels, and from up with a driver hundreds of these overlap. The same picture as flat shapes
+    // (trunk, six stacked ovals, three greens), each oval a hair nearer the camera than the one above so they never flicker
+    const solid = PERF.far && (() => { const P = [], C = [], c = new THREE.Color(), tri = (pts, z, hex) => { c.set(hex); for (let i = 1; i < pts.length - 1; i++) for (const k of [0, i, i + 1]) { P.push(pts[k][0], pts[k][1], z); C.push(c.r, c.g, c.b); } };
+      tri([[-2 / 64, 0], [2 / 64, 0], [2 / 64, 88 / 128], [-2 / 64, 88 / 128]], 0, '#2b2117');
+      for (let k = 0; k < 6; k++) tri(Array.from({ length: 10 }, (_, i) => [Math.cos(i * .6283 + .3) * (10 + k * 4) / 64, 1 - (16 + k * 13) / 128 + Math.sin(i * .6283 + .3) * 11 / 128]), (k + 1) * .06, ['#1d3320', '#22392a', '#1a2e1c'][k % 3]);
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(P.map((_, i) => i % 3 === 2 ? 1 : 0), 3)); return g; })();
+    const mat = solid ? new THREE.MeshLambertMaterial({ vertexColors: true, color: '#b8b8b8' }) : new THREE.MeshLambertMaterial({ map: tex, alphaTest: .5, side: THREE.DoubleSide, color: '#b8b8b8' }); // lit and fogged like the 3D trees, a touch darker so they sit behind them
+    if (SWAY) mat.customProgramCacheKey = () => 'farsway';
+    mat.onBeforeCompile = sh => { if (PERF.lean) { sh.vertexShader = '#undef USE_SHADOWMAP\n' + sh.vertexShader; sh.fragmentShader = '#undef USE_SHADOWMAP\n' + sh.fragmentShader; }
+      sh.uniforms.uWind = FOL.uWind; sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform vec4 uWind;').replace('#include <defaultnormal_vertex>', `
       vec3 cw = (modelMatrix * instanceMatrix * vec4(0., 0., 0., 1.)).xyz, tc = cameraPosition - cw; // normal: towards the camera, tipped up like a crown,
       vec3 transformedNormal = (viewMatrix * vec4(normalize(vec3(tc.x, length(tc.xz) * .5, tc.z)), 0.)).xyz; // so a back-lit tree goes dark on its shadow side`).replace('#include <project_vertex>', `
       vec3 rt = normalize(vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]));
-      vec4 mvPosition = viewMatrix * vec4(cw + rt * position.x * length(instanceMatrix[0].xyz) + vec3(0., position.y * length(instanceMatrix[1].xyz), 0.), 1.);
+      vec3 fw = cw + rt * position.x * length(instanceMatrix[0].xyz) + vec3(0., position.y * length(instanceMatrix[1].xyz), 0.)${solid ? ' + normalize(tc) * position.z' : ''};
+      ${SWAY ? `{ float ph = cw.x * .045 + cw.z * .062, gust = .6 + .4 * sin(uWind.w * .5 - dot(cw.xz, uWind.xy) * .04 + 1.7 * sin(ph)); // the same gusts as the 3D trees
+        fw.xz += uWind.xy * (.2 * uWind.z * pow(position.y * length(instanceMatrix[1].xyz) / 22., 1.5) * (gust + .3 * sin(uWind.w * 1.3 + ph * 7.))); }` : ''}
+      vec4 mvPosition = viewMatrix * vec4(fw, 1.);
       gl_Position = projectionMatrix * mvPosition;`); };
-    const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), mat, FAR_TREES.length);
+    const im = new THREE.InstancedMesh(solid || new THREE.PlaneGeometry(1, 1).translate(0, .5, 0), mat, FAR_TREES.length);
     FAR_TREES.forEach((t, i) => { const h = t.pine ? 22 * t.s : 7.5 * t.s; im.setMatrixAt(i, m4.compose(at.set(t.x, (t.h ?? heightAt(t.x, t.z)) - .3, t.z), q.identity(), sc.set(h * .45, h, 1))); });
-    im.frustumCulled = false; scene.add(im);
+    im.frustumCulled = false; im.name = 'far'; scene.add(im);
   }
   { // shrub clumps just in front of the innermost tree on each side, every ~7 m, about half the time; a third in bloom
     const BLOOM = ['#e0287a', '#c0174f', '#d93a5e', '#b8245c', '#f25c9a'], LEAF = ['#2f5a2a', '#3a6a30', '#28482a'], spots = [];
@@ -1776,10 +1965,10 @@ if (LUSH) {
         spots.push([x, zz, bloom && r() < .8 ? bloom : LEAF[Math.floor(r() * LEAF.length)]]);
       }
     }
-    const bush = new THREE.InstancedMesh(shadeUp(new THREE.IcosahedronGeometry(.7, 0)), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#1f1418', flatShading: true, vertexColors: true })), spots.length);
+    const bush = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 5, 1, .3) : new THREE.IcosahedronGeometry(.7, 0)), foliage({ emissive: '#1f1418', flatShading: !SOFT, vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), spots.length);
     spots.forEach(([x, z, c], i) => { const s = .9 + r() * 1.1; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
       const ys = s * (.85 + r() * .25); bush.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); bush.setColorAt(i, col.set(c)); });
-    scene.add(bush);
+    scene.add(bush); bushSee(bush, spots);
   }
 }
 if (UNDERSTORY.length) { // two puffs per plant (a body and an offset top, so the top is irregular), one InstancedMesh each: two draws
@@ -1787,16 +1976,20 @@ if (UNDERSTORY.length) { // two puffs per plant (a body and an offset top, so th
   const geo = new THREE.IcosahedronGeometry(1, 0), pa = geo.attributes.position, jr = rng(77);
   for (let i = 0; i < pa.count; i++) { const k = .8 + jr() * .4; pa.setXYZ(i, pa.getX(i) * k, pa.getY(i) * k, pa.getZ(i) * k); } // lumpy, not a gem
   geo.computeVertexNormals(); shadeUp(geo);
-  const [body, top] = [0, 1].map(() => new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ flatShading: true, vertexColors: true }), UNDERSTORY.length));
-  UNDERSTORY.forEach(({ x, z, h, w }, i) => {
-    const y = groundLow(x, z, w * .6), back = clamp((Math.abs(x - centreX(Math.min(z, GZ))) - 25) / 80, 0, 1);
-    col.set(['#2a4a26', '#33552b', '#244222', '#3b5e2e', '#2e4d2a'][Math.floor(r() * 5)]).offsetHSL(0, 0, -.06 * back - r() * .03); // darker deeper in
-    q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
-    body.setMatrixAt(i, m4.compose(at.set(x, y + h * .4, z), q, sc.set(w, h * .45, w * (.8 + r() * .4)))); body.setColorAt(i, col);
-    const a = r() * 6.28, d = w * .4;
-    top.setMatrixAt(i, m4.compose(at.set(x + Math.cos(a) * d, y + h * (.7 + r() * .15), z + Math.sin(a) * d), q, sc.set(w * .65, h * .3, w * .65))); top.setColorAt(i, col.offsetHSL(0, 0, .02));
-  });
-  for (const m of [body, top]) { m.computeBoundingSphere(); scene.add(m); }
+  // ?soft: smooth lumpy puffs; the plants by the fairway and tee (the ones seen close) get rounder ones with more faces, in their own two meshes
+  const byPlay = ({ x, z }) => Math.abs(x - centreX(clamp(z, 0, GZ))) < HOLE.fairway.half_width + 30 || Math.hypot(x - HOLE.tee[0], z - HOLE.tee[1]) < 45;
+  for (const [list, g] of SOFT ? [[UNDERSTORY.filter(u => !byPlay(u)), shadeUp(blob(1, 0, 77, 1, .15))], [UNDERSTORY.filter(byPlay), shadeUp(blob(1, 1, 78, 1, .35))]] : [[UNDERSTORY, geo]]) {
+    const [body, top] = [0, 1].map(() => new THREE.InstancedMesh(g, foliage({ flatShading: !SOFT, vertexColors: true }, { sway: [1, .5, .05], soft: 1 }), list.length));
+    list.forEach(({ x, z, h, w }, i) => {
+      const y = groundLow(x, z, w * .6), back = clamp((Math.abs(x - centreX(Math.min(z, GZ))) - 25) / 80, 0, 1);
+      col.set(['#2a4a26', '#33552b', '#244222', '#3b5e2e', '#2e4d2a'][Math.floor(r() * 5)]).offsetHSL(0, 0, -.06 * back - r() * .03); // darker deeper in
+      q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
+      body.setMatrixAt(i, m4.compose(at.set(x, y + h * .4, z), q, sc.set(w, h * .45, w * (.8 + r() * .4)))); body.setColorAt(i, col);
+      const a = r() * 6.28, d = w * .4;
+      top.setMatrixAt(i, m4.compose(at.set(x + Math.cos(a) * d, y + h * (.7 + r() * .15), z + Math.sin(a) * d), q, sc.set(w * .65, h * .3, w * .65))); top.setColorAt(i, col.offsetHSL(0, 0, .02));
+    });
+    if (list.length) for (const m of [body, top]) { m.computeBoundingSphere(); m.name = 'under'; scene.add(m); }
+  }
 }
 // garden holes (opt in with `garden`, owner: make 12 feel like the real thing): banked azalea beds, feature trees
 // (red maples, white dogwoods) and stone arch bridges over the creek. Decoration only (no collisions).
@@ -1813,23 +2006,22 @@ if (HOLE.garden) {
       if (waterD(x, z) > 1 && greenD(x, z) > 1.6 && bunkerD(x, z) > 1.3 && (!LUSH || clumpy(d, x0))) beds.push([x, z, row]);
     }
   }
-  const bush = new THREE.Mesh(shadeUp(new THREE.IcosahedronGeometry(.7, 1)), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1420', vertexColors: true })));
-  const bedMesh = new THREE.InstancedMesh(bush.geometry, bush.material, beds.length);
+  const bedMesh = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 9, 1, .3) : new THREE.IcosahedronGeometry(.7, 1)), foliage({ emissive: '#2a1420', vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), beds.length);
   beds.forEach(([x, z, row], i) => {
     const s = 1 + r() * 1.4; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
     bedMesh.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .4 * s + row * .35, z), q, sc.set(s * (1 + r() * .3), s * (.85 + row * .06), s)));
     bedMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
   });
-  scene.add(bedMesh);
+  scene.add(bedMesh); bushSee(bedMesh, beds, 4);
   // feature trees: a short trunk under a few soft, wide puffs. maple = deep red, dogwood = white blossom
-  const puff = new THREE.IcosahedronGeometry(1, 1), bark = new THREE.MeshLambertMaterial({ color: '#3a2a20' });
+  const puff = SOFT ? blob(1, 2, 21, 1, .3) : new THREE.IcosahedronGeometry(1, 1), bark = new THREE.MeshLambertMaterial({ color: '#3a2a20' });
   const TREE_COL = { maple: ['#8e1f16', '#b0301f', '#6f1a14'], dogwood: LUSH ? ['#c9c3ad', '#bdb7a0', '#b9c0a6'] : ['#f4efe4', '#e9e3d4', '#dfe8cf'] };
   for (let [kind, x, z, size = 1] of G.trees || []) {
     if (LUSH && kind === 'dogwood') size *= .7;
     const y = heightAt(x, z), trunk = new THREE.Mesh(new THREE.CylinderGeometry(.12 * size, .2 * size, 2.4 * size, 6), bark);
     trunk.position.set(x, y + 1.2 * size, z); trunk.castShadow = true; scene.add(trunk);
     for (let k = 0; k < 6; k++) {
-      const a = k * 1.05 + r(), d = (k ? 1.3 : 0) * size, m = new THREE.Mesh(puff, new THREE.MeshLambertMaterial({ color: TREE_COL[kind][k % 3], emissive: kind === 'maple' ? '#2a0806' : '#2a2a24', flatShading: true })); // not seeThrough: that shader is for instanced meshes
+      const a = k * 1.05 + r(), d = (k ? 1.3 : 0) * size, m = new THREE.Mesh(puff, foliage({ color: TREE_COL[kind][k % 3], emissive: kind === 'maple' ? '#2a0806' : '#2a2a24', flatShading: !SOFT }, { sway: [0, 10, .05], soft: 1 })); // never see-through: that shader is for instanced meshes
       m.position.set(x + Math.cos(a) * d, y + (2.6 + r() * .9) * size, z + Math.sin(a) * d); m.scale.set(1.7 * size, 1.1 * size, 1.7 * size);
       m.castShadow = true; scene.add(m);
     }
@@ -1870,14 +2062,13 @@ if (HOLE.garden) {
     if (nearView(z) && clear(x, z)) shrubs.push([x, z]);
   }
   const BLOOMS = ['#f08aa8', LUSH ? '#cdc4b0' : '#f4ece0', '#c8487a', '#e86f96', '#f08aa8', '#3d6332'];
-  const bush = new THREE.Mesh(shadeUp(new THREE.IcosahedronGeometry(.7, 1)), seeThrough(new THREE.MeshLambertMaterial({ emissive: '#2a1a1f', vertexColors: true }))); // a touch of glow so blooms read in low sun
-  const shrubMesh = new THREE.InstancedMesh(bush.geometry, bush.material, shrubs.length);
+  const shrubMesh = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 13, 1, .3) : new THREE.IcosahedronGeometry(.7, 1)), foliage({ emissive: '#2a1a1f', vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), shrubs.length); // a touch of glow so blooms read in low sun
   shrubs.forEach(([x, z], i) => {
     const s = 1.1 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
     const ys = s * (.85 + r() * .25); shrubMesh.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); // owner: round, not squashed flat
     shrubMesh.setColorAt(i, col.set(BLOOMS[Math.floor(r() * BLOOMS.length)]));
   });
-  scene.add(shrubMesh);
+  scene.add(shrubMesh); bushSee(shrubMesh, shrubs);
 }
 function makeBag() { // Racing Green golf bag on a stand, Redline band, club heads poking out
   const bag = new THREE.Group(), green = new THREE.MeshStandardMaterial({ color: '#0E2A1C', roughness: .6 }), red = new THREE.MeshLambertMaterial({ color: '#C1121F' }), steel = new THREE.MeshStandardMaterial({ color: '#9a968c', metalness: .8, roughness: .3 });
@@ -2146,6 +2337,59 @@ const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMa
 // one fixed buffer filled in place: rebuilding the trail each frame (new points, new GPU buffer) churned memory and dropped a frame every ~0.3 s in flight (owner video, 31 Oct 2026)
 const TRAIL_MAX = 45 * 120 / 3 + 2, trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_MAX * 3), 3).setUsage(THREE.DynamicDrawUsage);
 const trail = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', trailPos), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(trail);
+// impact moments (?fx trial, 11 Nov 2026): a puff of sand, a splash, turf off the club, a little lift when the ball drops. Looks only.
+// One small pool of soft round points (no images; they blend and never write depth, so nothing needs sorting) and three flat rings
+const FXP = FX && (() => {
+  const N = 420, P = new Float32Array(N * 3), C = new Float32Array(N * 4), S = new Float32Array(N), V = new Float32Array(N * 3), T = new Float32Array(N * 8); // T: age, life, gravity, drag, growth, first size, first alpha, lands (1 = stops on the ground)
+  const attr = (a, n) => new THREE.BufferAttribute(a, n).setUsage(THREE.DynamicDrawUsage), geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', attr(P, 3)); geo.setAttribute('pcol', attr(C, 4)); geo.setAttribute('psize', attr(S, 1));
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true, uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), uPx: { value: 1 } },
+    vertexShader: `attribute vec4 pcol; attribute float psize; varying vec4 vC; uniform float uPx;
+      #include <fog_pars_vertex>
+      void main() { vC = pcol; vec4 mvPosition = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mvPosition; gl_PointSize = psize * uPx / -mvPosition.z;
+      #include <fog_vertex>
+      }`,
+    fragmentShader: `varying vec4 vC;
+      #include <common>
+      #include <fog_pars_fragment>
+      void main() { gl_FragColor = vec4(vC.rgb, vC.a * smoothstep(1., .5, length(gl_PointCoord * 2. - 1.)));
+      #include <colorspace_fragment>
+      #include <fog_fragment>
+      }` });
+  const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; scene.add(pts);
+  const rings = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.RingGeometry(.84, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0 })); m.visible = false; scene.add(m); return m; });
+  let head = 0, live = 0, ringI = 0; const R = Math.random, tint = new THREE.Color(), c = new THREE.Color();
+  const light = () => tint.copy(sun.color).multiplyScalar(sun.intensity * .28).add(c.copy(hemi.color).multiplyScalar(hemi.intensity * .3)); // roughly how bright a pale thing is in this Mood
+  const put = (x, y, z, vx, vy, vz, hex, a, size, life, grav, drag, grow, lands = 0) => { const i = head; head = (head + 1) % N; live = Math.max(live, 1);
+    P[i * 3] = x; P[i * 3 + 1] = y; P[i * 3 + 2] = z; V[i * 3] = vx; V[i * 3 + 1] = vy; V[i * 3 + 2] = vz; c.set(hex).multiply(tint);
+    C[i * 4] = Math.min(1, c.r); C[i * 4 + 1] = Math.min(1, c.g); C[i * 4 + 2] = Math.min(1, c.b); C[i * 4 + 3] = a; S[i] = size; T.set([0, life, grav, drag, grow, size, a, lands], i * 8); };
+  const ring = (p, hex, r0, r1, a, dur) => { const m = rings[ringI++ % 3]; light(); m.material.color.set(hex).multiply(tint); m.position.set(p.x, heightAt(p.x, p.z) + .03, p.z); m.userData = { t: 0, dur, r0, r1, a }; m.visible = true; };
+  return {
+    sand(p, k = 1, dx = 0, dz = 0) { light(); const y = heightAt(p.x, p.z); // k: how hard (0.3 a soft landing, 1.5 a full bunker shot); dx, dz: the way it's thrown
+      for (let i = 0, n = Math.round(22 + 26 * k); i < n; i++) { const a = R() * 6.283, s = (.4 + R() * 1.6) * k, up = (1.5 + R() * 3.5) * Math.sqrt(k);
+        put(p.x + Math.cos(a) * .15, y + .05, p.z + Math.sin(a) * .15, Math.cos(a) * s + dx * up * .8, up, Math.sin(a) * s + dz * up * .8, R() < .5 ? '#ffffff' : '#e6e8ea', .55 + R() * .3, .14 + R() * .2, .55 + R() * .5, 7, 2.2, 1.6); } },
+    splash(p) { light(); const y = heightAt(p.x, p.z);
+      for (let i = 0; i < 46; i++) { const a = R() * 6.283, s = .3 + R() * 2.2, up = 3.5 + R() * 5.5;
+        put(p.x, y + .05, p.z, Math.cos(a) * s, up, Math.sin(a) * s, R() < .6 ? '#f2f8fb' : '#cfe1ea', .6 + R() * .3, .06 + R() * .1, .7 + R() * .5, 9.8, .4, .3); }
+      for (let i = 0; i < 14; i++) { const a = R() * 6.283; put(p.x, y + .1, p.z, Math.cos(a) * 1.2, .6 + R(), Math.sin(a) * 1.2, '#e6f0f4', .35, .35 + R() * .3, .5 + R() * .3, 2, 2.5, 2.2); } // the low burst of spray
+      ring(p, '#dfeaf0', .25, 2.6, .5, 1.1); setTimeout(() => ring(p, '#dfeaf0', .2, 1.8, .35, 1.1), 260); },
+    divot(p, aim, k, lie) { light(); const y = heightAt(p.x, p.z), fx = Math.sin(aim), fz = Math.cos(aim), straw = lie === 'straw'; // turf (or pine straw) thrown forward off the club
+      for (let i = 0, n = Math.round(8 + 14 * k); i < n; i++) { const side = (R() - .5) * 1.6, f = (2 + R() * 4.5) * (.5 + k * .5), up = (1.6 + R() * 2.8) * (.5 + k * .5);
+        put(p.x + fx * .1, y + .03, p.z + fz * .1, fx * f + fz * side, up, fz * f - fx * side, straw ? (R() < .5 ? '#8a5a30' : '#6b4526') : R() < .6 ? '#4f7f3c' : '#5a4630', .95, .05 + R() * .08, .7 + R() * .5, 9.8, .5, 0, 1); } },
+    holed(p) { light(); ring(p, '#EDE9DF', .08, .75, .55, .9);
+      for (let i = 0; i < 18; i++) { const a = R() * 6.283, s = .15 + R() * .35; put(p.x + Math.cos(a) * .06, heightAt(p.x, p.z) + .02, p.z + Math.sin(a) * .06, Math.cos(a) * s, .5 + R() * .9, Math.sin(a) * s, '#EDE9DF', .7, .02 + R() * .025, .8 + R() * .6, .6, 1.2, 0); } },
+    tick(dt, px) { mat.uniforms.uPx.value = px;
+      for (const m of rings) if (m.visible) { const u = m.userData, k = (u.t += dt) / u.dur; if (k >= 1) { m.visible = false; continue; } const e = 1 - (1 - k) * (1 - k); m.scale.setScalar(u.r0 + (u.r1 - u.r0) * e); m.material.opacity = u.a * (1 - k); }
+      if (!live) return; live = 0;
+      for (let i = 0; i < N; i++) { const o = i * 8; if (!T[o + 1]) continue;
+        const age = T[o] += dt, k = age / T[o + 1]; if (k >= 1) { T[o + 1] = 0; S[i] = 0; C[i * 4 + 3] = 0; continue; } live++;
+        const d = Math.exp(-T[o + 3] * dt); V[i * 3] *= d; V[i * 3 + 2] *= d; V[i * 3 + 1] = V[i * 3 + 1] * d - T[o + 2] * dt;
+        P[i * 3] += V[i * 3] * dt; P[i * 3 + 1] += V[i * 3 + 1] * dt; P[i * 3 + 2] += V[i * 3 + 2] * dt;
+        if (T[o + 7] && V[i * 3 + 1] < 0) { const gy = heightAt(P[i * 3], P[i * 3 + 2]) + .02; if (P[i * 3 + 1] < gy) { P[i * 3 + 1] = gy; V[i * 3] = V[i * 3 + 1] = V[i * 3 + 2] = 0; T[o + 2] = 0; } } // turf lands and lies there till it fades
+        S[i] = T[o + 5] * (1 + T[o + 4] * age); C[i * 4 + 3] = T[o + 6] * (1 - k * k); }
+      geo.attributes.position.needsUpdate = geo.attributes.pcol.needsUpdate = geo.attributes.psize.needsUpdate = true; },
+  };
+})();
 trail.geometry.setDrawRange(0, 0);
 aimLine.frustumCulled = trail.frustumCulled = false; // geometry is rewritten every frame, so its cached bounds go stale and hide the line
 
@@ -2359,6 +2603,9 @@ function launch() {
   const r = simulate(state.ball, s, WIND, { pin: PIN, rolling: !!c.putter });
   state.shot = { from: { ...state.ball }, s, r, i: 0, t0: performance.now(), heard: 0 };
   sfx.hit(state.power, !!c.putter, c.speed / CLUBS[0].speed);
+  if (FXP && !c.putter) { const teed = Math.hypot(state.ball.x - HOLE.tee[0], state.ball.z - HOLE.tee[1]) < .5, wood = state.club < 2; // off the club: sand from a bunker, turf from grass (a wood sweeps it, so less), nothing off a tee peg
+    if (lie === 'sand') FXP.sand(state.ball, .6 + .9 * state.power, Math.sin(state.aim), Math.cos(state.aim));
+    else if (!teed && lie !== 'green' && lie !== 'water') FXP.divot(state.ball, state.aim, state.power * (wood ? .35 : 1), lie); }
   state.phase = 'flying'; document.body.classList.add('flying');
   refresh();
 }
@@ -2660,13 +2907,13 @@ function frame(now) {
     // blend between the 1/120 s samples: snapping to whole samples moved the ball 2, then 3, then 2 a frame, so it juddered in flight
     const a = sh.r.pts[i], b = sh.r.pts[Math.min(i + 1, sh.r.pts.length - 1)], t = f - i;
     ball = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
-    while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); }
+    while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); if (FXP && h.m === 'sand') FXP.sand(sh.r.pts[h.i], clamp(h.s / 14, .25, 1.2)); }
     // the trail ends exactly where the ball is drawn: ending on every 3rd whole sample left its tip up to ~2 m behind a driver, read as a second ball
     { let n = 0; const A = trailPos.array;
       for (let k = 0; k <= i && n < TRAIL_MAX - 1; k += 3, n++) { const p = sh.r.pts[k]; A[n * 3] = p.x; A[n * 3 + 1] = p.y; A[n * 3 + 2] = p.z; }
       A[n * 3] = ball.x; A[n * 3 + 1] = ball.y; A[n * 3 + 2] = ball.z; n++;
       trailPos.needsUpdate = true; trail.geometry.setDrawRange(0, n); }
-    if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); } if (sh.r.outcome === 'water') sfx.splash(); }
+    if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); if (FXP) FXP.holed(PIN); } if (sh.r.outcome === 'water') { sfx.splash(); if (FXP) FXP.splash(sh.r.pts[sh.r.pts.length - 1]); } }
   }
   let bs = BALL_NEAR + (1 - BALL_NEAR) * clamp((flat(ball, PIN) - 20) / 20, 0, 1); // true size near the cup so what you see is what drops; eases by distance only so it never pops mid-roll
   // owner: ball and club in proportion, the club a real club's size. At address the ball is true size beside a true-size club
@@ -2737,7 +2984,11 @@ function frame(now) {
   { const a = clothGeo.attributes.position, flap = .02 + HOLE.wind.mph * .003; // ripple grows toward the free edge and with the wind
     for (let i = 0; i < a.count; i++) { const x = clothX[i * 3]; a.setZ(i, Math.sin(x * 9 - now / 140) * flap * x / .8); }
     a.needsUpdate = true; clothGeo.computeVertexNormals(); }
-  if (frame.shown) treeSee(camera.position, ballMesh.position);
+  if (frame.shown) (PERF.see ? seeNear : treeSee)(camera.position, ballMesh.position);
+  if (FXP) { FXP.tick(Math.min(.05, (now - (frame.fxT || now)) / 1000), renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360))); frame.fxT = now; }
+  if (SWAY) { // the trees move with the hole's wind (it turns slowly on the swirl holes); looks only, the flight's wind is its own sum
+    const a = HOLE.wind.toward_deg * Math.PI / 180 + (HOLE.swirl ? .8 * Math.sin(now / 9000) + .25 * Math.sin(now / 2300) : 0);
+    FOL.uWind.value.set(Math.sin(a), Math.cos(a), HOLE.wind.mph / 10, now / 1000); }
   renderer.render(scene, camera);
   if (FPS) fpsCpu = Math.max(fpsCpu, performance.now() - cpu0); // worst JS + draw-submit time this second (GPU work isn't in it)
   if (!frame.shown) { frame.shown = true; const l = document.getElementById('loading'); l.classList.add('done'); setTimeout(() => { l.remove(); sndStart(); }, 600); } // sound built here, not on the first key or tap (it stalled the first aim ~11 ms: noise buffer, clip decoding); the first gesture only resumes it
