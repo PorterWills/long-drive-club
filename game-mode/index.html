@@ -1414,10 +1414,11 @@ const LUSH = LOB && HOLE_NO !== 18 && !QS.has('nolush'); // lush (default since 
 // never the whole forest) and `lean` (no shadow code in anything that never takes a shadow). ?oldperf turns them all off and
 // ?oldperf=ground,far (any of the four) turns off the ones named, so the owner can tell with ?fps which one mattered
 const PERF = (off => ({ ground: !off('ground'), far: !off('far'), see: !off('see'), lean: !off('lean') }))(k => QS.has('oldperf') && (!QS.get('oldperf') || QS.get('oldperf').split(',').includes(k)));
-// trials (11 Nov 2026), off until the owner has seen them: ?soft de-gems the trees and bushes (smooth shading, dappled light, a sunlit
-// edge, rounder crowns by the fairway), ?sway moves them with the hole's wind, ?fx adds the impact moments; ?new turns on all three
-const TRIAL = k => QS.has(k) || QS.has('new');
-const SOFT = LOB && TRIAL('soft'), SWAY = LOB && TRIAL('sway') && !matchMedia('(prefers-reduced-motion: reduce)').matches, FX = TRIAL('fx');
+// the new look (default since 12 Nov 2026, owner): soft de-gems the trees and bushes (smooth shading, dappled light, a sunlit edge,
+// rounder crowns by the fairway), sway moves them with the hole's wind, fx adds the impact moments. ?nosoft, ?nosway and ?nofx turn
+// one off; ?oldlook turns off all three
+const LOOK = k => !QS.has('no' + k) && !QS.has('oldlook');
+const SOFT = LOB && LOOK('soft'), SWAY = LOB && LOOK('sway') && !matchMedia('(prefers-reduced-motion: reduce)').matches, FX = LOOK('fx');
 const clumpy = (d, seed = 0) => Math.sin(d * .55 + seed) + Math.sin(d * .21 + seed * 2.3) > .5; // ?lush: runs of shrubs broken into clumps (~4-6 m) with gaps // test switches: ?fps shows a frame meter, ?pr=1 renders at a lower resolution (stutter hunt, 31 Oct 2026)
 renderer.setPixelRatio(QS.has('pr') ? +QS.get('pr') || 1 : Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true; renderer.shadowMap.autoUpdate = false; // redrawn only when something that casts one moves (see the loop)
@@ -2337,7 +2338,7 @@ const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMa
 // one fixed buffer filled in place: rebuilding the trail each frame (new points, new GPU buffer) churned memory and dropped a frame every ~0.3 s in flight (owner video, 31 Oct 2026)
 const TRAIL_MAX = 45 * 120 / 3 + 2, trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_MAX * 3), 3).setUsage(THREE.DynamicDrawUsage);
 const trail = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', trailPos), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(trail);
-// impact moments (?fx trial, 11 Nov 2026): a puff of sand, a splash, turf off the club, a little lift when the ball drops. Looks only.
+// impact moments (11 Nov 2026, ?nofx turns them off): a puff of sand, a splash, turf off the club, a little lift when the ball drops. Looks only.
 // One small pool of soft round points (no images; they blend and never write depth, so nothing needs sorting) and three flat rings
 const FXP = FX && (() => {
   const N = 420, P = new Float32Array(N * 3), C = new Float32Array(N * 4), S = new Float32Array(N), V = new Float32Array(N * 3), T = new Float32Array(N * 8); // T: age, life, gravity, drag, growth, first size, first alpha, lands (1 = stops on the ground)
