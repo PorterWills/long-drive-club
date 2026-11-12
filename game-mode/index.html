@@ -1720,14 +1720,21 @@ const foliage = (params, o = {}) => {
       vec3 ab = uBall - cameraPosition, ap = vSeeW - cameraPosition; float t = clamp(dot(ap, ab) / dot(ab, ab), 0., 1.);
       float d = min(length(ap) - 1.5, length(ap - ab * t) - .4 - 2.2 * t); // tube widens towards the ball
       if (fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453) > smoothstep(0., 3., d)) discard;`);
-    if (soft) F = F.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
-      { // dappled light: soft patches of sun and shade across the whole crown (they drift a little with the wind), fading to their average far off
-        vec3 dq = vSeeW * .8 + vec3(uWind.x, 0., uWind.y) * (uWind.w * .1);
-        float dp = sin(dq.x * 1.3 + sin(dq.z * 1.1 + dq.y * .7) * 1.6) * sin(dq.y * 1.9 + sin(dq.x * .9 - dq.z * .6) * 1.4) + .6 * sin(dq.z * 1.6 + sin(dq.y * 1.3 + dq.x * .5) * 1.5);
-        reflectedLight.directDiffuse *= mix(.95, mix(.5, 1.35, smoothstep(-.7, .8, dp)), 1. - smoothstep(60., 170., vFogDepth));
+    if (soft) F = F.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      float fNear = 1. - smoothstep(50., 170., vFogDepth); // far off, leaf detail is smaller than a pixel: it fades to its average so nothing shimmers
+      { vec3 bq = vSeeW * 4.3; // leaf clumps: the smooth surface catches the light in soft bumps, not as one polished shape
+        normal = normalize(normal + (viewMatrix * vec4(sin(bq.x + sin(bq.y * 1.3) * 1.5), sin(bq.y * 1.1 + sin(bq.z * .9) * 1.5), sin(bq.z * 1.2 + sin(bq.x * 1.4) * 1.5), 0.)).xyz * (.38 * fNear)); }`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+      { // dappled light: patches of sun and shade across the whole crown, broad ones and leaf-sized ones (they drift a little with the wind)
+        vec3 dq = vSeeW + vec3(uWind.x, 0., uWind.y) * (uWind.w * .12);
+        float d1 = sin(dq.x * 2.3 + sin(dq.z * 1.9 + dq.y * 1.1) * 1.6) * sin(dq.y * 2.9 + sin(dq.x * 1.7 - dq.z * 1.2) * 1.4);
+        float d2 = sin(dq.x * 7.1 + sin(dq.z * 6.3) * 1.3 + dq.y * 3.) * sin(dq.z * 6.7 + sin(dq.y * 7.9) * 1.2 - dq.x * 2.);
+        float dp = smoothstep(-.55, .65, d1 + .5 * d2 * fNear);
+        reflectedLight.directDiffuse *= mix(.95, mix(.45, 1.45, dp), fNear);
+        reflectedLight.indirectDiffuse *= mix(1., .84 + .32 * dp, fNear);
         #if NUM_DIR_LIGHTS > 0
-        float rim = pow(1. - saturate(dot(normal, normalize(vViewPosition))), 3.) * smoothstep(-.15, .5, dot(normal, directionalLights[0].direction));
-        reflectedLight.directDiffuse += directionalLights[0].color * (diffuseColor.rgb * .7 + vec3(.04, .05, .01)) * rim; // the sunlit edge, on the sun's side only
+        float rim = pow(1. - saturate(dot(normal, normalize(vViewPosition))), 2.5) * smoothstep(-.1, .45, dot(normal, directionalLights[0].direction));
+        reflectedLight.directDiffuse += directionalLights[0].color * (diffuseColor.rgb * 1.1 + vec3(.03, .04, .008)) * rim; // the sunlit edge, on the sun's side only
         #endif
       }`);
     if (PERF.lean) { V = '#undef USE_SHADOWMAP\n' + V; F = '#undef USE_SHADOWMAP\n' + F; }
@@ -1769,7 +1776,7 @@ const bushSee = (mesh, spots, r = 5) => { if (!PERF.see) return; seeTwin(mesh, 9
 const blob = (r, detail, seed, sy = 1, lump = .2) => {
   const g = new THREE.IcosahedronGeometry(1, detail), P = g.attributes.position, acc = new Map(), key = i => `${Math.round(P.getX(i) * 500)},${Math.round(P.getY(i) * 500)},${Math.round(P.getZ(i) * 500)}`, keys = [], s = seed * 1.37;
   for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i); keys.push(key(i));
-    const k = r * (1 + lump * (Math.sin(x * 2.3 + s) * Math.sin(y * 2.9 + s * 1.7) + .7 * Math.sin(z * 3.3 + s * .6 + x * 1.9) + .5 * Math.sin(y * 4.1 - z * 2.3 + s * 2.1)));
+    const k = r * (1 + lump / 2.2 * (Math.sin(x * 2.3 + s) * Math.sin(y * 2.9 + s * 1.7) + .7 * Math.sin(z * 3.3 + s * .6 + x * 1.9) + .5 * Math.sin(y * 4.1 - z * 2.3 + s * 2.1))); // lump: the most a point moves in or out, as a share of the radius
     P.setXYZ(i, x * k, y * k * sy, z * k); }
   const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), N = [];
   for (let i = 0; i < P.count; i += 3) { a.fromBufferAttribute(P, i); b.fromBufferAttribute(P, i + 1); c.fromBufferAttribute(P, i + 2); b.sub(a); c.sub(a); b.cross(c); // area-weighted face normal, shared by every corner at the same point
@@ -1871,7 +1878,7 @@ const shadeUp = (geo, lo = .7, hi = 1.12) => { const p = geo.attributes.position
   // more faces (their own meshes), the rest keep 20 faces each, and the out-of-bounds forest draws 6 clumps a tree, not 10
   const byPlay = t => !t.outer && (Math.abs(t.x - centreX(clamp(t.z, 0, GZ))) < HOLE.fairway.half_width + 26 || Math.hypot(t.x - HOLE.green.at[0], t.z - GZ) < 50 || Math.hypot(t.x - HOLE.tee[0], t.z - HOLE.tee[1]) < 50);
   const softGeo = (K, gi, hi) => K.parts.map(([g], pi) => g.parameters.detail === undefined ? leafy(g, 11 + gi * 7 + pi)
-    : shadeUp(K.parts === LOBP ? blob(g.parameters.radius, hi && pi < 4 ? 1 : 0, 11 + gi * 7 + pi, .62, hi ? .2 : .12) : blob(g.parameters.radius, hi ? 2 : 1, 11 + gi * 7 + pi, 1, .16), .66, 1.16));
+    : shadeUp(K.parts === LOBP ? blob(g.parameters.radius, hi && pi < 4 ? 1 : 0, 11 + gi * 7 + pi, .62, hi ? .32 : .15) : blob(g.parameters.radius, hi ? 2 : 1, 11 + gi * 7 + pi, 1, .3), .66, 1.16));
   const sets = [];
   KINDS.forEach((K, gi) => {
     const list = DRAWN.filter(K.is);
@@ -1958,7 +1965,7 @@ if (LUSH) {
         spots.push([x, zz, bloom && r() < .8 ? bloom : LEAF[Math.floor(r() * LEAF.length)]]);
       }
     }
-    const bush = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 5) : new THREE.IcosahedronGeometry(.7, 0)), foliage({ emissive: '#1f1418', flatShading: !SOFT, vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), spots.length);
+    const bush = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 5, 1, .3) : new THREE.IcosahedronGeometry(.7, 0)), foliage({ emissive: '#1f1418', flatShading: !SOFT, vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), spots.length);
     spots.forEach(([x, z, c], i) => { const s = .9 + r() * 1.1; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
       const ys = s * (.85 + r() * .25); bush.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); bush.setColorAt(i, col.set(c)); });
     scene.add(bush); bushSee(bush, spots);
@@ -1971,7 +1978,7 @@ if (UNDERSTORY.length) { // two puffs per plant (a body and an offset top, so th
   geo.computeVertexNormals(); shadeUp(geo);
   // ?soft: smooth lumpy puffs; the plants by the fairway and tee (the ones seen close) get rounder ones with more faces, in their own two meshes
   const byPlay = ({ x, z }) => Math.abs(x - centreX(clamp(z, 0, GZ))) < HOLE.fairway.half_width + 30 || Math.hypot(x - HOLE.tee[0], z - HOLE.tee[1]) < 45;
-  for (const [list, g] of SOFT ? [[UNDERSTORY.filter(u => !byPlay(u)), shadeUp(blob(1, 0, 77, 1, .22))], [UNDERSTORY.filter(byPlay), shadeUp(blob(1, 1, 78, 1, .22))]] : [[UNDERSTORY, geo]]) {
+  for (const [list, g] of SOFT ? [[UNDERSTORY.filter(u => !byPlay(u)), shadeUp(blob(1, 0, 77, 1, .15))], [UNDERSTORY.filter(byPlay), shadeUp(blob(1, 1, 78, 1, .35))]] : [[UNDERSTORY, geo]]) {
     const [body, top] = [0, 1].map(() => new THREE.InstancedMesh(g, foliage({ flatShading: !SOFT, vertexColors: true }, { sway: [1, .5, .05], soft: 1 }), list.length));
     list.forEach(({ x, z, h, w }, i) => {
       const y = groundLow(x, z, w * .6), back = clamp((Math.abs(x - centreX(Math.min(z, GZ))) - 25) / 80, 0, 1);
@@ -1999,7 +2006,7 @@ if (HOLE.garden) {
       if (waterD(x, z) > 1 && greenD(x, z) > 1.6 && bunkerD(x, z) > 1.3 && (!LUSH || clumpy(d, x0))) beds.push([x, z, row]);
     }
   }
-  const bedMesh = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 9) : new THREE.IcosahedronGeometry(.7, 1)), foliage({ emissive: '#2a1420', vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), beds.length);
+  const bedMesh = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 9, 1, .3) : new THREE.IcosahedronGeometry(.7, 1)), foliage({ emissive: '#2a1420', vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), beds.length);
   beds.forEach(([x, z, row], i) => {
     const s = 1 + r() * 1.4; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
     bedMesh.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .4 * s + row * .35, z), q, sc.set(s * (1 + r() * .3), s * (.85 + row * .06), s)));
@@ -2007,7 +2014,7 @@ if (HOLE.garden) {
   });
   scene.add(bedMesh); bushSee(bedMesh, beds, 4);
   // feature trees: a short trunk under a few soft, wide puffs. maple = deep red, dogwood = white blossom
-  const puff = SOFT ? blob(1, 2, 21, 1, .16) : new THREE.IcosahedronGeometry(1, 1), bark = new THREE.MeshLambertMaterial({ color: '#3a2a20' });
+  const puff = SOFT ? blob(1, 2, 21, 1, .3) : new THREE.IcosahedronGeometry(1, 1), bark = new THREE.MeshLambertMaterial({ color: '#3a2a20' });
   const TREE_COL = { maple: ['#8e1f16', '#b0301f', '#6f1a14'], dogwood: LUSH ? ['#c9c3ad', '#bdb7a0', '#b9c0a6'] : ['#f4efe4', '#e9e3d4', '#dfe8cf'] };
   for (let [kind, x, z, size = 1] of G.trees || []) {
     if (LUSH && kind === 'dogwood') size *= .7;
@@ -2055,7 +2062,7 @@ if (HOLE.garden) {
     if (nearView(z) && clear(x, z)) shrubs.push([x, z]);
   }
   const BLOOMS = ['#f08aa8', LUSH ? '#cdc4b0' : '#f4ece0', '#c8487a', '#e86f96', '#f08aa8', '#3d6332'];
-  const shrubMesh = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 13) : new THREE.IcosahedronGeometry(.7, 1)), foliage({ emissive: '#2a1a1f', vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), shrubs.length); // a touch of glow so blooms read in low sun
+  const shrubMesh = new THREE.InstancedMesh(shadeUp(SOFT ? blob(.7, 1, 13, 1, .3) : new THREE.IcosahedronGeometry(.7, 1)), foliage({ emissive: '#2a1a1f', vertexColors: true }, { see: !PERF.see, sway: [.7, .7, .035], soft: 1 }), shrubs.length); // a touch of glow so blooms read in low sun
   shrubs.forEach(([x, z], i) => {
     const s = 1.1 + r() * .9; q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, r() * 6.28);
     const ys = s * (.85 + r() * .25); shrubMesh.setMatrixAt(i, m4.compose(at.set(x, groundLow(x, z, .7 * s) + .45 * ys, z), q, sc.set(s * (1 + r() * .3), ys, s))); // owner: round, not squashed flat
@@ -2330,6 +2337,59 @@ const aimLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMa
 // one fixed buffer filled in place: rebuilding the trail each frame (new points, new GPU buffer) churned memory and dropped a frame every ~0.3 s in flight (owner video, 31 Oct 2026)
 const TRAIL_MAX = 45 * 120 / 3 + 2, trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_MAX * 3), 3).setUsage(THREE.DynamicDrawUsage);
 const trail = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', trailPos), new THREE.LineBasicMaterial({ color: '#EDE9DF' })); scene.add(trail);
+// impact moments (?fx trial, 11 Nov 2026): a puff of sand, a splash, turf off the club, a little lift when the ball drops. Looks only.
+// One small pool of soft round points (no images; they blend and never write depth, so nothing needs sorting) and three flat rings
+const FXP = FX && (() => {
+  const N = 420, P = new Float32Array(N * 3), C = new Float32Array(N * 4), S = new Float32Array(N), V = new Float32Array(N * 3), T = new Float32Array(N * 8); // T: age, life, gravity, drag, growth, first size, first alpha, lands (1 = stops on the ground)
+  const attr = (a, n) => new THREE.BufferAttribute(a, n).setUsage(THREE.DynamicDrawUsage), geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', attr(P, 3)); geo.setAttribute('pcol', attr(C, 4)); geo.setAttribute('psize', attr(S, 1));
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, fog: true, uniforms: { ...THREE.UniformsUtils.clone(THREE.UniformsLib.fog), uPx: { value: 1 } },
+    vertexShader: `attribute vec4 pcol; attribute float psize; varying vec4 vC; uniform float uPx;
+      #include <fog_pars_vertex>
+      void main() { vC = pcol; vec4 mvPosition = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mvPosition; gl_PointSize = psize * uPx / -mvPosition.z;
+      #include <fog_vertex>
+      }`,
+    fragmentShader: `varying vec4 vC;
+      #include <common>
+      #include <fog_pars_fragment>
+      void main() { gl_FragColor = vec4(vC.rgb, vC.a * smoothstep(1., .5, length(gl_PointCoord * 2. - 1.)));
+      #include <colorspace_fragment>
+      #include <fog_fragment>
+      }` });
+  const pts = new THREE.Points(geo, mat); pts.frustumCulled = false; scene.add(pts);
+  const rings = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.RingGeometry(.84, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0 })); m.visible = false; scene.add(m); return m; });
+  let head = 0, live = 0, ringI = 0; const R = Math.random, tint = new THREE.Color(), c = new THREE.Color();
+  const light = () => tint.copy(sun.color).multiplyScalar(sun.intensity * .28).add(c.copy(hemi.color).multiplyScalar(hemi.intensity * .3)); // roughly how bright a pale thing is in this Mood
+  const put = (x, y, z, vx, vy, vz, hex, a, size, life, grav, drag, grow, lands = 0) => { const i = head; head = (head + 1) % N; live = Math.max(live, 1);
+    P[i * 3] = x; P[i * 3 + 1] = y; P[i * 3 + 2] = z; V[i * 3] = vx; V[i * 3 + 1] = vy; V[i * 3 + 2] = vz; c.set(hex).multiply(tint);
+    C[i * 4] = Math.min(1, c.r); C[i * 4 + 1] = Math.min(1, c.g); C[i * 4 + 2] = Math.min(1, c.b); C[i * 4 + 3] = a; S[i] = size; T.set([0, life, grav, drag, grow, size, a, lands], i * 8); };
+  const ring = (p, hex, r0, r1, a, dur) => { const m = rings[ringI++ % 3]; light(); m.material.color.set(hex).multiply(tint); m.position.set(p.x, heightAt(p.x, p.z) + .03, p.z); m.userData = { t: 0, dur, r0, r1, a }; m.visible = true; };
+  return {
+    sand(p, k = 1, dx = 0, dz = 0) { light(); const y = heightAt(p.x, p.z); // k: how hard (0.3 a soft landing, 1.5 a full bunker shot); dx, dz: the way it's thrown
+      for (let i = 0, n = Math.round(22 + 26 * k); i < n; i++) { const a = R() * 6.283, s = (.4 + R() * 1.6) * k, up = (1.5 + R() * 3.5) * Math.sqrt(k);
+        put(p.x + Math.cos(a) * .15, y + .05, p.z + Math.sin(a) * .15, Math.cos(a) * s + dx * up * .8, up, Math.sin(a) * s + dz * up * .8, R() < .5 ? '#ffffff' : '#e6e8ea', .55 + R() * .3, .14 + R() * .2, .55 + R() * .5, 7, 2.2, 1.6); } },
+    splash(p) { light(); const y = heightAt(p.x, p.z);
+      for (let i = 0; i < 46; i++) { const a = R() * 6.283, s = .3 + R() * 2.2, up = 3.5 + R() * 5.5;
+        put(p.x, y + .05, p.z, Math.cos(a) * s, up, Math.sin(a) * s, R() < .6 ? '#f2f8fb' : '#cfe1ea', .6 + R() * .3, .06 + R() * .1, .7 + R() * .5, 9.8, .4, .3); }
+      for (let i = 0; i < 14; i++) { const a = R() * 6.283; put(p.x, y + .1, p.z, Math.cos(a) * 1.2, .6 + R(), Math.sin(a) * 1.2, '#e6f0f4', .35, .35 + R() * .3, .5 + R() * .3, 2, 2.5, 2.2); } // the low burst of spray
+      ring(p, '#dfeaf0', .25, 2.6, .5, 1.1); setTimeout(() => ring(p, '#dfeaf0', .2, 1.8, .35, 1.1), 260); },
+    divot(p, aim, k, lie) { light(); const y = heightAt(p.x, p.z), fx = Math.sin(aim), fz = Math.cos(aim), straw = lie === 'straw'; // turf (or pine straw) thrown forward off the club
+      for (let i = 0, n = Math.round(8 + 14 * k); i < n; i++) { const side = (R() - .5) * 1.6, f = (2 + R() * 4.5) * (.5 + k * .5), up = (1.6 + R() * 2.8) * (.5 + k * .5);
+        put(p.x + fx * .1, y + .03, p.z + fz * .1, fx * f + fz * side, up, fz * f - fx * side, straw ? (R() < .5 ? '#8a5a30' : '#6b4526') : R() < .6 ? '#4f7f3c' : '#5a4630', .95, .05 + R() * .08, .7 + R() * .5, 9.8, .5, 0, 1); } },
+    holed(p) { light(); ring(p, '#EDE9DF', .08, .75, .55, .9);
+      for (let i = 0; i < 18; i++) { const a = R() * 6.283, s = .15 + R() * .35; put(p.x + Math.cos(a) * .06, heightAt(p.x, p.z) + .02, p.z + Math.sin(a) * .06, Math.cos(a) * s, .5 + R() * .9, Math.sin(a) * s, '#EDE9DF', .7, .02 + R() * .025, .8 + R() * .6, .6, 1.2, 0); } },
+    tick(dt, px) { mat.uniforms.uPx.value = px;
+      for (const m of rings) if (m.visible) { const u = m.userData, k = (u.t += dt) / u.dur; if (k >= 1) { m.visible = false; continue; } const e = 1 - (1 - k) * (1 - k); m.scale.setScalar(u.r0 + (u.r1 - u.r0) * e); m.material.opacity = u.a * (1 - k); }
+      if (!live) return; live = 0;
+      for (let i = 0; i < N; i++) { const o = i * 8; if (!T[o + 1]) continue;
+        const age = T[o] += dt, k = age / T[o + 1]; if (k >= 1) { T[o + 1] = 0; S[i] = 0; C[i * 4 + 3] = 0; continue; } live++;
+        const d = Math.exp(-T[o + 3] * dt); V[i * 3] *= d; V[i * 3 + 2] *= d; V[i * 3 + 1] = V[i * 3 + 1] * d - T[o + 2] * dt;
+        P[i * 3] += V[i * 3] * dt; P[i * 3 + 1] += V[i * 3 + 1] * dt; P[i * 3 + 2] += V[i * 3 + 2] * dt;
+        if (T[o + 7] && V[i * 3 + 1] < 0) { const gy = heightAt(P[i * 3], P[i * 3 + 2]) + .02; if (P[i * 3 + 1] < gy) { P[i * 3 + 1] = gy; V[i * 3] = V[i * 3 + 1] = V[i * 3 + 2] = 0; T[o + 2] = 0; } } // turf lands and lies there till it fades
+        S[i] = T[o + 5] * (1 + T[o + 4] * age); C[i * 4 + 3] = T[o + 6] * (1 - k * k); }
+      geo.attributes.position.needsUpdate = geo.attributes.pcol.needsUpdate = geo.attributes.psize.needsUpdate = true; },
+  };
+})();
 trail.geometry.setDrawRange(0, 0);
 aimLine.frustumCulled = trail.frustumCulled = false; // geometry is rewritten every frame, so its cached bounds go stale and hide the line
 
@@ -2543,6 +2603,9 @@ function launch() {
   const r = simulate(state.ball, s, WIND, { pin: PIN, rolling: !!c.putter });
   state.shot = { from: { ...state.ball }, s, r, i: 0, t0: performance.now(), heard: 0 };
   sfx.hit(state.power, !!c.putter, c.speed / CLUBS[0].speed);
+  if (FXP && !c.putter) { const teed = Math.hypot(state.ball.x - HOLE.tee[0], state.ball.z - HOLE.tee[1]) < .5, wood = state.club < 2; // off the club: sand from a bunker, turf from grass (a wood sweeps it, so less), nothing off a tee peg
+    if (lie === 'sand') FXP.sand(state.ball, .6 + .9 * state.power, Math.sin(state.aim), Math.cos(state.aim));
+    else if (!teed && lie !== 'green' && lie !== 'water') FXP.divot(state.ball, state.aim, state.power * (wood ? .35 : 1), lie); }
   state.phase = 'flying'; document.body.classList.add('flying');
   refresh();
 }
@@ -2844,13 +2907,13 @@ function frame(now) {
     // blend between the 1/120 s samples: snapping to whole samples moved the ball 2, then 3, then 2 a frame, so it juddered in flight
     const a = sh.r.pts[i], b = sh.r.pts[Math.min(i + 1, sh.r.pts.length - 1)], t = f - i;
     ball = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t };
-    while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); }
+    while (sh.heard < sh.r.hits.length && sh.r.hits[sh.heard].i <= i) { const h = sh.r.hits[sh.heard++]; if (h.m !== 'water') sfx.bounce(h.s, h.m); if (FXP && h.m === 'sand') FXP.sand(sh.r.pts[h.i], clamp(h.s / 14, .25, 1.2)); }
     // the trail ends exactly where the ball is drawn: ending on every 3rd whole sample left its tip up to ~2 m behind a driver, read as a second ball
     { let n = 0; const A = trailPos.array;
       for (let k = 0; k <= i && n < TRAIL_MAX - 1; k += 3, n++) { const p = sh.r.pts[k]; A[n * 3] = p.x; A[n * 3 + 1] = p.y; A[n * 3 + 2] = p.z; }
       A[n * 3] = ball.x; A[n * 3 + 1] = ball.y; A[n * 3 + 2] = ball.z; n++;
       trailPos.needsUpdate = true; trail.geometry.setDrawRange(0, n); }
-    if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); } if (sh.r.outcome === 'water') sfx.splash(); }
+    if (i >= sh.r.pts.length - 1 && now - sh.t0 > 400) { state.phase = 'settle'; document.body.classList.remove('flying'); setTimeout(endShot, 700); if (sh.r.outcome === 'holed') { state.dropT0 = now; sfx.cup(); if (FXP) FXP.holed(PIN); } if (sh.r.outcome === 'water') { sfx.splash(); if (FXP) FXP.splash(sh.r.pts[sh.r.pts.length - 1]); } }
   }
   let bs = BALL_NEAR + (1 - BALL_NEAR) * clamp((flat(ball, PIN) - 20) / 20, 0, 1); // true size near the cup so what you see is what drops; eases by distance only so it never pops mid-roll
   // owner: ball and club in proportion, the club a real club's size. At address the ball is true size beside a true-size club
@@ -2922,6 +2985,7 @@ function frame(now) {
     for (let i = 0; i < a.count; i++) { const x = clothX[i * 3]; a.setZ(i, Math.sin(x * 9 - now / 140) * flap * x / .8); }
     a.needsUpdate = true; clothGeo.computeVertexNormals(); }
   if (frame.shown) (PERF.see ? seeNear : treeSee)(camera.position, ballMesh.position);
+  if (FXP) { FXP.tick(Math.min(.05, (now - (frame.fxT || now)) / 1000), renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360))); frame.fxT = now; }
   if (SWAY) { // the trees move with the hole's wind (it turns slowly on the swirl holes); looks only, the flight's wind is its own sum
     const a = HOLE.wind.toward_deg * Math.PI / 180 + (HOLE.swirl ? .8 * Math.sin(now / 9000) + .25 * Math.sin(now / 2300) : 0);
     FOL.uWind.value.set(Math.sin(a), Math.cos(a), HOLE.wind.mph / 10, now / 1000); }
